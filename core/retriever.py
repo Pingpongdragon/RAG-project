@@ -20,7 +20,7 @@ class QARetriever:
     
     def similarity_search(self, query: str, threshold: float = 0.65) -> List[dict]:
         """带余弦验证的增强检索"""
-        candidates = self.retriever.get_relevant_documents(query)
+        candidates = self.retriever.invoke(query)
         query_embedding = np.array(self.embedder.embed_query(query))
         
         results = []
@@ -33,6 +33,5 @@ class QARetriever:
                     "similarity": round(float(similarity), 4),
                     "metadata": doc.metadata
                 })
-        
-        logger.info(f"检索到 {len(results)} 条符合条件的结果")
+        logger.info(f"🔍 检索到 {len(results)} 条符合条件的结果")
         return sorted(results, key=lambda x: x["similarity"], reverse=True)

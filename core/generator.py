@@ -10,21 +10,31 @@ logger = configure_logger(__name__)
 # -------------------------
 # LLM 生成模板配置
 # -------------------------
-RESPONSE_TEMPLATE = """基于以下上下文（按相关性排序），用中文专业、简明地回答。遵循格式：
-1. 答案正文
-2. 来源标注: [ID列表]
+CONTEXT_PROMPT_TEMPLATE = '''
+你是一位专业顾问，请严格根据提供的参考资料回答问题。
 
-上下文:
+参考资料片段：
 {context}
 
-问题: {query}
-答案："""
+用户问题：
+{query}
 
-ERROR_MESSAGES = {
-    "timeout": "请求超时，请简化问题后重试",
-    "model_not_found": "模型服务不可用",
-    "default": "服务暂时不可用，请稍后再试"
-}
+回答要求：
+1. 优先使用参考资料中的信息
+2. 如果引用资料，需标注具体来源编号如 [来源1] 
+3. 资料不足时可结合常识回答，但需明确说明
+'''
+
+NO_CONTEXT_PROMPT_TEMPLATE = '''
+请基于你的专业知识回答以下问题：
+
+{query}
+
+回答要求：
+1. 使用简洁中文，避免技术术语
+2. 如果不确定答案，建议提供探索方向
+3. 明确说明回答是否基于通用知识
+'''
 
 # -------------------------
 # 生成主函数
@@ -35,25 +45,26 @@ def generate_llm_response(
     max_retries: int = 3,
     temperature: float = 0.3,
     max_tokens: int = 300,
-    context_top_n: int = 3,  # 显式化关键参数
-    **kwargs  # 保留扩展能力
+    context_top_n: int = 3,
+    context_score_threshold: float = 0.5  # 可配置阈值
 ) -> Optional[str]:
-    """
-    增强版生成器主要改进点：
-    1. 显式参数与兼容参数分离
-    2. 安全获取上下文配置
-    3. 稳定类型标注
-    """
-    if calculate_context_score(context) < 0.5:
-        return "当前知识库信息不足，建议补充问题细节"
+    """支持无上下文生成的全功能版"""
+    # =============== 动态判断上下文有效性 ================
+    use_context = bool(context) and (calculate_context_score(context) >= context_score_threshold)
     
-    context_str = format_context(context, top_n=context_top_n)  # ✓ 正确引用
-    prompt = RESPONSE_TEMPLATE.format(context=context_str, query=query)
-    
-    retry_count = 0
-    backoff_factor = 1.5
-    
-    while retry_count < max_retries:
+    # =============== 智能构造Prompt ================
+    if use_context:
+        context_str = format_context(context, top_n=context_top_n)
+        prompt = CONTEXT_PROMPT_TEMPLATE.format(
+            context=context_str, 
+            query=query
+        )
+    else:
+        prompt = NO_CONTEXT_PROMPT_TEMPLATE.format(query=query)
+        logger.info("无有效上下文，启用通用回答模式")
+
+    # =============== 生成逻辑 ================
+    for retry in range(max_retries):
         try:
             response = settings.OLLAMA_CLIENT.generate(
                 model=settings.OLLAMA_MODEL,
@@ -61,54 +72,34 @@ def generate_llm_response(
                 options={
                     "temperature": temperature,
                     "max_tokens": max_tokens,
-                    "top_p": 0.95
+                    "top_p": 0.9
                 },
-                stream=False,
+                stream=False
             )
-            return postprocess_response(response, context)
-        
+            cleaned_response = _sanitize_output(
+                response.get("response", ""),
+                has_context=use_context  # 传递上下文使用标志★
+            )
+            return cleaned_response
+            
         except Exception as e:
             error_type = classify_error(e)
-            logger.warning(f"尝试 {retry_count+1}/{max_retries} 失败: [{error_type}] {str(e)}")
-            
-            if retry_count == max_retries - 1:
-                return ERROR_MESSAGES.get(error_type, ERROR_MESSAGES["default"])
-            
-            sleep_time = min(5, backoff_factor ** retry_count)
-            time.sleep(sleep_time)
-            retry_count += 1
+            logger.error(f"Generation attempt {retry+1} failed: {error_type}")
+    
     return None
 
-# # -------------------------
-# # 工具函数
-# # -------------------------
-# def format_context(context: List[Dict], top_n: int = 3) -> str:
-#     """格式化上下文信息"""
-#     return "\n------\n".join(
-#         f"[ID:{item['metadata']['q_id']}] {item.get('text', '')[:200]}..."  # 截断长文本
-#         for item in context[:top_n]
-#     )
+def _sanitize_output(raw_response: str, has_context: bool) -> str:
+    """根据是否使用上下文智能后处理"""
+    cleaned = (
+        raw_response.strip()
+        .replace('\r\n', '\n')
+        .encode('utf-8', 'ignore').decode('utf-8')
+    )
+    
+    # 仅当使用上下文时检查来源标注
+    if has_context and not any(f"[来源{i}]" in cleaned for i in range(1,4)):
+        cleaned += "\n[注意：此回答未引用提供的参考资料]"
+    
+    return cleaned[:3000]  # 确保长度可控
 
-# def _classify_error(error: Exception) -> str:
-#     """错误类型分类器"""
-#     if "timed out" in str(error).lower():
-#         return "timeout"
-#     elif "not found" in str(error).lower():
-#         return "model_not_found"
-#     return "default"
 
-# def _postprocess_response(response: dict, context: List[Dict]) -> str:
-#     """响应后处理"""
-#     try:
-#         answer = response["response"].strip()
-#         source_ids = list({c["metadata"]["q_id"] for c in context[:3]})
-        
-#         # 检查是否已包含来源
-#         if "来源" not in answer:
-#             answer += f"\n来源标注: {source_ids}"
-        
-#         # 格式化编码处理
-#         return answer.encode('utf-8', 'ignore').decode('utf-8')
-#     except KeyError:
-#         logger.error("响应格式异常: 缺少 'response' 字段")
-#         return ERROR_MESSAGES["default"]

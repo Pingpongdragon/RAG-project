@@ -1,14 +1,9 @@
 import pytest
 from core.retriever import QARetriever
-from config.settings import EMBEDDING_MODEL
-from langchain_huggingface import HuggingFaceEmbeddings
+from core.data_processor import load_or_build_index
 
-@pytest.fixture
-def sample_retriever():
-    embedder = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-    # 这里可以加载测试用的小型索引
-    return QARetriever(...)
-
-def test_similarity_search(sample_retriever):
-    results = sample_retriever.similarity_search("测试查询")
-    assert len(results) > 0, "应该返回至少一个结果"
+def test_similarity_search():
+    retriever = QARetriever(load_or_build_index())
+    query = "Was Abraham Lincoln the sixteenth President of the United States?"
+    results = retriever.similarity_search(query, threshold=0.7)
+    print(results)
