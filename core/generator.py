@@ -1,7 +1,7 @@
 import time
 from typing import List, Dict, Optional
-from core.utils.context_utils import format_context, calculate_context_score
-from core.utils.error_utils import classify_error, generate_error_response
+from core.utils.context_utils import format_context
+from core.utils.error_utils import classify_error
 from config import settings
 from config.logger_config import configure_logger
 
@@ -20,10 +20,15 @@ CONTEXT_PROMPT_TEMPLATE = '''
 {query}
 
 回答要求：
-1. 优先使用参考资料中的信息
-2. 如果引用资料，需标注具体来源编号如 [来源1] 
-3. 资料不足时可结合常识回答，但需明确说明
+1. 必须优先使用参考资料中的信息，并在回答中标注具体来源编号，例如：[来源1]、[来源2]。
+2. 如果问题需要结合多个参考资料片段回答，请分别标注每个来源，例如：
+   - 第一部分 [来源1]
+   - 第二部分 [来源2]
+3. 如果参考资料中没有相关信息，请明确说明“参考资料中未找到相关信息”。
+4. 如果未标注来源，回答将被视为无效。请确保回答准确且完整。
 '''
+
+
 
 NO_CONTEXT_PROMPT_TEMPLATE = '''
 请基于你的专业知识回答以下问题：
@@ -42,17 +47,19 @@ NO_CONTEXT_PROMPT_TEMPLATE = '''
 def generate_llm_response(
     query: str,
     context: List[Dict],
-    max_retries: int = 3,
-    temperature: float = 0.3,
-    max_tokens: int = 300,
-    context_top_n: int = 3,
-    context_score_threshold: float = 0.5  # 可配置阈值
+    max_retries: int = settings.GENERATION_CONFIG["max_retries"],
+    temperature: float = settings.GENERATION_CONFIG["temperature"],
+    max_tokens: int = settings.GENERATION_CONFIG["max_tokens"],
+    context_top_n: int = settings.GENERATION_CONFIG["context_top_n"],
 ) -> Optional[str]:
     """支持无上下文生成的全功能版"""
-    # =============== 动态判断上下文有效性 ================
-    use_context = bool(context) and (calculate_context_score(context) >= context_score_threshold)
+    
+    # =============== 参数提取 ================
+    top_p = settings.GENERATION_CONFIG["top_p"]
+    stream = settings.GENERATION_CONFIG["stream"]
     
     # =============== 智能构造Prompt ================
+    use_context = bool(context not in (None, [])) 
     if use_context:
         context_str = format_context(context, top_n=context_top_n)
         prompt = CONTEXT_PROMPT_TEMPLATE.format(
@@ -62,23 +69,22 @@ def generate_llm_response(
     else:
         prompt = NO_CONTEXT_PROMPT_TEMPLATE.format(query=query)
         logger.info("无有效上下文，启用通用回答模式")
-
     # =============== 生成逻辑 ================
     for retry in range(max_retries):
         try:
             response = settings.OLLAMA_CLIENT.generate(
-                model=settings.OLLAMA_MODEL,
+                model=settings.OLLAMA_MODEL,  # 使用配置中的模型名
                 prompt=prompt,
                 options={
                     "temperature": temperature,
                     "max_tokens": max_tokens,
-                    "top_p": 0.9
+                    "top_p": top_p
                 },
-                stream=False
+                stream=stream
             )
             cleaned_response = _sanitize_output(
                 response.get("response", ""),
-                has_context=use_context  # 传递上下文使用标志★
+                has_context=use_context
             )
             return cleaned_response
             
