@@ -2,11 +2,9 @@ from typing import List, Union, Dict
 from abc import ABC, abstractmethod
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import linear_kernel
-from config import settings
-from config.logger_config import logger
-from core.reranker import ReRanker 
+from RAG_project.config import settings
+from RAG_project.config.logger_config import logger
+from RAG_project.core.reranker import ReRanker 
 from langchain_community.vectorstores.utils import DistanceStrategy
 from rank_bm25 import BM25Okapi
 
@@ -186,7 +184,7 @@ class QARetriever:
         self, 
         query: str, 
         rerank_top_k: int = settings.DEFAULT_RERANK_K, 
-        final_threshold: float = settings.FINAL_SCORE_THRESHOLD
+        rerank_threshold: float = settings.RERANK_THRESHOLD
     ) -> List[Dict]:
         """保持不变的对外接口"""
         # 阶段1: 基础召回
@@ -217,7 +215,7 @@ class QARetriever:
                 item for item in candidates 
                 if item["text"] == res["text"]
             )
-            if res["rerank_score"] >= final_threshold:
+            if res["rerank_score"] >= rerank_threshold:
                 final_item = {
                     "text": res["text"],
                     "scores": {
@@ -232,5 +230,15 @@ class QARetriever:
                 final_results.append(final_item)
         
         logger.info(f"✅ 最终有效结果: {len(final_results)}条")
-        return sorted(final_results, key=lambda x: x["scores"]["rerank"], reverse=True)
+        if settings.RANK_ORDER == 0:  # 降序排序
+            return sorted(
+                final_results, 
+                key=lambda x: 0.5 * x["scores"]["rerank"] + 0.5 * x["scores"]["hybrid"], 
+                reverse=True
+            )
+        else:  # 升序排序
+            return sorted(
+                final_results, 
+                key=lambda x: 0.5 * x["scores"]["rerank"] + 0.5 * x["scores"]["hybrid"]
+            )
 

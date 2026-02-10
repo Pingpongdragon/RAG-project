@@ -1,7 +1,7 @@
 # reranker.py
 from typing import List, Dict
 from sentence_transformers import CrossEncoder
-from config.settings import RERANKER_MODEL,CACHE_FOLDER
+from RAG_project.config.settings import RERANKER_MODEL,CACHE_FOLDER
 import numpy as np
 
 class ReRanker:

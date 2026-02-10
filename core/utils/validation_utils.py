@@ -1,9 +1,9 @@
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
 from typing import List
-from config.logger_config import configure_logger
+from config.logger_config import configure_console_logger
 
-logger = configure_logger(__name__)
+logger = configure_console_logger(__name__)
 
 def validate_data_consistency(vector_db: FAISS, docs: List[Document]) -> bool:
     """检查文档数量是否匹配"""
