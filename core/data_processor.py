@@ -1,12 +1,12 @@
 from typing import List, Tuple
 from pathlib import Path
 from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
+from langchain_core.documents import Document
 from datasets import load_dataset
-from RAG_project.models.embeddings import SafeHuggingFaceEmbedder
-from RAG_project.config import settings
+from models.embeddings import SafeHuggingFaceEmbedder
+from config import settings
 import pickle
-from RAG_project.config.logger_config import configure_console_logger
+from config.logger_config import configure_console_logger
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain.text_splitter import CharacterTextSplitter
 import sys
