@@ -3,9 +3,9 @@
 """
 from kb_base import ClusteredKnowledgeBase, load_kb_documents
 from evaluator import load_test_data, compute_retrieval_score
-from static_updater import StaticUpdater
-from reactive_updater import ReactiveUpdater
-from cluster_updater import ClusteredAdaptiveUpdater
+from RAG_project.updator.static_updater import StaticUpdater
+from RAG_project.updator.reactive_updater import ReactiveUpdater
+from RAG_project.updator.cluster_updater import ClusteredAdaptiveUpdater
 from RAG_project.core.detector.detector import AutoAdaptiveDetector
 
 

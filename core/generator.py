@@ -3,11 +3,42 @@ from typing import List, Dict, Optional,Tuple
 from RAG_project.core.utils.context_utils import format_context
 from RAG_project.config import settings
 from RAG_project.config.logger_config import configure_console_logger
+from openai import OpenAI
 from swift.llm import InferRequest, RequestConfig
 import os
 
 logger = configure_console_logger(__name__)
 os.environ['NO_PROXY'] = 'localhost,127.0.0.1,0.0.0.0'
+
+
+# -------------------------
+# API 客户端初始化
+# -------------------------
+def _get_api_client():
+    """根据配置返回对应的 OpenAI 兼容客户端"""
+    if settings.ACTIVE_MODEL_TYPE == "qwen":
+        return OpenAI(
+            api_key=settings.QWEN_API_CONFIG["api_key"],
+            base_url=settings.QWEN_API_CONFIG["base_url"]
+        )
+    elif settings.ACTIVE_MODEL_TYPE == "deepseek":
+        return OpenAI(
+            api_key=settings.DEEPSEEK_CONFIG["api_key"],
+            base_url=settings.DEEPSEEK_CONFIG["base_url"]
+        )
+    else:
+        return None  # 使用本地模型
+
+def _get_model_name():
+    """返回当前激活模型的名称"""
+    if settings.ACTIVE_MODEL_TYPE == "qwen":
+        return settings.QWEN_API_CONFIG["model"]
+    elif settings.ACTIVE_MODEL_TYPE == "deepseek":
+        return settings.DEEPSEEK_CONFIG["model"]
+    else:
+        return None
+
+
 # -------------------------
 # LLM 生成模板配置
 # -------------------------
@@ -116,7 +147,7 @@ def generate_llm_response(
     
     # =============== 智能构造Prompt ================
     use_context = bool(context not in (None, [])) 
-    context_str = ""  # 初始化 context_str，确保在所有情况下都有值
+    context_str = ""
     
     if use_context:
         context_str = format_context(context, top_n=context_top_n, language=language)
@@ -137,40 +168,54 @@ def generate_llm_response(
                 logger.info("No valid context found, enabling generic response mode.")
         else:
             prompt = NO_CONTEXT_PROMPT_TEMPLATE_ZH.format(query=query)
-            logger.info("无有效上下文，启用通用回答模式")
-    
-    # 加载推理引擎
-    ENGINE = settings.model_manager.get_engine(settings.MODEL_DIR, settings.ADAPTER_DIR, settings.MODEL_TYPE)
+            logger.info("无有效上下文,启用通用回答模式")
     
     # =============== 生成逻辑 ================
+    api_client = _get_api_client()
+    
     for retry in range(max_retries):
         try:
-            infer_request = [InferRequest(messages=[{'role': 'user', 'content': prompt}])]
-            request_config = RequestConfig(max_tokens=settings.MAX_NEW_TOKEN,temperature=settings.TEMPERATURE)
-            resp_list = ENGINE.infer(infer_request, request_config)
-            response = resp_list[0].choices[0].message.content
-            return context_str, _post_process(response, use_context, language)
+            if api_client:  # 使用 API
+                response = api_client.chat.completions.create(
+                    model=_get_model_name(),
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=settings.MAX_NEW_TOKEN,
+                    temperature=settings.TEMPERATURE
+                )
+                response_text = response.choices[0].message.content
+            else:  # 使用本地模型
+                ENGINE = settings.model_manager.get_engine(
+                    settings.MODEL_DIR, 
+                    settings.ADAPTER_DIR, 
+                    settings.MODEL_TYPE
+                )
+                infer_request = [InferRequest(messages=[{'role': 'user', 'content': prompt}])]
+                request_config = RequestConfig(
+                    max_tokens=settings.MAX_NEW_TOKEN,
+                    temperature=settings.TEMPERATURE
+                )
+                resp_list = ENGINE.infer(infer_request, request_config)
+                response_text = resp_list[0].choices[0].message.content
+            
+            return context_str, _post_process(response_text, use_context, language)
+            
         except Exception as e:
             logger.error(f"Generation attempt {retry+1} failed: {e}")
     
-    # 所有重试失败后返回提示信息
     return context_str, "无法生成回答，请稍后再试。" if language == "zh" else "Unable to generate a response. Please try again later."
 
 
 def generate_batch_llm_response(
     queries: List[str],
-    contexts: List[List[Dict]], # 注意：这是一个列表的列表，每个查询对应一组上下文
+    contexts: List[List[Dict]],
     language: str = "en",
     max_batch_size: int = settings.MAX_BATCH_SIZE,
 ) -> List[str]:
-    """
-    Batch 生成函数，大幅提升实验速度
-    """
+    """Batch 生成函数，大幅提升实验速度"""
     
     # 1. 批量构造 Prompts
     prompts = []
-    # 记录每个样本是否有上下文，用于后处理
-    has_context_flags = [] 
+    has_context_flags = []
 
     for query, context in zip(queries, contexts):
         use_context = bool(context not in (None, []))
@@ -180,7 +225,6 @@ def generate_batch_llm_response(
         if use_context:
             context_str = format_context(context, top_n=settings.CONTEXT_TOP_N, language=language)
             
-        # 根据语言和任务选择模板
         if language == "en":
             if settings.IS_MMLU:
                 prompt = CONTEXT_PROMPT_MMLU_TEMPLATE_EN.format(context=context_str, query=query)
@@ -189,7 +233,6 @@ def generate_batch_llm_response(
         else:
             prompt = CONTEXT_PROMPT_TEMPLATE_ZH.format(context=context_str, query=query)
             
-        # 无上下文时的 fallback 逻辑 (与单条保持一致)
         if not use_context:
             if language == "en":
                 if settings.IS_MMLU:
@@ -201,27 +244,45 @@ def generate_batch_llm_response(
         
         prompts.append(prompt)
 
-    # 2. 获取引擎 (单例)
-    ENGINE = settings.model_manager.get_engine(settings.MODEL_DIR, settings.ADAPTER_DIR, settings.MODEL_TYPE)
+    # 2. 获取 API 客户端或本地引擎
+    api_client = _get_api_client()
     
-    # 3. 构造批量请求
-    # Swift/vLLM 的 infer 接口通常支持传入 list[InferRequest]
-    infer_requests = [InferRequest(messages=[{'role': 'user', 'content': p}]) for p in prompts]
-    request_config = RequestConfig(max_tokens=settings.MAX_NEW_TOKEN, temperature=settings.TEMPERATURE,
-                                   )
-    
-    # 4. 执行批量推理 (最耗时的步骤，现在并行了)
+    # 3. 执行批量推理
     try:
-        resp_list = ENGINE.infer(infer_requests, request_config)
+        if api_client:  # 使用 API (逐个调用，因为 OpenAI API 不支持真正的批量)
+            resp_list = []
+            for prompt in prompts:
+                response = api_client.chat.completions.create(
+                    model=_get_model_name(),
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=settings.MAX_NEW_TOKEN,
+                    temperature=settings.TEMPERATURE
+                )
+                resp_list.append(response.choices[0].message.content)
+        else:  # 使用本地模型批量推理
+            ENGINE = settings.model_manager.get_engine(
+                settings.MODEL_DIR, 
+                settings.ADAPTER_DIR, 
+                settings.MODEL_TYPE
+            )
+            infer_requests = [
+                InferRequest(messages=[{'role': 'user', 'content': p}]) 
+                for p in prompts
+            ]
+            request_config = RequestConfig(
+                max_tokens=settings.MAX_NEW_TOKEN, 
+                temperature=settings.TEMPERATURE
+            )
+            responses = ENGINE.infer(infer_requests, request_config)
+            resp_list = [resp.choices[0].message.content for resp in responses]
+            
     except Exception as e:
         logger.error(f"Batch generation failed: {e}")
-        # 如果批量失败，返回空字符串列表以避免程序崩溃
         return ["" for _ in queries]
 
-    # 5. 批量后处理
+    # 4. 批量后处理
     final_responses = []
-    for i, resp in enumerate(resp_list):
-        raw_text = resp.choices[0].message.content
+    for i, raw_text in enumerate(resp_list):
         processed = _post_process(raw_text, has_context_flags[i], language)
         final_responses.append(processed)
         

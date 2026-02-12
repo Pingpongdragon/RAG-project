@@ -1,7 +1,8 @@
 from pathlib import Path
 from .logger_config import configure_console_logger
-from swift.llm import VllmEngine,PtEngine
+from dotenv import load_dotenv
 import torch
+import os
 
 logger = configure_console_logger(__name__)
 
@@ -80,10 +81,39 @@ RERANKER_MODEL = "BAAI/bge-reranker-base"  # 默认模型名称
 # -------------------------
 # 推理配置
 # -------------------------
+try:
+    from swift.llm import VllmEngine, PtEngine
+    USE_SWIFT_LLM = True
+except Exception as e:
+    print(f"⚠️  Warning: swift.llm import failed ({e}). Local model inference disabled.")
+    VllmEngine = None
+    PtEngine = None
+    USE_SWIFT_LLM = False
 MODEL_DIR = str(BASE_DIR.parent / "llm/Qwen/Qwen3-8B")
-# MODEL_DIR = "/home/users/zhangxx/.cache/modelscope/hub/models/Qwen/Qwen2.5-3B"
 MODEL_TYPE = None  # 模型类型
 ADAPTER_DIR = None # 适配器目录
+
+# 本地模型配置
+MODEL_DIR = str(BASE_DIR.parent / "llm/Qwen/Qwen3-8B")
+MODEL_TYPE = 'qwen25-32b-instruct'
+ADAPTER_DIR = None
+
+# DeepSeek API 配置
+DEEPSEEK_CONFIG = {
+    "api_key": os.getenv("DEEPSEEK_API_KEY"),
+    "base_url": os.getenv("DEEPSEEK_BASE_URL"),
+    "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+}
+
+# Qwen-30B API 配置
+QWEN_API_CONFIG = {
+    "api_key": os.getenv("QWEN_API_KEY", "none"),
+    "base_url": os.getenv("QWEN_BASE_URL"),
+    "model": os.getenv("QWEN_MODEL_NAME", "qwen-30b"),
+}
+
+# 选择使用的模型类型: "local" | "deepseek" | "qwen"
+ACTIVE_MODEL_TYPE = os.getenv("ACTIVE_MODEL_TYPE", "qwen")  # 默认使用 Qwen
 
 class ModelManager:
     def __init__(self):
@@ -116,7 +146,11 @@ class ModelManager:
         return None
 
 # 创建全局模型管理器实例
-model_manager = ModelManager()
+# ✅ 仅在需要时初始化 ModelManager
+if USE_SWIFT_LLM:
+    model_manager = ModelManager()
+else:
+    model_manager = None
 
 CONTEXT_TOP_N = 3  # 上下文数量
 MAX_NEW_TOKEN = 2048  # 最大生成token数
