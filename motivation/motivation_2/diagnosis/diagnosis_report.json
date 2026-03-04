@@ -1,0 +1,24 @@
+{
+  "h1_rank_dist": {
+    "top1_pct": 0.8925,
+    "top10_pct": 0.99,
+    "mean_rank": 2.2425
+  },
+  "h3_hot_docs": {
+    "n_unique_gold": 797,
+    "total_gold_refs": 800,
+    "dedup_ratio": 0.99625
+  },
+  "h4_noise_scale": [
+    {
+      "ratio": 10,
+      "hit_rate": 0.9975,
+      "kb_size": 8766
+    },
+    {
+      "ratio": 50,
+      "hit_rate": 0.9925,
+      "kb_size": 40646
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+[
+  {
+    "label": "Aligned",
+    "jsd": 0.0,
+    "hit_rate": 0.99,
+    "accuracy": 0.6725,
+    "noise_dist": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "kb_stats": {
+      "n_gold": 797,
+      "n_noise": 79700,
+      "n_total": 80497,
+      "noise_per_domain": {
+        "entertainment": 19925,
+        "stem": 19925,
+        "humanities": 19925,
+        "lifestyle": 19925
+      }
+    }
+  },
+  {
+    "label": "Mild",
+    "jsd": 0.12822203113815936,
+    "hit_rate": 0.9875,
+    "accuracy": 0.655,
+    "noise_dist": [
+      0.4,
+      0.25,
+      0.2,
+      0.15
+    ],
+    "kb_stats": {
+      "n_gold": 797,
+      "n_noise": 79700,
+      "n_total": 80497,
+      "noise_per_domain": {
+        "entertainment": 31880,
+        "stem": 19925,
+        "humanities": 15940,
+        "lifestyle": 11955
+      }
+    }
+  },
+  {
+    "label": "Moderate",
+    "jsd": 0.25193906205317546,
+    "hit_rate": 0.985,
+    "accuracy": 0.68,
+    "noise_dist": [
+      0.55,
+      0.25,
+      0.12,
+      0.08
+    ],
+    "kb_stats": {
+      "n_gold": 797,
+      "n_noise": 78791,
+      "n_total": 79588,
+      "noise_per_domain": {
+        "entertainment": 42926,
+        "stem": 19925,
+        "humanities": 9564,
+        "lifestyle": 6376
+      }
+    }
+  },
+  {
+    "label": "Severe",
+    "jsd": 0.33881331572346296,
+    "hit_rate": 0.9875,
+    "accuracy": 0.6925,
+    "noise_dist": [
+      0.7,
+      0.15,
+      0.1,
+      0.05
+    ],
+    "kb_stats": {
+      "n_gold": 797,
+      "n_noise": 66836,
+      "n_total": 67633,
+      "noise_per_domain": {
+        "entertainment": 42926,
+        "stem": 11955,
+        "humanities": 7970,
+        "lifestyle": 3985
+      }
+    }
+  },
+  {
+    "label": "Extreme",
+    "jsd": 0.45864481628615866,
+    "hit_rate": 0.99,
+    "accuracy": 0.69,
+    "noise_dist": [
+      0.85,
+      0.1,
+      0.03,
+      0.02
+    ],
+    "kb_stats": {
+      "n_gold": 797,
+      "n_noise": 54881,
+      "n_total": 55678,
+      "noise_per_domain": {
+        "entertainment": 42926,
+        "stem": 7970,
+        "humanities": 2391,
+        "lifestyle": 1594
+      }
+    }
+  }
+]

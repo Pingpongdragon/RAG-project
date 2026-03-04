@@ -32,10 +32,7 @@ from common import (
     DOMAIN_NAMES, NUM_DOMAINS, OUT_DIR,
 )
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["TOKENIZERS_PARALLELISM"] = "false"  # ✅ 新增：避免 tokenizer 多线程死锁
-os.environ["OMP_NUM_THREADS"] = "1"              # ✅ 新增：限制 OpenMP 线程数
-os.environ["MKL_NUM_THREADS"] = "1"  
+
 
 # ==========================================
 # 实验配置
@@ -64,8 +61,8 @@ def set_random_seed(seed: int = RANDOM_SEED):
     try:
         import torch
         torch.manual_seed(seed)
-        # if torch.cuda.is_available():
-        #     torch.cuda.manual_seed_all(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass
     print(f"🎲 Random seed set to {seed}")
@@ -303,7 +300,7 @@ def evaluate_scaling_recovery(
         
         del pipe
         gc.collect()
-        # torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
     
     return accs
 

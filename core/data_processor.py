@@ -8,11 +8,11 @@ from config import settings
 import pickle
 from config.logger_config import configure_console_logger
 from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from streamingqa import extraction
+# from streamingqa import extraction
 
 logger = configure_console_logger(__name__)  # 使用统一配置的logger
 
@@ -56,43 +56,43 @@ embedding_service = CompatibleEmbeddings()
 # 数据集处理相关
 # -------------------------
 
-def _load_wmt_dataset(counter_size=30000) -> List[Document]:
-    """加载WMT数据集"""
-    logger.info(f"🚀 正在加载WMT数据集")
-    wmt_docs = []
-    wmt_dir = Path(settings.WMT_DIR)
-    # 假设这里配置了WMT存档文件路径和去重排序键文件路径
-    wmt_archive_file_paths = [
-        str(wmt_dir / 'news-docs.2019.en.filtered.gz'),
-    ]
-    streamingqa_dir = Path(settings.STREAMINGQA_DIR)    
-    deduplicated_sorting_keys_file_path = str(streamingqa_dir / 'wmt_sorting_key_ids.txt.gz')
+# def _load_wmt_dataset(counter_size=30000) -> List[Document]:
+#     """加载WMT数据集"""
+#     logger.info(f"🚀 正在加载WMT数据集")
+#     wmt_docs = []
+#     wmt_dir = Path(settings.WMT_DIR)
+#     # 假设这里配置了WMT存档文件路径和去重排序键文件路径
+#     wmt_archive_file_paths = [
+#         str(wmt_dir / 'news-docs.2019.en.filtered.gz'),
+#     ]
+#     streamingqa_dir = Path(settings.STREAMINGQA_DIR)    
+#     deduplicated_sorting_keys_file_path = str(streamingqa_dir / 'wmt_sorting_key_ids.txt.gz')
 
-    try:
-        wmt_doc_objects = extraction.get_deduplicated_wmt_docs(
-            wmt_archive_files=wmt_archive_file_paths,
-            deduplicated_sorting_keys_file=deduplicated_sorting_keys_file_path
-        )
-         # 随机采样文档
-        wmt_passage_objects = extraction.get_wmt_passages_from_docs(wmt_doc_objects)
-        counter = 0
-        for wmt_passage in wmt_passage_objects:
-            if counter >= counter_size:
-                break
-            passage = Document(
-                page_content=wmt_passage.text.decode(),
-                metadata={
-                    "doc_id": wmt_passage.id.split('_')[0], 
-                    "source": "WMT"
-                }
-            )
-            wmt_docs.append(passage)
-            counter += 1
-    except Exception as e:
-        logger.error(f"🔥 加载WMT数据集失败: {str(e)}")
+#     try:
+#         wmt_doc_objects = extraction.get_deduplicated_wmt_docs(
+#             wmt_archive_files=wmt_archive_file_paths,
+#             deduplicated_sorting_keys_file=deduplicated_sorting_keys_file_path
+#         )
+#          # 随机采样文档
+#         wmt_passage_objects = extraction.get_wmt_passages_from_docs(wmt_doc_objects)
+#         counter = 0
+#         for wmt_passage in wmt_passage_objects:
+#             if counter >= counter_size:
+#                 break
+#             passage = Document(
+#                 page_content=wmt_passage.text.decode(),
+#                 metadata={
+#                     "doc_id": wmt_passage.id.split('_')[0], 
+#                     "source": "WMT"
+#                 }
+#             )
+#             wmt_docs.append(passage)
+#             counter += 1
+#     except Exception as e:
+#         logger.error(f"🔥 加载WMT数据集失败: {str(e)}")
 
-    logger.info(f"📊 加载完成: 共 {len(wmt_docs)} 条")
-    return wmt_docs
+#     logger.info(f"📊 加载完成: 共 {len(wmt_docs)} 条")
+#     return wmt_docs
 
 def _load_hf_dataset(cfg=None) -> List[Document]:
     """加载数据集，针对MMLU只保留问题和正确答案
@@ -108,8 +108,8 @@ def _load_hf_dataset(cfg=None) -> List[Document]:
     
     logger.info(f"🚀 正在加载数据集 {cfg['dataset_name']} from {cfg['dataset_source']}")
     
-    if cfg['dataset_source'] == 'local':
-        return _load_wmt_dataset()
+    # if cfg['dataset_source'] == 'local':
+    #     return _load_wmt_dataset()
     
     # 判断是否为MMLU数据集，以便特殊处理
     is_mmlu = "mmlu" in cfg['dataset_name'].lower()

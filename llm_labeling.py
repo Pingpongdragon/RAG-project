@@ -426,7 +426,7 @@ Output JSON: {{"probabilities": [P_ent, P_stem, P_hum, P_life], "reasoning": "..
 # ==========================================
 
 def main():
-    OUTPUT_FILE = "train_distill_mixed_qwen_v4.jsonl"
+    OUTPUT_FILE = "train_distill_mixed_qwenv5.jsonl"
     
     TOTAL_SAMPLES = 10000  # 先测试，之后改大
     raw_data = load_mixed_data(sample_size=TOTAL_SAMPLES)

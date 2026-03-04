@@ -1,10 +1,10 @@
 from typing import List, Union, Dict
 from abc import ABC, abstractmethod
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
-from RAG_project.config import settings
-from RAG_project.config.logger_config import logger
-from RAG_project.core.reranker import ReRanker 
+from config import settings
+from config.logger_config import logger
+from core.reranker import ReRanker 
 from langchain_community.vectorstores.utils import DistanceStrategy
 from rank_bm25 import BM25Okapi
 

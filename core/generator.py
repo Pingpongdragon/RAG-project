@@ -1,14 +1,13 @@
 import re
 from typing import List, Dict, Optional,Tuple
-from RAG_project.core.utils.context_utils import format_context
-from RAG_project.config import settings
-from RAG_project.config.logger_config import configure_console_logger
+from core.utils.context_utils import format_context
+from config import settings
+from config.logger_config import configure_console_logger
 from openai import OpenAI
 from swift.llm import InferRequest, RequestConfig
 import os
 
 logger = configure_console_logger(__name__)
-os.environ['NO_PROXY'] = 'localhost,127.0.0.1,0.0.0.0'
 
 
 # -------------------------

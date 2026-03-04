@@ -8,6 +8,10 @@ logger = configure_console_logger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# 修改这一行，使用 BASE_DIR 定位 .env 文件
+load_dotenv(dotenv_path=BASE_DIR / ".env")
+
+
 IS_MMLU = True  # 是否使用MMLU数据集
 
 # -------------------------
@@ -109,11 +113,15 @@ DEEPSEEK_CONFIG = {
 QWEN_API_CONFIG = {
     "api_key": os.getenv("QWEN_API_KEY", "none"),
     "base_url": os.getenv("QWEN_BASE_URL"),
-    "model": os.getenv("QWEN_MODEL_NAME", "qwen-30b"),
+    "model": os.getenv("QWEN_MODEL_NAME"),
 }
+
 
 # 选择使用的模型类型: "local" | "deepseek" | "qwen"
 ACTIVE_MODEL_TYPE = os.getenv("ACTIVE_MODEL_TYPE", "qwen")  # 默认使用 Qwen
+
+print(f"当前使用的模型类型: {ACTIVE_MODEL_TYPE}")
+print(f"Qwen API 配置: {QWEN_API_CONFIG}")
 
 class ModelManager:
     def __init__(self):
