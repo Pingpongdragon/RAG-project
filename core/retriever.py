@@ -7,6 +7,13 @@ from config.logger_config import logger
 from core.reranker import ReRanker 
 from langchain_community.vectorstores.utils import DistanceStrategy
 from rank_bm25 import BM25Okapi
+from core.query_strategies import (
+    expand_query,
+    generate_query_variations,
+    deduplicate_results,
+    grade_retrieval,
+    refine_query,
+)
 
 class BaseRetriever(ABC):
     """检索器基类（最小化修改）"""
@@ -242,3 +249,74 @@ class QARetriever:
                 key=lambda x: 0.5 * x["scores"]["rerank"] + 0.5 * x["scores"]["hybrid"]
             )
 
+
+    def retrieve_advanced(
+        self,
+        query: str,
+        rerank_top_k: int = settings.DEFAULT_RERANK_K,
+        rerank_threshold: float = settings.RERANK_THRESHOLD,
+        enable_expansion: bool = None,
+        enable_multi_query: bool = None,
+        enable_self_reflection: bool = None,
+    ) -> List[Dict]:
+        """
+        高级检索接口: 在原有 retrieve() 基础上集成三个策略。
+
+        策略执行顺序:
+        1. Query Expansion (可选) - 扩展简短查询
+        2. Multi-Query (可选) - 多角度查询 + 去重
+        3. 标准 retrieve (Dense + BM25 Hybrid + Reranking)
+        4. Self-Reflection (可选) - 自评 + 修正重试
+
+        参考: https://github.com/coleam00/ottomator-agents/tree/main/all-rag-strategies
+        """
+        # 读取配置 (参数优先于全局配置)
+        use_expansion = enable_expansion if enable_expansion is not None else settings.ENABLE_QUERY_EXPANSION
+        use_multi_query = enable_multi_query if enable_multi_query is not None else settings.ENABLE_MULTI_QUERY
+        use_self_reflection = enable_self_reflection if enable_self_reflection is not None else settings.ENABLE_SELF_REFLECTION
+
+        working_query = query
+
+        # === Strategy 1: Query Expansion ===
+        if use_expansion:
+            working_query = expand_query(working_query)
+            logger.info(f"📝 [Query Expansion] '{query[:40]}...' → '{working_query[:60]}...'")
+
+        # === Strategy 2: Multi-Query RAG ===
+        if use_multi_query:
+            variations = generate_query_variations(
+                working_query,
+                num_variations=settings.MULTI_QUERY_NUM_VARIATIONS,
+            )
+            logger.info(f"🔀 [Multi-Query] Generated {len(variations)} query variations")
+
+            all_results = []
+            for i, q_var in enumerate(variations):
+                results_i = self.retrieve(q_var, rerank_top_k, rerank_threshold)
+                logger.info(f"  Variation {i+1}: '{q_var[:50]}...' → {len(results_i)} results")
+                all_results.append(results_i)
+
+            # 去重合并
+            results = deduplicate_results(all_results, key="text", top_k=rerank_top_k)
+            logger.info(f"🎯 [Multi-Query] Deduplicated: {sum(len(r) for r in all_results)} → {len(results)}")
+        else:
+            # 单查询标准检索
+            results = self.retrieve(working_query, rerank_top_k, rerank_threshold)
+
+        # === Strategy 3: Self-Reflective RAG ===
+        if use_self_reflection and results:
+            for attempt in range(settings.SELF_REFLECTION_MAX_RETRIES + 1):
+                grade = grade_retrieval(working_query, results)
+
+                if grade >= settings.SELF_REFLECTION_THRESHOLD:
+                    logger.info(f"✅ [Self-Reflection] Grade {grade}/5 — quality OK")
+                    break
+
+                if attempt < settings.SELF_REFLECTION_MAX_RETRIES:
+                    logger.info(f"⚠️ [Self-Reflection] Grade {grade}/5 — refining query (attempt {attempt+1})")
+                    working_query = refine_query(working_query)
+                    results = self.retrieve(working_query, rerank_top_k, rerank_threshold)
+                else:
+                    logger.warning(f"⚠️ [Self-Reflection] Grade {grade}/5 — max retries reached, using best results")
+
+        return results

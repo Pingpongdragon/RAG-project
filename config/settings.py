@@ -187,3 +187,99 @@ EVAL_CONFIG = {
 }
 
 
+
+
+# -------------------------
+# Advanced RAG Strategies (参考 ottomator-agents/all-rag-strategies)
+# -------------------------
+
+# Query Expansion: 用 LLM 将简短 query 扩展为详细版本
+ENABLE_QUERY_EXPANSION = False
+QUERY_EXPANSION_TEMPERATURE = 0.3
+
+# Multi-Query RAG: 生成多个查询变体并行检索
+ENABLE_MULTI_QUERY = False
+MULTI_QUERY_NUM_VARIATIONS = 3
+
+# Self-Reflective RAG: 检索后自评注, 低分则修正查询重试
+ENABLE_SELF_REFLECTION = False
+SELF_REFLECTION_THRESHOLD = 3  # 1-5评分, 低于此值触发修正
+SELF_REFLECTION_MAX_RETRIES = 1  # 最多修正几轮
+
+
+# -------------------------
+# ComRAG Hyperparameters (Paper Section 5.4)
+# https://arxiv.org/abs/2506.21098
+# -------------------------
+
+# Cluster threshold: cosine similarity for cluster assignment
+COMRAG_TAU = 0.75
+
+# Near-duplicate threshold: sim >= delta -> direct reuse / replacement
+COMRAG_DELTA = 0.9
+
+# Quality boundary: score >= gamma -> V_high, else -> V_low
+COMRAG_GAMMA = 0.6
+
+# Adaptive temperature parameters (Section 4.4)
+COMRAG_TEMP_K = 250.0       # Scaling factor for temperature function
+COMRAG_TEMP_MIN = 0.7       # Minimum temperature (high variance -> consistency)
+COMRAG_TEMP_MAX = 1.2       # Maximum temperature (low variance -> exploration)
+
+
+# -------------------------
+# ERASE Hyperparameters (Li et al., 2024)
+# https://arxiv.org/abs/2406.11830
+# -------------------------
+
+# Retrieval threshold for inference (Appendix A.3)
+ERASE_INFERENCE_THRESHOLD = 0.7
+
+# Top-k facts retrieved for update step
+ERASE_UPDATE_TOP_K = 20
+
+# Top-k facts retrieved for inference
+ERASE_INFERENCE_TOP_K = 10
+
+
+# -------------------------
+# ERASE Hyperparameters (Li et al., 2024)
+# https://arxiv.org/abs/2406.11830
+# -------------------------
+ERASE_INFERENCE_THRESHOLD = 0.7
+ERASE_UPDATE_TOP_K = 20
+ERASE_INFERENCE_TOP_K = 10
+
+
+# -------------------------
+# QARC Hyperparameters (Query-Aligned Retrieval-augmented Knowledge Curation)
+# Our proposed framework — three-phase adaptive KB curation
+# -------------------------
+
+# Window parameters
+QARC_WINDOW_SIZE = 50           # Queries per window (W_size)
+
+# Phase 1 (Explore) parameters
+QARC_N_WARMUP_MIN = 5           # Minimum windows before Phase 1→2 transition
+QARC_EPSILON_SIGMA = 0.3        # Convergence threshold for Gap variance ratio
+QARC_EXPLORE_LAMBDA_MAX = 0.5   # Replacement ratio in Phase 1 (aggressive)
+QARC_EXPLORE_ETA = 0.0          # Diversity term in Phase 1 (pure interest)
+
+# Phase 2 (Exploit) parameters
+QARC_EXPLOIT_LAMBDA_MAX = 0.2   # Replacement ratio in Phase 2 (conservative)
+QARC_EXPLOIT_ETA = 0.1          # Diversity regularization in Phase 2
+QARC_COOLDOWN_WINDOWS = 3       # Cooldown windows after re-curation
+
+# Adaptive threshold (EMA + k·MAD)
+QARC_THRESHOLD_BETA = 0.9       # EMA smoothing factor
+QARC_THRESHOLD_K = 2.0          # MAD multiplier (sensitivity)
+
+# Re-explore trigger
+QARC_RE_EXPLORE_TRIGGER = 3     # Consecutive Phase 2 triggers before re-explore
+
+# KB parameters
+QARC_KB_BUDGET = 50             # Maximum KB documents
+QARC_CANDIDATE_TOP_K = 100      # Candidates per interest centroid from pool
+
+# Retrieval parameters
+QARC_RETRIEVE_TOP_K = 5         # Docs retrieved per query for RAG

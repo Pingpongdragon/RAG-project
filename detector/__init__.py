@@ -1,6 +1,11 @@
 from .clustering_detector import (
-    ClusteringDetector,
-    HierarchicalClusteringDetector,
-    DetectionResult,
-    Cluster,
+    QARecord,
+    SearchResult,
+    CentroidClusterStore,
+    DynamicMemory,
+)
+
+from .comrag_pipeline import (
+    ComRAGPipeline,
+    compute_adaptive_temperature,
 )

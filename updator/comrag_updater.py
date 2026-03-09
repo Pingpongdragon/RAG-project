@@ -1,224 +1,191 @@
 """
-ComRAG Updater: 基于聚类的增量式 KB 更新
+ComRAG Update Phase (Algorithm 2)
 
-配合 detector/clustering_detector.py 的 ClusteringDetector 使用:
-1. 接收 DetectionResult 中的簇分布
-2. 按比例分配 KB 容量给各个簇
-3. 低质量簇获得额外容量 boost
-4. 用 centroid 向量从 DocPool 检索相关文档 (inject)
-5. 过剩的簇做 FIFO 淘汰 (evict)
+Paper: ComRAG (ACL 2025 Industry Track)
+https://arxiv.org/abs/2506.21098
+
+Update Flow:
+1. Generate answer: a_hat = LLM(q, context)
+2. Score answer: s = Scorer(q, a_hat)  (e.g., BERT-Score)
+3. Route to V_high (s >= gamma) or V_low (s < gamma)
+4. Within target store:
+   - If near-duplicate exists (sim >= delta): replace if new score > old score
+   - Else if cluster match (sim >= tau): add to cluster, update centroid
+   - Else: create new cluster
 """
 
 import numpy as np
-from typing import Dict, List, Any, Optional, Protocol
+from typing import Dict, List, Any, Optional, Callable
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-# ============================================================
-# 接口协议
-# ============================================================
-
-class KBProtocol(Protocol):
-    """知识库需要实现的接口"""
-    def add_document(self, doc: Any, cluster_id: int) -> None: ...
-    def remove_document(self, doc: Any, cluster_id: int) -> None: ...
-    def get_documents_by_cluster(self, cluster_id: int) -> List[Any]: ...
-    def count(self) -> int: ...
-
-
-class DocPoolProtocol(Protocol):
-    """全局文档池需要实现的接口"""
-    def search_by_vector(self, vector: np.ndarray, top_k: int = 10) -> List[Any]: ...
-
-
-# ============================================================
-# 内存 Mock 实现 (测试用)
-# ============================================================
-
-class SimpleKB:
-    """内存知识库 (测试用)"""
-    def __init__(self):
-        self._docs: Dict[int, List[Any]] = {}
-
-    def add_document(self, doc: Any, cluster_id: int = -1) -> None:
-        self._docs.setdefault(cluster_id, []).append(doc)
-
-    def remove_document(self, doc: Any, cluster_id: int = -1) -> None:
-        if cluster_id in self._docs:
-            try:
-                self._docs[cluster_id].remove(doc)
-            except ValueError:
-                pass
-
-    def get_documents_by_cluster(self, cluster_id: int) -> List[Any]:
-        return self._docs.get(cluster_id, [])
-
-    def count(self) -> int:
-        return sum(len(docs) for docs in self._docs.values())
-
-
-class SimpleDocPool:
-    """Mock 全局文档池"""
-    def search_by_vector(self, vector: np.ndarray, top_k: int = 10) -> List[Any]:
-        import random
-        return [
-            {"id": f"doc_{random.randint(1000, 9999)}", "embedding": vector}
-            for _ in range(top_k)
-        ]
-
-
-# ============================================================
-# ComRAG Updater
-# ============================================================
-
 class ComRAGUpdater:
     """
-    ComRAG 风格的增量式 KB 更新器。
+    ComRAG Update Phase implementation.
 
-    核心策略:
-    - KB 总容量按簇的 query 分布比例分配
-    - 低质量簇获得 boost (优先补充知识)
-    - inject: 用 centroid 向 DocPool 检索
-    - evict: FIFO 淘汰最旧文档
+    Works with DynamicMemory to manage the update cycle:
+    answer -> score -> route to store -> centroid-based placement.
+
+    The DynamicMemory.add() already implements Algorithm 2 internally,
+    so this class orchestrates the higher-level update loop:
+    scoring, embedding, and feeding results into DynamicMemory.
     """
 
     def __init__(
         self,
-        kb: Any = None,
-        doc_pool: Any = None,
-        max_kb_size: int = 1000,
-        low_quality_boost: float = 1.5,
+        dynamic_memory,
+        embed_fn: Optional[Callable] = None,
+        score_fn: Optional[Callable] = None,
     ):
-        self.kb = kb or SimpleKB()
-        self.doc_pool = doc_pool or SimpleDocPool()
-        self.max_kb_size = max_kb_size
-        self.low_quality_boost = low_quality_boost
-
-        self._cluster_docs: Dict[int, List[Any]] = {}
-        self.update_count = 0
-        self.total_cost = 0
-
-    def should_update(self, detection_result) -> bool:
-        """判断是否需要更新 (新簇出现 or 分布漂移)"""
-        return detection_result.is_new_cluster or detection_result.is_distribution_shift
-
-    def update(self, detection_result, detector=None) -> Dict:
         """
-        根据 DetectionResult 增量调整 KB。
+        Args:
+            dynamic_memory: DynamicMemory instance (from clustering_detector.py)
+            embed_fn: function(text: str) -> np.ndarray, for embedding questions
+            score_fn: function(question: str, answer: str, reference: str) -> float
+                      Returns quality score in [0, 1]. Default uses BERT-Score.
+        """
+        self.memory = dynamic_memory
+        self.embed_fn = embed_fn
+        self.score_fn = score_fn or self._default_scorer
+
+        # Statistics
+        self.update_count = 0
+        self.strategy_counts = {
+            "direct_reuse": 0,
+            "reference_generation": 0,
+            "kb_avoidance": 0,
+        }
+
+    def update(
+        self,
+        question: str,
+        answer: str,
+        score: Optional[float] = None,
+        reference_answer: Optional[str] = None,
+        embedding: Optional[np.ndarray] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
+        """
+        Execute one update step (Algorithm 2).
 
         Args:
-            detection_result: ClusteringDetector.detect() 的返回值
-            detector: ClusteringDetector 实例 (用于获取 centroid 和质量信息)
+            question:         The question text
+            answer:           The generated answer
+            score:            Pre-computed quality score. If None, uses score_fn.
+            reference_answer: Ground truth answer for scoring (if available)
+            embedding:        Pre-computed question embedding. If None, uses embed_fn.
+            metadata:         Optional metadata to store with the record
 
         Returns:
-            操作摘要 dict
+            Update result dict from DynamicMemory.add()
         """
-        if not self.should_update(detection_result):
-            return {"action": "no_update"}
+        # 1. Get embedding
+        if embedding is None:
+            if self.embed_fn is None:
+                raise ValueError("No embedding provided and no embed_fn configured")
+            embedding = self.embed_fn(question)
 
-        dist = detection_result.cluster_distribution
-        if not dist:
-            return {"action": "no_update"}
+        # 2. Get score
+        if score is None:
+            if reference_answer is not None:
+                score = self.score_fn(question, answer, reference_answer)
+            else:
+                # Without reference, use a default moderate score
+                logger.warning(
+                    "No score or reference_answer provided, using default score 0.5"
+                )
+                score = 0.5
 
-        # 确定低质量簇
-        low_q_ids = set()
-        if detector:
-            for c in detector.get_low_quality_clusters():
-                low_q_ids.add(c.cluster_id)
-
-        # 1. 计算目标容量
-        target_counts = self._compute_targets(dist, low_q_ids)
-
-        # 2. 增量调整
-        added_total = 0
-        removed_total = 0
-
-        for cid, target in target_counts.items():
-            current_docs = self._cluster_docs.get(cid, [])
-            delta = target - len(current_docs)
-
-            if delta > 0 and detector:
-                added = self._inject(cid, delta, detector)
-                added_total += added
-            elif delta < 0:
-                removed = self._evict(cid, abs(delta))
-                removed_total += removed
+        # 3. Add to DynamicMemory (Algorithm 2 logic is inside)
+        result = self.memory.add(
+            question=question,
+            answer=answer,
+            embedding=embedding,
+            score=score,
+            metadata=metadata,
+        )
 
         self.update_count += 1
-        cost = added_total + removed_total
-        self.total_cost += cost
+        logger.info(
+            f"[Update #{self.update_count}] "
+            f"store={result.get('target_store', '?')}, "
+            f"action={result.get('action', '?')}, "
+            f"score={score:.3f}"
+        )
 
-        return {
-            "action": "incremental_align",
-            "added": added_total,
-            "removed": removed_total,
-            "cost": cost,
-            "total_clusters": len(dist),
-        }
+        return result
 
-    def _compute_targets(self, dist: Dict[int, float], low_q_ids: set) -> Dict[int, int]:
-        """按分布比例 + 低质量 boost 计算各簇目标容量"""
-        raw = {}
-        for cid, ratio in dist.items():
-            w = ratio
-            if cid in low_q_ids:
-                w *= self.low_quality_boost
-            raw[cid] = w
+    def batch_update(
+        self,
+        qa_pairs: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Batch update multiple QA pairs.
 
-        total_w = sum(raw.values()) or 1.0
-        return {
-            cid: max(1, int(self.max_kb_size * w / total_w))
-            for cid, w in raw.items()
-        }
+        Each item in qa_pairs should have:
+        - "question": str
+        - "answer": str
+        - "score": float (optional)
+        - "reference_answer": str (optional)
+        - "embedding": np.ndarray (optional)
+        """
+        results = []
+        for item in qa_pairs:
+            result = self.update(
+                question=item["question"],
+                answer=item["answer"],
+                score=item.get("score"),
+                reference_answer=item.get("reference_answer"),
+                embedding=item.get("embedding"),
+                metadata=item.get("metadata"),
+            )
+            results.append(result)
+        return results
 
-    def _inject(self, cluster_id: int, count: int, detector) -> int:
-        """从 DocPool 检索文档注入 KB"""
-        if cluster_id not in detector.clusters:
-            return 0
-
-        centroid = detector.clusters[cluster_id].centroid
-        candidates = self.doc_pool.search_by_vector(centroid, top_k=count * 2)
-
-        added = 0
-        for doc in candidates:
-            if added >= count:
-                break
-            self.kb.add_document(doc, cluster_id=cluster_id)
-            self._cluster_docs.setdefault(cluster_id, []).append(doc)
-            added += 1
-
-        if added:
-            logger.info(f"Injected {added} docs into cluster {cluster_id}")
-        return added
-
-    def _evict(self, cluster_id: int, count: int) -> int:
-        """FIFO 淘汰"""
-        docs = self._cluster_docs.get(cluster_id, [])
-        to_remove = docs[:count]
-        self._cluster_docs[cluster_id] = docs[count:]
-
-        for doc in to_remove:
-            self.kb.remove_document(doc, cluster_id=cluster_id)
-
-        if to_remove:
-            logger.info(f"Evicted {len(to_remove)} docs from cluster {cluster_id}")
-        return len(to_remove)
-
-    def inject_for_cluster(self, cluster_id: int, centroid: np.ndarray, count: int = 10):
-        """手动为指定簇补充文档 (low-quality 簇主动补充)"""
-        candidates = self.doc_pool.search_by_vector(centroid, top_k=count)
-        for doc in candidates:
-            self.kb.add_document(doc, cluster_id=cluster_id)
-            self._cluster_docs.setdefault(cluster_id, []).append(doc)
-        logger.info(f"Manual inject: {len(candidates)} docs for cluster {cluster_id}")
+    def record_strategy(self, strategy: str):
+        """Record which routing strategy was used (for analytics)."""
+        if strategy in self.strategy_counts:
+            self.strategy_counts[strategy] += 1
 
     def get_statistics(self) -> Dict:
+        """Get updater statistics."""
+        memory_stats = self.memory.get_statistics()
         return {
             "update_count": self.update_count,
-            "total_cost": self.total_cost,
-            "kb_size": self.kb.count() if hasattr(self.kb, 'count') else "N/A",
-            "clusters_tracked": len(self._cluster_docs),
-            "strategy": "ComRAG (Dynamic Incremental)",
+            "strategy_counts": self.strategy_counts.copy(),
+            "memory": memory_stats,
         }
+
+    @staticmethod
+    def _default_scorer(question: str, answer: str, reference: str) -> float:
+        """
+        Default scoring using BERT-Score (paper Section 5.4).
+        Falls back to simple overlap ratio if bert_score not available.
+        """
+        try:
+            from bert_score import score as bert_score
+            P, R, F1 = bert_score(
+                [answer], [reference],
+                lang="en",
+                verbose=False,
+            )
+            return float(F1[0])
+        except ImportError:
+            logger.warning(
+                "bert_score not installed, using simple word overlap scorer. "
+                "Install with: pip install bert-score"
+            )
+            # Simple fallback: word overlap ratio
+            answer_words = set(answer.lower().split())
+            ref_words = set(reference.lower().split())
+            if not ref_words:
+                return 0.0
+            overlap = len(answer_words & ref_words)
+            precision = overlap / len(answer_words) if answer_words else 0.0
+            recall = overlap / len(ref_words)
+            if precision + recall == 0:
+                return 0.0
+            f1 = 2 * precision * recall / (precision + recall)
+            return f1

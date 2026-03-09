@@ -1,4 +1,36 @@
+# Environment
+.env
 *.env
+
+# Python
 **/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Datasets
 /datasets
+
+# Models (HuggingFace cache)
+models/models--*/
+models/.locks/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs & Results
+*.log
+experiments/
+results/
+
+# Temporary files
+*.tmp
+*.bak
+*~
