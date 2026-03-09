@@ -28,7 +28,7 @@ import logging
 from typing import Dict, List, Optional, Any, Callable, Tuple
 from enum import Enum
 
-from updator.qarc_interest_model import (
+from updator.qarc.interest_model import (
     QueryWindowBuffer,
     InterestCluster,
     AlignmentGapResult,
@@ -37,7 +37,7 @@ from updator.qarc_interest_model import (
     auto_kmeans,
     compute_alignment_gap,
 )
-from updator.qarc_kb_curator import (
+from updator.qarc.kb_curator import (
     QARCKBCurator,
     DocumentPool,
     Document,

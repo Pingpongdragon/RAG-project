@@ -19,7 +19,7 @@ import re
 import logging
 from typing import Dict, List, Optional, Callable, Any, Tuple
 
-from updator.erase_knowledge_base import ERASEKnowledgeBase, FactEntry, RetrievalResult
+from updator.erase.knowledge_base import ERASEKnowledgeBase, FactEntry, RetrievalResult
 
 logger = logging.getLogger(__name__)
 

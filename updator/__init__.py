@@ -1,18 +1,30 @@
-from .comrag_updater import ComRAGUpdater
-from .erase_knowledge_base import ERASEKnowledgeBase, FactEntry, FactHistory, RetrievalResult
-from .erase_updater import ERASEUpdater
-from .qarc_interest_model import (
-    QueryWindowBuffer,
-    InterestCluster,
-    AlignmentGapResult,
-    AdaptiveThreshold,
-    auto_kmeans,
-    compute_alignment_gap,
+"""
+updator — Unified package for all RAG update/curation methods.
+
+Sub-packages:
+  comrag/  — ComRAG: Dynamic Memory + centroid-based detection & routing + update loop
+  erase/   — ERASE:  Editable Knowledge Base + three-step consistency update
+  qarc/    — QARC:   Interest profiling (AutoKMeans + GMM drift detection) + KB curation lifecycle
+"""
+
+# ── ComRAG ──
+from .comrag import (
+    QARecord, SearchResult, CentroidClusterStore, DynamicMemory,
+    ComRAGPipeline, compute_adaptive_temperature,
+    ComRAGUpdater,
 )
-from .qarc_kb_curator import (
-    QARCKBCurator,
-    DocumentPool,
-    Document,
-    CurationResult,
+
+# ── ERASE ──
+from .erase import (
+    ERASEKnowledgeBase, FactEntry, FactHistory, RetrievalResult,
+    ERASEUpdater,
 )
-from .qarc_pipeline import QARCPipeline, QARCPhase
+
+# ── QARC (our method) ──
+from .qarc import (
+    QueryWindowBuffer, InterestCluster, AlignmentGapResult,
+    AdaptiveThreshold, GMMDriftDetector,
+    auto_kmeans, compute_alignment_gap,
+    QARCKBCurator, DocumentPool, Document, CurationResult,
+    QARCPipeline, QARCPhase,
+)

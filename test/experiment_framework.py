@@ -283,8 +283,8 @@ class QARCAdapter(MethodAdapter):
         self.pipeline = None
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc_kb_curator import Document, DocumentPool, QARCKBCurator
-        from updator.qarc_pipeline import QARCPipeline
+        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.pipeline import QARCPipeline
 
         pool = DocumentPool()
         for pd in pool_docs:
@@ -359,8 +359,8 @@ class ComRAGAdapter(MethodAdapter):
         self.memory = None  # DynamicMemory
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc_kb_curator import Document, DocumentPool, QARCKBCurator
-        from detector.clustering_detector import DynamicMemory
+        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.comrag.memory import DynamicMemory
 
         # 1. Same diversity-bootstrap KB as other methods
         pool = DocumentPool()
@@ -457,8 +457,8 @@ class ERASEAdapter(MethodAdapter):
         self._pending_gold_ids: List[str] = []
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.erase_knowledge_base import ERASEKnowledgeBase
-        from updator.qarc_kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.erase.knowledge_base import ERASEKnowledgeBase
+        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
 
         self._doc_embeddings = doc_embeddings
         self._pool_map = {pd.doc_id: pd for pd in pool_docs}
@@ -499,7 +499,7 @@ class ERASEAdapter(MethodAdapter):
             q = q / qnorm
 
         # Retrieve from ERASE KB
-        from updator.erase_knowledge_base import RetrievalResult
+        from updator.erase.knowledge_base import RetrievalResult
         results = self.kb.retrieve(q, top_k=self.top_k, threshold=0.0, only_true=True)
         ret_ids = []
         for r in results:
@@ -593,7 +593,7 @@ class StaticKBAdapter(MethodAdapter):
         self._pool_map: Dict[str, PoolDocument] = {}
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc_kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
 
         pool = DocumentPool()
         for pd in pool_docs:
