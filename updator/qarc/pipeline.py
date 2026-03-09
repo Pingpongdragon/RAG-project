@@ -1,26 +1,52 @@
 """
-QARC Pipeline: Three-Phase Lifecycle — Bootstrap → Explore → Exploit
+QARC 流水线: 三阶段生命周期 — Bootstrap → Explore → Exploit
 
-Part of the QARC (Query-Aligned Retrieval-augmented Knowledge Curation) framework.
+所属框架: QARC (Query-Aligned Retrieval-augmented Knowledge Curation)
 
-Lifecycle:
-  Phase 0 (Bootstrap): Before any queries — initialize KB via diversity-max from D_pool
-  Phase 1 (Explore):   First N_warmup windows — aggressive re-curation every window,
-                        accumulate Gap statistics for Phase 2 threshold initialization
-  Phase 2 (Exploit):   Steady-state — adaptive threshold triggers re-curation only
-                        when alignment gap exceeds EMA + k·MAD
+=== 三阶段生命周期 ===
 
-Phase transitions:
-  Phase 0 → 1:  Automatically after bootstrap
-  Phase 1 → 2:  After N_warmup windows AND Gap variance converges (σ_recent/σ_all < ε_σ)
-  Phase 2 → 1:  Re-explore when ≥ re_explore_trigger consecutive re-curations
-                 (indicates drastic interest shift that Phase 2 can't handle)
+Phase 0 (Bootstrap): 冷启动
+  - 在第一个用户查询之前执行
+  - 从文档池 D_pool 中用多样性最大化选择初始 KB
+  - 不需要任何用户信息
 
-Integration:
-  - Uses AutoKMeans (qarc_interest_model.py) for interest profiling
-  - Uses QARCKBCurator (qarc_kb_curator.py) for document selection
-  - Optionally calls ERASEUpdater for consistency checks on new documents
-  - Works alongside ComRAG's DynamicMemory for QA history routing
+Phase 1 (Explore): 探索期
+  - 前 N_warmup 个窗口
+  - 每个窗口都触发重新策展 (ReCurate)
+  - λ_max = 0.5 (激进替换，快速追踪兴趣)
+  - η = 0.0 (纯兴趣匹配，不考虑多样性)
+  - 积累 Alignment Gap 历史，为 Phase 2 初始化阈值
+
+Phase 2 (Exploit): 利用期
+  - 稳态运行
+  - 仅当 Alignment Gap G(t) > EMA + k·MAD 时才触发重新策展
+  - λ_max = 0.2 (保守替换，维持稳定性)
+  - η = 0.1 (加入多样性，保持探索能力)
+  - 有冷却期 (cooldown) 防止频繁重新策展
+
+=== 阶段转换 ===
+
+Phase 0 → 1: bootstrap() 后自动进入
+Phase 1 → 2: 满足两个条件:
+  1. 窗口数 ≥ N_warmup
+  2. Gap 方差收敛: σ(recent) / σ(all) < ε_σ
+     (近期 Gap 波动比整体波动小 → 说明兴趣已稳定)
+
+Phase 2 → 1: 当连续 re_explore_trigger 次触发重新策展
+  (说明兴趣发生了 Phase 2 无法处理的剧烈变化)
+
+=== 漂移检测 (DriftLens-inspired) ===
+
+除了 Alignment Gap 阈值外，还使用 GMM 漂移检测器:
+  - 将 embedding 投影到"兴趣距离空间"
+  - 用 GMM 建模基线分布 (KB 文档的) 和窗口分布 (新查询的)
+  - 通过对称 KL 散度检测分布变化
+  - 两个信号取 OR: Gap 超阈值 OR GMM 检测到漂移 → 触发重新策展
+
+=== 与 ComRAG/ERASE 的对比 ===
+- ComRAG 没有阶段概念，每条查询独立处理路由
+- ERASE 没有阶段概念，每篇文档独立触发三步更新
+- QARC 有完整的窗口级生命周期管理，根据兴趣变化的剧烈程度自适应调整策略
 """
 
 import numpy as np
@@ -48,7 +74,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Phase Enum
+# 阶段枚举
 # ============================================================
 
 class QARCPhase(Enum):
@@ -58,31 +84,33 @@ class QARCPhase(Enum):
 
 
 # ============================================================
-# QARC Pipeline
+# QARC 流水线
 # ============================================================
 
 class QARCPipeline:
     """
-    Main QARC pipeline orchestrator.
+    QARC 主编排器 — 管理三阶段生命周期。
 
-    Manages the three-phase lifecycle and coordinates:
-    - Query window buffering
-    - Interest profiling (AutoKMeans)
-    - Alignment gap computation
-    - Phase transition logic
-    - KB re-curation triggering
+    协调以下组件:
+      - QueryWindowBuffer:  积累查询直到窗口满
+      - auto_kmeans():      对窗口查询做兴趣聚类
+      - compute_alignment_gap(): 计算 KB 与兴趣的对齐度差距
+      - GMMDriftDetector:   漂移检测 (DriftLens 启发)
+      - QARCKBCurator:      子模选择 + 增量替换
 
-    Usage:
+    典型使用:
         pool = DocumentPool()
         pool.add_documents([...])
         curator = QARCKBCurator(pool, kb_budget=50)
 
-        pipeline = QARCPipeline(curator, embed_fn=my_embed_fn)
-        pipeline.bootstrap()  # Phase 0
+        pipeline = QARCPipeline(curator, embed_fn=my_embed)
+        pipeline.bootstrap()  # Phase 0 → Phase 1
 
         for query in query_stream:
-            docs, answer = pipeline.process_query(query)
-            # Use docs + answer...
+            result = pipeline.process_query(query)
+            # result["documents"]: 检索到的文档
+            # result["answer"]:    LLM 生成的答案
+            # result["window_event"]: 窗口事件 (如果窗口满了)
     """
 
     def __init__(
@@ -90,25 +118,25 @@ class QARCPipeline:
         curator: QARCKBCurator,
         embed_fn: Optional[Callable[[str], np.ndarray]] = None,
         llm_fn: Optional[Callable[[str, List[str]], str]] = None,
-        # Window parameters
+        # 窗口参数
         window_size: int = 50,
-        # Phase 1 (Explore) parameters
+        # Phase 1 (Explore) 参数
         n_warmup_min: int = 5,
         epsilon_sigma: float = 0.3,
         explore_lambda_max: float = 0.5,
         explore_eta: float = 0.0,
-        # Phase 2 (Exploit) parameters
+        # Phase 2 (Exploit) 参数
         exploit_lambda_max: float = 0.2,
         exploit_eta: float = 0.1,
         cooldown_windows: int = 3,
-        # Adaptive threshold parameters
+        # 自适应阈值参数
         threshold_beta: float = 0.9,
         threshold_k: float = 2.0,
-        # Re-explore trigger
+        # 重进入探索期的触发条件
         re_explore_trigger: int = 3,
-        # Retrieval parameters
+        # RAG 检索参数
         retrieve_top_k: int = 5,
-        # GMM drift detection (DriftLens-inspired)
+        # GMM 漂移检测参数 (DriftLens 启发)
         use_gmm_drift: bool = True,
         gmm_n_components_range: tuple = (1, 5),
         gmm_covariance_type: str = "diag",
@@ -116,47 +144,47 @@ class QARCPipeline:
         gmm_k_drift: float = 2.5,
     ):
         """
-        Args:
-            curator:             QARCKBCurator instance
-            embed_fn:            Function to embed a text string -> np.ndarray
-            llm_fn:              Function(question, context_docs) -> answer string
-            window_size:         Queries per window (W_size)
-            n_warmup_min:        Minimum windows in Phase 1
-            epsilon_sigma:       Convergence threshold for Phase 1 → 2 transition
-            explore_lambda_max:  Replacement ratio in Phase 1 (aggressive)
-            explore_eta:         Diversity term in Phase 1 (0 = pure interest)
-            exploit_lambda_max:  Replacement ratio in Phase 2 (conservative)
-            exploit_eta:         Diversity term in Phase 2 (keeps exploration)
-            cooldown_windows:    Cooldown after re-curation in Phase 2
-            threshold_beta:      EMA smoothing factor
-            threshold_k:         MAD multiplier for threshold
-            re_explore_trigger:  Consecutive Phase 2 re-curations before re-explore
-            retrieve_top_k:      Number of docs to retrieve per query
+        参数:
+            curator:             QARCKBCurator 实例
+            embed_fn:            文本 → 向量的嵌入函数
+            llm_fn:              (问题, 上下文文档列表) → 答案的 LLM 函数
+            window_size:         每个窗口的查询数 W
+            n_warmup_min:        Phase 1 最少窗口数
+            epsilon_sigma:       Phase 1→2 收敛阈值 (σ_recent/σ_all < ε_σ)
+            explore_lambda_max:  Phase 1 替换上限 (激进)
+            explore_eta:         Phase 1 多样性系数 (0=纯兴趣)
+            exploit_lambda_max:  Phase 2 替换上限 (保守)
+            exploit_eta:         Phase 2 多样性系数 (保持探索)
+            cooldown_windows:    Phase 2 重新策展后的冷却窗口数
+            threshold_beta:      EMA 平滑因子
+            threshold_k:         MAD 乘数
+            re_explore_trigger:  连续触发次数 → 回退到 Phase 1
+            retrieve_top_k:      RAG 检索 top-k
         """
         self.curator = curator
         self.embed_fn = embed_fn
         self.llm_fn = llm_fn
 
-        # Window
+        # 窗口缓冲区
         self.window_size = window_size
         self.buffer = QueryWindowBuffer(window_size=window_size)
 
-        # Phase 1 params
+        # Phase 1 参数
         self.n_warmup_min = n_warmup_min
         self.epsilon_sigma = epsilon_sigma
         self.explore_lambda_max = explore_lambda_max
         self.explore_eta = explore_eta
 
-        # Phase 2 params
+        # Phase 2 参数
         self.exploit_lambda_max = exploit_lambda_max
         self.exploit_eta = exploit_eta
         self.cooldown_windows = cooldown_windows
         self.re_explore_trigger = re_explore_trigger
 
-        # RAG params
+        # RAG 参数
         self.retrieve_top_k = retrieve_top_k
 
-        # GMM drift detector
+        # GMM 漂移检测器 (DriftLens 启发)
         self.use_gmm_drift = use_gmm_drift
         self.gmm_drift = GMMDriftDetector(
             n_components_range=gmm_n_components_range,
@@ -165,7 +193,7 @@ class QARCPipeline:
             k_drift=gmm_k_drift,
         ) if use_gmm_drift else None
 
-        # State
+        # 状态变量
         self.phase = QARCPhase.BOOTSTRAP
         self.adaptive_threshold = AdaptiveThreshold(
             beta=threshold_beta, k=threshold_k
@@ -173,15 +201,15 @@ class QARCPipeline:
         self.gap_history: List[float] = []
         self.window_count = 0
         self.cooldown_remaining = 0
-        self.consecutive_triggers = 0  # For re-explore detection
+        self.consecutive_triggers = 0  # 连续触发计数 (用于检测剧烈兴趣变化)
 
-        # Statistics
+        # 统计
         self.total_queries = 0
         self.total_recurations = 0
-        self.phase_history: List[Tuple[int, str]] = []  # (window_idx, phase_name)
+        self.phase_history: List[Tuple[int, str]] = []
 
     # -------------------------------------------------------
-    # Phase 0: Bootstrap
+    # Phase 0: Bootstrap (冷启动)
     # -------------------------------------------------------
 
     def bootstrap(
@@ -189,20 +217,23 @@ class QARCPipeline:
         historical_queries: Optional[List[np.ndarray]] = None,
     ):
         """
-        Phase 0: Initialize KB.
+        Phase 0: 初始化 KB。
 
-        If historical_queries are provided, uses warm bootstrap (interest-weighted).
-        Otherwise, uses diversity-max bootstrap.
+        两种模式:
+          1. 冷启动 (无历史): 用多样性最大化从文档池选文档
+          2. 热启动 (有历史查询): 先聚类历史查询得到兴趣模型，再选文档
 
-        Args:
-            historical_queries: Optional list of historical query embeddings
+        热启动的优势: 初始 KB 就已经对齐了已知的查询模式。
+
+        参数:
+            historical_queries: 可选的历史查询 embedding 列表
         """
         logger.info("=" * 60)
-        logger.info("QARC Phase 0: Bootstrap")
+        logger.info("QARC Phase 0: Bootstrap (冷启动)")
         logger.info("=" * 60)
 
         if historical_queries and len(historical_queries) >= 10:
-            # Warm start: cluster historical queries for interest model
+            # 热启动: 用历史查询聚类得到兴趣模型
             X = np.vstack(historical_queries)
             norms = np.linalg.norm(X, axis=1, keepdims=True)
             X = X / np.clip(norms, 1e-10, None)
@@ -214,21 +245,21 @@ class QARCPipeline:
                 weights=weights,
                 eta=0.05,
             )
-            logger.info(f"Warm bootstrap with {len(historical_queries)} historical queries")
+            logger.info(f"热启动完成: 使用 {len(historical_queries)} 条历史查询")
         else:
-            # Cold start: diversity-max
+            # 冷启动: 纯多样性
             self.curator.bootstrap_diversity()
-            logger.info("Cold bootstrap via diversity-max")
+            logger.info("冷启动完成: 使用多样性最大化")
 
         self.phase = QARCPhase.EXPLORE
         self.phase_history.append((0, "explore"))
-        logger.info("Transitioning to Phase 1 (Explore)")
+        logger.info("进入 Phase 1 (Explore)")
 
-        # GMM reference will be initialized after the first window
-        # when we have real interest centroids from AutoKMeans
+        # GMM 基线将在第一个窗口结束后设置
+        # (此时还没有兴趣中心，需要 AutoKMeans 输出)
 
     # -------------------------------------------------------
-    # Main query processing loop
+    # 主查询处理循环
     # -------------------------------------------------------
 
     def process_query(
@@ -237,53 +268,48 @@ class QARCPipeline:
         query_embedding: Optional[np.ndarray] = None,
     ) -> Dict[str, Any]:
         """
-        Process a single query through the QARC pipeline.
+        处理单条查询 — QARC 流水线的主入口。
 
-        Steps:
-        1. Embed query (if not provided)
-        2. Retrieve from current KB
-        3. Generate answer via LLM (if llm_fn provided)
-        4. Add to window buffer
-        5. If window full → trigger interest analysis + possible re-curation
+        流程:
+          1. 嵌入查询 (如果未提供)
+          2. 从当前 KB 检索 top-k 文档
+          3. LLM 生成答案 (如果配置了 llm_fn)
+          4. 将查询加入窗口缓冲区
+          5. 如果窗口满了 → 触发兴趣分析 + 可能的重新策展
 
-        Args:
-            query_text:      The query string
-            query_embedding: Pre-computed embedding (optional)
-
-        Returns:
-            Dict with keys: "documents", "answer", "max_sim", "phase",
-                           "window_event" (if window was processed)
+        返回:
+            包含 documents, answer, max_sim, phase, window_event 等信息的字典
         """
         self.total_queries += 1
 
-        # 1. Embed
+        # 1. 嵌入
         if query_embedding is None:
             if self.embed_fn is None:
-                raise ValueError("No query_embedding and no embed_fn configured")
+                raise ValueError("未提供 query_embedding 且未配置 embed_fn")
             query_embedding = self.embed_fn(query_text)
 
-        # Normalize
+        # L2 归一化
         qnorm = np.linalg.norm(query_embedding)
         if qnorm > 1e-10:
             query_embedding = query_embedding / qnorm
 
-        # 2. Retrieve from KB
+        # 2. 从 KB 检索
         retrieved = self.curator.retrieve(query_embedding, top_k=self.retrieve_top_k)
 
         documents = [doc for doc, sim in retrieved]
         max_sim = retrieved[0][1] if retrieved else 0.0
 
-        # 3. Generate answer
+        # 3. LLM 生成答案
         answer = None
         if self.llm_fn is not None and documents:
             context_texts = [doc.text for doc in documents]
             try:
                 answer = self.llm_fn(query_text, context_texts)
             except Exception as e:
-                logger.warning(f"LLM call failed: {e}")
+                logger.warning(f"LLM 调用失败: {e}")
                 answer = None
 
-        # 4. Add to buffer
+        # 4. 加入窗口缓冲区
         self.buffer.add(
             embedding=query_embedding,
             text=query_text,
@@ -299,7 +325,7 @@ class QARCPipeline:
             "window_event": None,
         }
 
-        # 5. Check if window is full
+        # 5. 检查窗口是否满了
         if self.buffer.is_full:
             window_result = self._process_window()
             result["window_event"] = window_result
@@ -307,40 +333,42 @@ class QARCPipeline:
         return result
 
     # -------------------------------------------------------
-    # Window processing — interest analysis + phase logic
+    # 窗口处理 — 兴趣分析 + 阶段逻辑
     # -------------------------------------------------------
 
     def _process_window(self) -> Dict[str, Any]:
         """
-        Process a full window of queries.
+        处理一个满窗口的查询。
 
-        1. Flush buffer
-        2. Cluster queries (AutoKMeans) → interest centroids + weights
-        3. Compute Alignment Gap G(t)
-        4. Phase-specific logic (Explore or Exploit)
+        流程:
+          1. 清空缓冲区，获取窗口内所有查询数据
+          2. AutoKMeans 聚类 → 兴趣中心 + 权重
+          3. 计算 Alignment Gap G(t)
+          4. GMM 漂移检测 (可选)
+          5. 根据当前阶段执行相应逻辑
 
-        Returns:
-            Dict with window processing details
+        返回:
+            窗口处理的详细结果
         """
         self.window_count += 1
         embeddings, texts, sims = self.buffer.flush()
 
         logger.info(f"\n{'='*60}")
         logger.info(
-            f"Window #{self.window_count} | Phase: {self.phase.value} | "
-            f"Queries: {len(embeddings)}"
+            f"窗口 #{self.window_count} | 阶段: {self.phase.value} | "
+            f"查询数: {len(embeddings)}"
         )
         logger.info(f"{'='*60}")
 
-        # Stack embeddings
+        # 堆叠并归一化 embedding
         X = np.vstack(embeddings)
         norms = np.linalg.norm(X, axis=1, keepdims=True)
         X = X / np.clip(norms, 1e-10, None)
 
-        # 1. AutoKMeans interest profiling
+        # 1. AutoKMeans 兴趣建模
         centroids, labels, weights = auto_kmeans(X)
 
-        # Build InterestCluster objects
+        # 构建 InterestCluster 对象 (用于日志记录)
         clusters = []
         for i in range(len(centroids)):
             mask = labels == i
@@ -353,11 +381,12 @@ class QARCPipeline:
                 representative_queries=cluster_texts[:3],
             ))
 
-        logger.info(f"Interest clusters: {len(clusters)}")
+        logger.info(f"兴趣簇数: {len(clusters)}")
         for c in clusters:
             logger.info(f"  {c}")
 
-        # 2. Compute Alignment Gap
+        # 2. 计算 Alignment Gap
+        # G(t) = 1 - avg max_sim(query, KB)
         kb_embs = self.curator.get_kb_embeddings()
         gap_result = compute_alignment_gap(X, kb_embs)
         self.gap_history.append(gap_result.gap)
@@ -367,12 +396,12 @@ class QARCPipeline:
             f"(avg_max_sim={gap_result.avg_max_sim:.4f})"
         )
 
-        # 2b. GMM drift detection (DriftLens-inspired)
+        # 2b. GMM 漂移检测 (DriftLens 启发)
         gmm_result = None
         if self.gmm_drift is not None:
             gmm_result = self.gmm_drift.compute_drift_score(X, centroids)
 
-        # 3. Phase-specific logic
+        # 3. 根据阶段执行逻辑
         curation_result = None
         phase_transition = None
 
@@ -401,7 +430,7 @@ class QARCPipeline:
         }
 
     # -------------------------------------------------------
-    # Phase 1: Explore logic
+    # Phase 1 (Explore): 探索期逻辑
     # -------------------------------------------------------
 
     def _explore_logic(
@@ -412,15 +441,25 @@ class QARCPipeline:
         gmm_result: Optional[Dict] = None,
     ) -> Tuple[Optional[CurationResult], Optional[str]]:
         """
-        Phase 1 (Explore): Always trigger re-curation, check for convergence.
+        Phase 1 (Explore): 每个窗口都重新策展，检查是否可以转入 Phase 2。
 
-        - Every window → ReCurate with aggressive params
-        - Track Gap history for Phase 2 initialization
-        - Check if Gap variance has converged → transition to Phase 2
+        行为:
+          - 每个窗口 → ReCurate (激进参数: λ_max=0.5, η=0)
+          - 积累 Gap 历史
+          - 检查 Gap 方差是否收敛 → 满足条件则转入 Phase 2
+
+        Phase 1 → 2 转换条件:
+          1. window_count ≥ n_warmup_min (至少跑 N_warmup 个窗口)
+          2. σ(recent_5_windows) / σ(all_history) < ε_σ
+             (近期 Gap 波动比整体小 → 兴趣已稳定)
+
+        转换时:
+          - 用积累的 Gap 历史初始化 AdaptiveThreshold
+          - 用积累的漂移分数历史初始化 GMMDriftDetector 的 EMA
         """
-        logger.info("Phase 1 (Explore): Triggering re-curation")
+        logger.info("Phase 1 (Explore): 触发重新策展")
 
-        # Always re-curate in explore phase
+        # 每个窗口都重新策展 (激进参数)
         curation = self.curator.recurate(
             centroids=centroids,
             weights=weights,
@@ -429,15 +468,15 @@ class QARCPipeline:
         )
         self.total_recurations += 1
 
-        # Update GMM reference after re-curation (KB changed)
+        # 重新策展后更新 GMM 基线 (KB 变了，基线要重设)
         if self.gmm_drift is not None:
             kb_embs = self.curator.get_kb_embeddings()
             self.gmm_drift.set_reference(kb_embs, centroids)
 
-        # Check Phase 1 → Phase 2 transition
+        # 检查 Phase 1 → Phase 2 转换
         phase_transition = None
         if self.window_count >= self.n_warmup_min and len(self.gap_history) >= self.n_warmup_min:
-            # Check convergence: σ(recent) / σ(all) < ε_σ
+            # 检查收敛: σ_recent / σ_all < ε_σ
             recent_window = min(5, len(self.gap_history))
             recent_std = float(np.std(self.gap_history[-recent_window:]))
             total_std = float(np.std(self.gap_history))
@@ -445,12 +484,12 @@ class QARCPipeline:
             ratio = recent_std / max(total_std, 1e-8)
 
             logger.info(
-                f"  Convergence check: σ_recent={recent_std:.4f}, "
-                f"σ_total={total_std:.4f}, ratio={ratio:.4f}, ε={self.epsilon_sigma}"
+                f"  收敛检查: σ_recent={recent_std:.4f}, "
+                f"σ_total={total_std:.4f}, 比值={ratio:.4f}, ε={self.epsilon_sigma}"
             )
 
             if ratio < self.epsilon_sigma:
-                # Transition to Phase 2
+                # 转入 Phase 2!
                 self.phase = QARCPhase.EXPLOIT
                 self.adaptive_threshold.initialize_from_history(self.gap_history)
                 self.cooldown_remaining = 0
@@ -458,13 +497,13 @@ class QARCPipeline:
                 self.phase_history.append((self.window_count, "exploit"))
                 phase_transition = "explore → exploit"
 
-                # Initialize GMM drift EMA from explore history
+                # 初始化 GMM 漂移检测的 EMA/MAD
                 if self.gmm_drift is not None:
                     self.gmm_drift.initialize_from_explore_history()
 
                 logger.info(
-                    f"*** Phase transition: Explore → Exploit ***\n"
-                    f"    Threshold initialized: "
+                    f"*** 阶段转换: Explore → Exploit ***\n"
+                    f"    阈值初始化: "
                     f"EMA={self.adaptive_threshold.g_ema:.4f}, "
                     f"MAD={self.adaptive_threshold.g_mad:.4f}"
                 )
@@ -472,7 +511,7 @@ class QARCPipeline:
         return curation, phase_transition
 
     # -------------------------------------------------------
-    # Phase 2: Exploit logic
+    # Phase 2 (Exploit): 利用期逻辑
     # -------------------------------------------------------
 
     def _exploit_logic(
@@ -483,17 +522,28 @@ class QARCPipeline:
         gmm_result: Optional[Dict] = None,
     ) -> Tuple[Optional[CurationResult], Optional[str]]:
         """
-        Phase 2 (Exploit): Adaptive threshold triggers re-curation.
+        Phase 2 (Exploit): 自适应阈值触发重新策展。
 
-        - Update EMA/MAD with current Gap
-        - If G > threshold AND cooldown == 0 → ReCurate
-        - If consecutive triggers >= re_explore_trigger → fallback to Phase 1
+        行为:
+          - 每个窗口更新 EMA/MAD
+          - G(t) > threshold OR GMM 检测到漂移 → 触发重新策展
+          - 有冷却期 (cooldown) 防止频繁触发
+          - 连续触发 ≥ re_explore_trigger 次 → 回退到 Phase 1
+
+        触发条件 (取 OR):
+          信号1: Gap > EMA + k·MAD  (Alignment Gap 异常)
+          信号2: GMM KL 散度 > EMA_drift + k_drift·MAD_drift  (分布漂移)
+
+        回退逻辑:
+          如果 Phase 2 连续多次触发重新策展，说明兴趣发生了剧烈变化，
+          Phase 2 的保守策略 (λ_max=0.2) 无法跟上。
+          此时回退到 Phase 1 (λ_max=0.5)，重新激进地追踪兴趣。
         """
-        # Update threshold and check trigger
+        # 更新阈值并检查触发
         gap_triggered = self.adaptive_threshold.update(gap_result.gap)
         gmm_triggered = (gmm_result or {}).get("triggered", False)
 
-        # Combined signal: trigger if EITHER Gap OR GMM detects drift
+        # 组合信号: 任一触发即可
         triggered = gap_triggered or gmm_triggered
 
         trigger_src = []
@@ -504,17 +554,17 @@ class QARCPipeline:
 
         logger.info(
             f"Phase 2 (Exploit): G={gap_result.gap:.4f}, "
-            f"threshold={self.adaptive_threshold.threshold:.4f}, "
-            f"triggered={triggered} [{'+'.join(trigger_src) if trigger_src else '-'}], "
-            f"cooldown={self.cooldown_remaining}"
+            f"阈值={self.adaptive_threshold.threshold:.4f}, "
+            f"触发={triggered} [{'+'.join(trigger_src) if trigger_src else '-'}], "
+            f"冷却={self.cooldown_remaining}"
         )
 
         curation = None
         phase_transition = None
 
         if triggered and self.cooldown_remaining <= 0:
-            # Trigger re-curation
-            logger.info("  Adaptive threshold exceeded → Re-curating")
+            # 触发重新策展
+            logger.info("  自适应阈值超过 → 执行重新策展")
 
             curation = self.curator.recurate(
                 centroids=centroids,
@@ -526,34 +576,33 @@ class QARCPipeline:
             self.cooldown_remaining = self.cooldown_windows
             self.consecutive_triggers += 1
 
-            # Update GMM reference after re-curation
+            # 更新 GMM 基线
             if self.gmm_drift is not None:
                 kb_embs = self.curator.get_kb_embeddings()
                 self.gmm_drift.set_reference(kb_embs, centroids)
 
-            # Check for re-explore
+            # 检查是否需要回退到 Phase 1
             if self.consecutive_triggers >= self.re_explore_trigger:
-                # Drastic interest shift — fallback to Phase 1
                 self.phase = QARCPhase.EXPLORE
                 self.consecutive_triggers = 0
                 self.phase_history.append((self.window_count, "re-explore"))
                 phase_transition = "exploit → re-explore"
 
                 logger.info(
-                    f"*** Phase transition: Exploit → Re-Explore ***\n"
-                    f"    {self.re_explore_trigger} consecutive triggers detected, "
-                    f"    reverting to aggressive re-curation"
+                    f"*** 阶段转换: Exploit → Re-Explore ***\n"
+                    f"    连续 {self.re_explore_trigger} 次触发, "
+                    f"    回退到激进重新策展模式"
                 )
         else:
-            # No trigger or in cooldown
+            # 未触发或在冷却期
             self.cooldown_remaining = max(0, self.cooldown_remaining - 1)
             if not triggered:
-                self.consecutive_triggers = 0  # Reset streak
+                self.consecutive_triggers = 0  # 重置连续触发计数
 
         return curation, phase_transition
 
     # -------------------------------------------------------
-    # Utility methods
+    # 工具方法
     # -------------------------------------------------------
 
     def force_recurate(
@@ -563,21 +612,21 @@ class QARCPipeline:
         lambda_max: Optional[float] = None,
         eta: Optional[float] = None,
     ) -> CurationResult:
-        """Force a re-curation regardless of phase/threshold (for testing)."""
+        """强制重新策展 — 无视阶段/阈值 (用于测试)"""
         lam = lambda_max if lambda_max is not None else self.exploit_lambda_max
         e = eta if eta is not None else self.exploit_eta
         return self.curator.recurate(centroids=centroids, weights=weights,
                                      lambda_max=lam, eta=e)
 
     def get_current_kb_docs(self) -> List[Document]:
-        """Return current KB documents."""
+        """返回当前 KB 文档列表"""
         return self.curator.get_kb_docs_list()
 
     def get_kb_size(self) -> int:
         return self.curator.kb_size
 
     def get_statistics(self) -> Dict[str, Any]:
-        """Return comprehensive pipeline statistics."""
+        """返回完整的流水线统计信息"""
         return {
             "phase": self.phase.value,
             "total_queries": self.total_queries,
@@ -593,7 +642,7 @@ class QARCPipeline:
         }
 
     def get_phase(self) -> str:
-        """Return current phase name."""
+        """返回当前阶段名"""
         return self.phase.value
 
     def __repr__(self):

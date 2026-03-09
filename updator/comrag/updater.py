@@ -1,17 +1,30 @@
 """
-ComRAG Update Phase (Algorithm 2)
+ComRAG 更新阶段 (Algorithm 2)
 
-Paper: ComRAG (ACL 2025 Industry Track)
-https://arxiv.org/abs/2506.21098
+论文: ComRAG (ACL 2025 Industry Track)
+链接: https://arxiv.org/abs/2506.21098
 
-Update Flow:
-1. Generate answer: a_hat = LLM(q, context)
-2. Score answer: s = Scorer(q, a_hat)  (e.g., BERT-Score)
-3. Route to V_high (s >= gamma) or V_low (s < gamma)
-4. Within target store:
-   - If near-duplicate exists (sim >= delta): replace if new score > old score
-   - Else if cluster match (sim >= tau): add to cluster, update centroid
-   - Else: create new cluster
+=== 论文 Algorithm 2: Update Phase ===
+
+更新流程 — 每次 LLM 回答完一个问题后执行:
+  1. 评分: s = Scorer(q, â)
+     - 论文默认用 BERT-Score F1 来衡量回答质量
+     - 有参考答案时计算 F1(â, a_ref)，无参考时默认 0.5
+  2. 路由: 根据 s 与 γ 的比较，选择目标库
+     - s >= γ → 存入 V_high (高质量库)
+     - s <  γ → 存入 V_low  (低质量库)
+  3. 放置: 在目标库内由 CentroidClusterStore.add() 处理
+     - 近重复 (sim >= δ): 仅保留评分更高者
+     - 文话题匹配 (sim >= τ): 加入簇，更新质心
+     - 新话题 (sim < τ): 创建新簇
+
+=== 这个类的职责 ===
+DynamicMemory.add() 已经封装了步骤2+3的内部逻辑，
+ComRAGUpdater 负责更上层的编排:
+  - 获取/计算 embedding
+  - 获取/计算评分
+  - 调用 DynamicMemory.add()
+  - 记录策略使用统计
 """
 
 import numpy as np
@@ -23,14 +36,10 @@ logger = logging.getLogger(__name__)
 
 class ComRAGUpdater:
     """
-    ComRAG Update Phase implementation.
+    ComRAG 更新阶段实现 — 编排 embedding/评分/记忆写入。
 
-    Works with DynamicMemory to manage the update cycle:
-    answer -> score -> route to store -> centroid-based placement.
-
-    The DynamicMemory.add() already implements Algorithm 2 internally,
-    so this class orchestrates the higher-level update loop:
-    scoring, embedding, and feeding results into DynamicMemory.
+    与 DynamicMemory 配合工作:
+    回答 → 评分 → 路由到目标库 → 质心聚类放置
     """
 
     def __init__(
@@ -41,16 +50,16 @@ class ComRAGUpdater:
     ):
         """
         Args:
-            dynamic_memory: DynamicMemory instance (from clustering_detector.py)
-            embed_fn: function(text: str) -> np.ndarray, for embedding questions
-            score_fn: function(question: str, answer: str, reference: str) -> float
-                      Returns quality score in [0, 1]. Default uses BERT-Score.
+            dynamic_memory: DynamicMemory 实例 (来自 memory.py)
+            embed_fn: 文本 → embedding 向量的函数
+            score_fn: 评分函数 (question, answer, reference) → float ∈ [0,1]
+                      默认使用 BERT-Score F1
         """
         self.memory = dynamic_memory
         self.embed_fn = embed_fn
         self.score_fn = score_fn or self._default_scorer
 
-        # Statistics
+        # 统计
         self.update_count = 0
         self.strategy_counts = {
             "direct_reuse": 0,
@@ -68,37 +77,25 @@ class ComRAGUpdater:
         metadata: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
-        Execute one update step (Algorithm 2).
+        执行一次更新 — 对应 Algorithm 2 的一次迭代。
 
-        Args:
-            question:         The question text
-            answer:           The generated answer
-            score:            Pre-computed quality score. If None, uses score_fn.
-            reference_answer: Ground truth answer for scoring (if available)
-            embedding:        Pre-computed question embedding. If None, uses embed_fn.
-            metadata:         Optional metadata to store with the record
-
-        Returns:
-            Update result dict from DynamicMemory.add()
+        典型调用时机: pipeline.answer_question() 生成回答后立刻调用。
         """
-        # 1. Get embedding
+        # 1. 获取 embedding
         if embedding is None:
             if self.embed_fn is None:
-                raise ValueError("No embedding provided and no embed_fn configured")
+                raise ValueError("未提供 embedding 且未配置 embed_fn")
             embedding = self.embed_fn(question)
 
-        # 2. Get score
+        # 2. 计算评分
         if score is None:
             if reference_answer is not None:
                 score = self.score_fn(question, answer, reference_answer)
             else:
-                # Without reference, use a default moderate score
-                logger.warning(
-                    "No score or reference_answer provided, using default score 0.5"
-                )
+                logger.warning("无评分且无参考答案，使用默认分数 0.5")
                 score = 0.5
 
-        # 3. Add to DynamicMemory (Algorithm 2 logic is inside)
+        # 3. 存入 DynamicMemory (Algorithm 2 的核心逻辑在 DynamicMemory.add() 内部)
         result = self.memory.add(
             question=question,
             answer=answer,
@@ -109,28 +106,16 @@ class ComRAGUpdater:
 
         self.update_count += 1
         logger.info(
-            f"[Update #{self.update_count}] "
-            f"store={result.get('target_store', '?')}, "
-            f"action={result.get('action', '?')}, "
-            f"score={score:.3f}"
+            f"[更新 #{self.update_count}] "
+            f"目标库={result.get('target_store', '?')}, "
+            f"动作={result.get('action', '?')}, "
+            f"评分={score:.3f}"
         )
 
         return result
 
-    def batch_update(
-        self,
-        qa_pairs: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        """
-        Batch update multiple QA pairs.
-
-        Each item in qa_pairs should have:
-        - "question": str
-        - "answer": str
-        - "score": float (optional)
-        - "reference_answer": str (optional)
-        - "embedding": np.ndarray (optional)
-        """
+    def batch_update(self, qa_pairs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """批量更新多条 QA 对。"""
         results = []
         for item in qa_pairs:
             result = self.update(
@@ -145,12 +130,11 @@ class ComRAGUpdater:
         return results
 
     def record_strategy(self, strategy: str):
-        """Record which routing strategy was used (for analytics)."""
+        """记录路由策略使用次数（用于分析）。"""
         if strategy in self.strategy_counts:
             self.strategy_counts[strategy] += 1
 
     def get_statistics(self) -> Dict:
-        """Get updater statistics."""
         memory_stats = self.memory.get_statistics()
         return {
             "update_count": self.update_count,
@@ -161,8 +145,9 @@ class ComRAGUpdater:
     @staticmethod
     def _default_scorer(question: str, answer: str, reference: str) -> float:
         """
-        Default scoring using BERT-Score (paper Section 5.4).
-        Falls back to simple overlap ratio if bert_score not available.
+        默认评分器 — 论文 Section 5.4 使用 BERT-Score F1。
+
+        如果 bert_score 未安装，回退到简单的词重叠 F1。
         """
         try:
             from bert_score import score as bert_score
@@ -174,10 +159,9 @@ class ComRAGUpdater:
             return float(F1[0])
         except ImportError:
             logger.warning(
-                "bert_score not installed, using simple word overlap scorer. "
-                "Install with: pip install bert-score"
+                "bert_score 未安装，使用简单词重叠评分。"
+                "安装: pip install bert-score"
             )
-            # Simple fallback: word overlap ratio
             answer_words = set(answer.lower().split())
             ref_words = set(reference.lower().split())
             if not ref_words:

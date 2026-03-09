@@ -1,19 +1,39 @@
 """
-ComRAG Dynamic Memory: Dual Vector Store + Centroid-Based Memory Mechanism
+ComRAG 动态记忆模块: 双向量库 + 基于质心的记忆管理机制
 
-Paper: ComRAG (ACL 2025 Industry Track)
-https://arxiv.org/abs/2506.21098
+论文: ComRAG — Conversational Retrieval-Augmented Generation (ACL 2025 Industry Track)
+链接: https://arxiv.org/abs/2506.21098
 
-Core Design:
-- V_high: High-quality CQA vector store (score >= gamma)
-- V_low:  Low-quality CQA vector store  (score <  gamma)
-- Centroid-based clustering for memory management within each store
-- Near-duplicate replacement (sim >= delta) keeps only best answer (Algorithm 2)
+=== 论文核心思想 (Section 4.2: Dynamic Memory Mechanism) ===
 
-Hyperparameters (Paper Section 5.4):
-- tau:   Cluster similarity threshold (default=0.75)
-- delta: Direct reuse / replacement threshold (default=0.9)
-- gamma: Quality score boundary (default=0.6)
+ComRAG 的核心观察是：在对话式问答 (CQA) 中，用户的问题会重复出现相似模式。
+与其每次都走 KB 检索 → LLM 生成 这条昂贵路径，不如维护一个"历史 QA 记忆库"，
+让高质量的历史回答可以被直接复用或作为参考。
+
+记忆库分两个向量库:
+  - V_high (高质量库): 存储评分 s >= γ 的 QA 对
+    → 这些回答质量好，可以被直接复用(策略1)或作为正面参考(策略2)
+  - V_low  (低质量库): 存储评分 s <  γ 的 QA 对
+    → 这些回答质量差，用作"反面教材"告诉 LLM 避免犯同样的错(策略3)
+
+记忆管理采用基于质心的聚类:
+  - 每个簇有一个质心 c = 均值(簇内所有 embedding)
+  - 新 QA 到来时:
+    1) 如果与某已有记录相似度 >= δ (近重复): 保留评分较高的那个 (论文 Algorithm 2)
+    2) 否则如果与某质心相似度 >= τ: 加入该簇, 更新质心
+    3) 否则: 创建新簇
+  - 这确保了记忆库不会无限膨胀，同时保持答案质量持续提升
+
+超参数 (论文 Section 5.4):
+  - τ (tau):   聚类相似度阈值 (默认 0.75) — 决定什么程度的相似算"同一话题"
+  - δ (delta): 直接复用/替换阈值 (默认 0.9) — 决定什么程度的相似算"同一问题"
+  - γ (gamma): 质量分界线 (默认 0.6) — 区分高质量和低质量回答
+
+=== 与 QARC/ERASE 的关键区别 ===
+- ComRAG 的检测是隐式的: 通过 τ/δ 相似度阈值进行路由，不显式检测分布漂移
+- ComRAG 不修改 KB: 只维护一个不断增长的 QA 记忆库，KB 内容始终不变
+- QARC 会显式检测兴趣漂移 (GMM + AlignmentGap) 并主动重新选择 KB 文档
+- ERASE 是文档驱动的: 新信息到来时编辑已有事实，而非路由查询
 """
 
 import numpy as np
@@ -27,16 +47,23 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Data Classes
+# 数据结构
 # ============================================================
 
 @dataclass
 class QARecord:
-    """One QA record: corresponds to (q, Emb(q), a_hat, s) in V_high / V_low."""
+    """一条 QA 记录，对应论文中的 (q, Emb(q), â, s)。
+
+    在论文 Section 4.2 中，每条记录包含:
+    - question:  原始问题 q
+    - answer:    生成的回答 â = LLM(q, context)
+    - embedding: 问题的稠密向量 Emb(q)，经 L2 归一化
+    - score:     评分 s = Scorer(q, â)，论文用 BERT-Score F1
+    """
     question: str
     answer: str
-    embedding: np.ndarray       # Emb(q), L2-normalized
-    score: float                # Scorer(q, a_hat)
+    embedding: np.ndarray       # Emb(q), L2 归一化
+    score: float                # Scorer(q, â) ∈ [0, 1]
     record_id: str = ""
     timestamp: float = field(default_factory=time.time)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -48,25 +75,30 @@ class QARecord:
 
 @dataclass
 class SearchResult:
-    """Single search result from the vector store."""
+    """向量库检索的单条结果。"""
     record: QARecord
     similarity: float
     cluster_id: int
 
 
 # ============================================================
-# Centroid-Based Cluster Memory (Paper Section 4.2)
+# 单向量库: 基于质心的聚类记忆 (论文 Section 4.2)
 # ============================================================
 
 class CentroidClusterStore:
     """
-    Centroid-based memory mechanism for a single vector store.
+    单个向量库（V_high 或 V_low）的基于质心的记忆管理。
 
-    Paper formulas:
-    - centroid: c = (1/|C|) * sum Emb(q_i)
-    - Assignment: C = argmax CosSim(Emb(q), c) if sim >= tau
-    - New cluster: c = Emb(q) if sim < tau for all centroids
-    - Replacement: if sim >= delta and new score > old score, replace
+    === 论文公式对应 ===
+    质心计算:     c_k = (1/|C_k|) × Σ_{q_i ∈ C_k} Emb(q_i)
+    簇分配:       分配到 argmax_k CosSim(Emb(q), c_k)，前提是 sim >= τ
+    新建簇:       当所有质心的 sim < τ 时，以 c_new = Emb(q) 创建新簇
+    近重复替换:   当与某已有记录 sim >= δ 时，仅保留评分更高者
+
+    这个机制保证:
+    1) 记忆在语义上是有组织的(不是散乱存放)
+    2) 同一主题下只保留最优回答(近重复替换)
+    3) 记忆量可控(不会为每个问题都存一条)
     """
 
     def __init__(
@@ -76,36 +108,43 @@ class CentroidClusterStore:
         delta: float = 0.9,
     ):
         self.store_name = store_name
-        self.tau = tau
-        self.delta = delta
+        self.tau = tau                          # 聚类阈值
+        self.delta = delta                      # 替换阈值
 
-        self.clusters: Dict[int, List[QARecord]] = defaultdict(list)
-        self.centroids: Dict[int, np.ndarray] = {}
+        self.clusters: Dict[int, List[QARecord]] = defaultdict(list)   # 簇ID → 记录列表
+        self.centroids: Dict[int, np.ndarray] = {}                     # 簇ID → 质心向量
         self._next_cluster_id = 0
 
-    # ---- Core Interface ----
+    # ---- 核心接口 ----
 
     def add(self, record: QARecord) -> Dict[str, Any]:
         """
-        Add a QA record (Algorithm 2 core logic).
+        添加一条 QA 记录 — 对应论文 Algorithm 2 的核心逻辑。
 
-        Returns:
-            Summary dict with action, cluster_id, and optional replaced_record.
+        决策树:
+        1. 在所有已有记录中找最相似的
+           → 如果 sim >= δ (近重复):
+             - 新记录评分更高 → 替换旧记录 (提升记忆质量)
+             - 旧记录评分更高 → 跳过 (已有记录已经够好了)
+        2. 否则，在质心中找最相似的
+           → 如果 sim >= τ → 加入该簇，更新质心
+           → 如果 sim <  τ → 创建新簇 (发现了新话题)
         """
         emb = record.embedding
 
-        # Step 1: Find most similar existing record (for replacement check)
+        # 步骤1: 查找最相似的已有记录 (用于替换检查)
         nearest_record, nearest_sim, nearest_cid = self._find_nearest_record(emb)
 
-        # Step 2: Replacement mechanism (sim >= delta)
+        # 步骤2: 近重复替换机制 (sim >= δ)
         if nearest_record is not None and nearest_sim >= self.delta:
             if record.score > nearest_record.score:
+                # 论文 Algorithm 2: "replace if new score > old score"
                 self._remove_record(nearest_cid, nearest_record)
                 self._add_to_cluster(nearest_cid, record)
                 self._update_centroid(nearest_cid)
                 logger.info(
-                    f"[{self.store_name}] Replaced in cluster {nearest_cid}: "
-                    f"score {nearest_record.score:.3f} -> {record.score:.3f}"
+                    f"[{self.store_name}] 替换 cluster {nearest_cid}: "
+                    f"评分 {nearest_record.score:.3f} → {record.score:.3f}"
                 )
                 return {
                     "action": "replaced",
@@ -114,28 +153,30 @@ class CentroidClusterStore:
                 }
             else:
                 logger.debug(
-                    f"[{self.store_name}] Skipped (existing score "
-                    f"{nearest_record.score:.3f} >= new {record.score:.3f})"
+                    f"[{self.store_name}] 跳过 (已有评分 "
+                    f"{nearest_record.score:.3f} >= 新评分 {record.score:.3f})"
                 )
                 return {"action": "skipped", "cluster_id": nearest_cid}
 
-        # Step 3: Find nearest centroid
+        # 步骤3: 质心匹配
         best_cid, best_sim = self._find_nearest_centroid(emb)
 
         if best_cid >= 0 and best_sim >= self.tau:
+            # 属于已有话题簇
             self._add_to_cluster(best_cid, record)
             self._update_centroid(best_cid)
             return {"action": "added_to_cluster", "cluster_id": best_cid}
         else:
+            # 发现新话题，创建新簇
             new_cid = self._create_cluster(record)
             logger.info(
-                f"[{self.store_name}] New cluster {new_cid} "
-                f"(nearest_sim={best_sim:.3f} < tau={self.tau})"
+                f"[{self.store_name}] 新簇 {new_cid} "
+                f"(最近质心 sim={best_sim:.3f} < τ={self.tau})"
             )
             return {"action": "new_cluster", "cluster_id": new_cid}
 
     def search(self, query_embedding: np.ndarray, top_k: int = 5) -> List[SearchResult]:
-        """Search for top-k most similar QA records."""
+        """暴力搜索 top-k 最相似的 QA 记录（适用于记忆库较小的场景）。"""
         query_emb = self._normalize(query_embedding)
         all_results = []
 
@@ -153,12 +194,15 @@ class CentroidClusterStore:
         self, query_embedding: np.ndarray, top_k: int = 5, n_probe_clusters: int = 3
     ) -> List[SearchResult]:
         """
-        Two-phase search (Paper Algorithm 1):
-        1. Top-k centroid retrieval
-        2. Record-level search within candidate clusters
+        两阶段检索 — 对应论文 Algorithm 1 的加速检索策略:
+        第一阶段: 用质心做粗筛，找到最相关的 n_probe_clusters 个簇
+        第二阶段: 在候选簇内做记录级精细搜索
+
+        当记忆库很大时，这比暴力搜索快得多 (避免遍历所有记录)。
         """
         query_emb = self._normalize(query_embedding)
 
+        # 第一阶段: 质心级检索
         centroid_sims = []
         for cid, centroid in self.centroids.items():
             sim = self._cosine_sim(query_emb, centroid)
@@ -167,6 +211,7 @@ class CentroidClusterStore:
 
         candidate_cids = [cid for cid, _ in centroid_sims[:max(n_probe_clusters, top_k)]]
 
+        # 第二阶段: 候选簇内检索
         all_results = []
         for cid in candidate_cids:
             for rec in self.clusters.get(cid, []):
@@ -179,13 +224,13 @@ class CentroidClusterStore:
         return all_results[:top_k]
 
     def get_max_similarity(self, query_embedding: np.ndarray) -> Tuple[Optional[SearchResult], float]:
-        """Get the single most similar record and its similarity score."""
+        """获取与 query 最相似的单条记录及其相似度 — 用于路由决策。"""
         results = self.search(query_embedding, top_k=1)
         if results:
             return results[0], results[0].similarity
         return None, 0.0
 
-    # ---- Statistics ----
+    # ---- 统计信息 ----
 
     @property
     def total_records(self) -> int:
@@ -209,9 +254,10 @@ class CentroidClusterStore:
             "cluster_avg_scores": avg_scores,
         }
 
-    # ---- Internal Methods ----
+    # ---- 内部方法 ----
 
     def _find_nearest_record(self, emb: np.ndarray) -> Tuple[Optional[QARecord], float, int]:
+        """在所有已有记录中找最相似的（用于替换检查）。"""
         best_record = None
         best_sim = -1.0
         best_cid = -1
@@ -226,6 +272,7 @@ class CentroidClusterStore:
         return best_record, best_sim, best_cid
 
     def _find_nearest_centroid(self, emb: np.ndarray) -> Tuple[int, float]:
+        """找最近的簇质心。"""
         best_cid = -1
         best_sim = -1.0
         emb = self._normalize(emb)
@@ -237,6 +284,7 @@ class CentroidClusterStore:
         return best_cid, best_sim
 
     def _create_cluster(self, record: QARecord) -> int:
+        """创建新簇: c_new = Emb(q)"""
         cid = self._next_cluster_id
         self._next_cluster_id += 1
         self.centroids[cid] = self._normalize(record.embedding.copy())
@@ -254,7 +302,7 @@ class CentroidClusterStore:
             del self.centroids[cluster_id]
 
     def _update_centroid(self, cluster_id: int):
-        """Recompute centroid: c = (1/|C|) * sum Emb(q_i)"""
+        """重新计算质心: c = (1/|C|) × Σ Emb(q_i)"""
         recs = self.clusters.get(cluster_id, [])
         if not recs:
             return
@@ -264,6 +312,7 @@ class CentroidClusterStore:
 
     @staticmethod
     def _cosine_sim(v1: np.ndarray, v2: np.ndarray) -> float:
+        """余弦相似度（输入已 L2 归一化，所以直接点积即可）。"""
         return float(np.dot(v1, v2))
 
     @staticmethod
@@ -275,20 +324,29 @@ class CentroidClusterStore:
 
 
 # ============================================================
-# Dynamic Memory: Dual Vector Store (Paper Section 4.2)
+# 动态记忆: 双向量库 (论文 Section 4.2)
 # ============================================================
 
 class DynamicMemory:
     """
-    ComRAG dual vector store manager.
+    ComRAG 双向量库管理器 — 论文的核心数据结构。
 
-    - high_store (V_high): QA pairs with score >= gamma
-    - low_store  (V_low):  QA pairs with score <  gamma
+    === 论文架构对应 ===
+    - high_store (V_high): 高质量 QA 对 (score >= γ)
+      用途: 策略1 直接复用 + 策略2 正面参考
+    - low_store  (V_low):  低质量 QA 对 (score < γ)
+      用途: 策略3 反面教材 (告诉 LLM 这些回答是错的，不要学)
 
-    Usage:
-        memory = DynamicMemory(tau=0.75, delta=0.9, gamma=0.6)
-        memory.add(question, answer, embedding, score)
-        route = memory.route_query(query_embedding)
+    === 三层路由策略 (论文 Algorithm 1, Section 4.3) ===
+    给定新查询 q，计算 Emb(q) 与 V_high 中最相似记录的相似度 sim:
+    1) sim >= δ (近重复)       → 直接复用: 返回历史回答，不调 LLM (省 token)
+    2) τ <= sim < δ (相关)     → 参考生成: 用高质量 QA 作为 ICL 示例辅助 LLM
+    3) sim < τ (不相关)        → KB回退 + 避免低质量: 用 KB 文档 + V_low 中的反面教材
+
+    === 为什么分高低两个库？ ===
+    论文的核心 insight: 低质量回答不是垃圾，而是有价值的负面信号。
+    通过告诉 LLM "这些回答是错的，请避免类似错误"，可以显著提升回答质量。
+    这就是策略3中 "avoidance" 的含义。
     """
 
     def __init__(self, tau: float = 0.75, delta: float = 0.9, gamma: float = 0.6):
@@ -312,9 +370,13 @@ class DynamicMemory:
         metadata: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
-        Add a new QA record (Algorithm 2).
-        Automatically routes to high_store or low_store based on score vs gamma.
-        Internally handles centroid-based replacement logic.
+        添加一条新 QA 记录 — 对应论文 Algorithm 2 (Update Phase)。
+
+        流程:
+        1. 根据评分 s 与阈值 γ 的比较，决定存入 V_high 还是 V_low
+        2. 在目标库内，由 CentroidClusterStore.add() 执行:
+           - 近重复检测与替换 (sim >= δ)
+           - 聚类分配 (sim >= τ) 或新建簇 (sim < τ)
         """
         record = QARecord(
             question=question,
@@ -324,7 +386,7 @@ class DynamicMemory:
             metadata=metadata or {},
         )
 
-        # Algorithm 2, Line 3: choose target store
+        # Algorithm 2, Line 3: 根据评分选择目标库
         if score >= self.gamma:
             target_store = self.high_store
             store_label = "V_high"
@@ -346,21 +408,24 @@ class DynamicMemory:
 
     def route_query(self, query_embedding: np.ndarray) -> Dict[str, Any]:
         """
-        Three-tier routing (Algorithm 1, Section 4.3).
+        三层路由决策 — 对应论文 Algorithm 1, Section 4.3。
 
-        1) sim >= delta       -> direct_reuse        (reuse high-quality answer directly)
-        2) tau <= sim < delta -> reference_generation (use high-quality QA as reference)
-        3) sim < tau          -> kb_avoidance         (use KB + avoid low-quality answers)
+        输入: 查询 embedding  Emb(q)
+        输出: 路由策略 + 相关上下文
 
-        Returns dict with strategy, similarity, matches, references, and negatives.
+        决策逻辑:
+        1) 查 V_high 中与 q 最相似的记录，得到 sim
+        2) sim >= δ  → direct_reuse        (直接复用高质量回答)
+        3) τ <= sim  → reference_generation (用 V_high 中的 QA 作为正面参考)
+        4) sim < τ   → kb_avoidance         (用 KB + V_low 中的 QA 作为反面教材)
         """
         query_emb = CentroidClusterStore._normalize(query_embedding)
         best_high, max_sim_high = self.high_store.get_max_similarity(query_emb)
 
-        # Strategy 1: Direct Reuse
+        # 策略1: 直接复用 — 高相似度意味着问过几乎一样的问题，直接返回历史回答
         if best_high is not None and max_sim_high >= self.delta:
             logger.info(
-                f"[Route] (1) Direct Reuse (sim={max_sim_high:.3f} >= delta={self.delta})"
+                f"[路由] (1) 直接复用 (sim={max_sim_high:.3f} >= δ={self.delta})"
             )
             return {
                 "strategy": "direct_reuse",
@@ -370,12 +435,12 @@ class DynamicMemory:
                 "low_q_negatives": [],
             }
 
-        # Strategy 2: Reference Generation
+        # 策略2: 参考生成 — 有相关但不完全一样的高质量 QA，作为 ICL 示例
         if best_high is not None and max_sim_high >= self.tau:
             high_refs = self.high_store.search(query_emb, top_k=5)
             logger.info(
-                f"[Route] (2) Reference Generation "
-                f"(tau={self.tau} <= sim={max_sim_high:.3f} < delta={self.delta})"
+                f"[路由] (2) 参考生成 "
+                f"(τ={self.tau} <= sim={max_sim_high:.3f} < δ={self.delta})"
             )
             return {
                 "strategy": "reference_generation",
@@ -385,12 +450,12 @@ class DynamicMemory:
                 "low_q_negatives": [],
             }
 
-        # Strategy 3: KB + Low-Quality Avoidance
+        # 策略3: KB回退 + 避免低质量 — 没有好的历史参考，回退到 KB 检索
         low_negatives = self.low_store.search(query_emb, top_k=5)
         logger.info(
-            f"[Route] (3) KB + Avoidance "
-            f"(sim={max_sim_high:.3f} < tau={self.tau}, "
-            f"low_q_negatives={len(low_negatives)})"
+            f"[路由] (3) KB回退+避免 "
+            f"(sim={max_sim_high:.3f} < τ={self.tau}, "
+            f"反面教材数={len(low_negatives)})"
         )
         return {
             "strategy": "kb_avoidance",

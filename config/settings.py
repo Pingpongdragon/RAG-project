@@ -12,40 +12,42 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 
-IS_MMLU = True  # 是否使用MMLU数据集
 
 # -------------------------
 # 数据集配置区
 # -------------------------
+# ----- Wizard of Wikipedia -----
+WOW_DATASET_CONFIG = {
+    "dataset_source": "huggingface",
+    "dataset_name": "wiki_of_wikipedia",
+    "local_path": str(BASE_DIR / "datasets/wizard_of_wikipedia"),
+    "split": "train",
+}
+
+# ----- HotpotQA -----
+HOTPOTQA_DATASET_CONFIG = {
+    "dataset_source": "huggingface",
+    "dataset_name": "hotpot_qa",
+    "local_path": str(BASE_DIR / "datasets/hotpotqa"),
+    "split": "train",
+    "config_name": "distractor",
+}
+
+# ----- 通用索引构建（供 data_processor 使用，留作兼容） -----
 KNOWLEDGE_DATASET_CONFIG = {
-    "dataset_source": "huggingface",  # 数据集来源（hugginface或local）
-    "dataset_name": "cais/mmlu",  # 数据集名称
-    "split": "test",        # 使用的数据拆分
-    "config_name": [
-    "global_facts",
-    "astronomy",
-    "prehistory",
-    "college_biology",
-    "college_chemistry",
-    "college_physics",
-    "college_medicine",
-    "clinical_knowledge",
-    "philosophy",
-    "world_religions"
-  ],   # 预训练模型配置
-    "text_columns": ["question","choices","answer"],# 文本字段名（支持多个）
-    "id_column": "id",          # ID字段名
-    
-    # 索引构建参数
-    "chunk_size": 1024,         # 文本切分块大小
-    "chunk_overlap": 128,       # 切分块重叠长度
-    "index_save_path": str(BASE_DIR / "data/mmlu_index"),  # 默认保存路径
+    "dataset_source": "huggingface",
+    "dataset_name": "wiki_of_wikipedia",
+    "split": "train",
+    "config_name": "default",
+    "text_columns": ["text"],
+    "id_column": "id",
+    "chunk_size": 1024,
+    "chunk_overlap": 128,
+    "index_save_path": str(BASE_DIR / "data/wow_index"),
 }
 
 DATA_CACHE_DIR = str(BASE_DIR / "data/raw_data")  # 数据集缓存目录
 
-WMT_DIR = str(BASE_DIR / "streamingqa/WMT docs")  # WMT数据集目录
-STREAMINGQA_DIR = str(BASE_DIR / "streamingqa/streamingQAdatasets")  # StreamingQA数据集目录
 
 
 # -------------------------
@@ -93,9 +95,6 @@ except Exception as e:
     VllmEngine = None
     PtEngine = None
     USE_SWIFT_LLM = False
-MODEL_DIR = str(BASE_DIR.parent / "llm/Qwen/Qwen3-8B")
-MODEL_TYPE = None  # 模型类型
-ADAPTER_DIR = None # 适配器目录
 
 # 本地模型配置
 MODEL_DIR = str(BASE_DIR.parent / "llm/Qwen/Qwen3-8B")
@@ -120,8 +119,8 @@ QWEN_API_CONFIG = {
 # 选择使用的模型类型: "local" | "deepseek" | "qwen"
 ACTIVE_MODEL_TYPE = os.getenv("ACTIVE_MODEL_TYPE", "qwen")  # 默认使用 Qwen
 
-print(f"当前使用的模型类型: {ACTIVE_MODEL_TYPE}")
-print(f"Qwen API 配置: {QWEN_API_CONFIG}")
+logger.info(f"当前使用的模型类型: {ACTIVE_MODEL_TYPE}")
+logger.info(f"Qwen API 配置: {QWEN_API_CONFIG}")
 
 class ModelManager:
     def __init__(self):
@@ -173,17 +172,14 @@ MAX_RETRIES = 2  # 最大重试次数
 # RAG评估配置区
 # -------------------------
 EVAL_CONFIG = {
-    # 测试问题集配置 (使用同一仓库下的questions split)
-    "eval_dataset": {
-        "name": "rag-datasets/rag-mini-wikipedia",
-        "split": "test",         
-        "config_name": "question-answer",
-        "question_col": "question",  # 输入问题字段
-        "answer_col": "answer"       # 参考答案字段
-    },
-    
-    # RAGAS评估参数
-    "metrics": ["answer_relevancy", "answer_correctness","context_recall","context_precision"],
+    "metrics": [
+        "recall_at_k",
+        "gold_in_kb_rate",
+        "mean_reciprocal_rank",
+        "exact_match",
+        "token_f1",
+        "adaptation_speed",
+    ],
 }
 
 
@@ -241,14 +237,6 @@ ERASE_UPDATE_TOP_K = 20
 # Top-k facts retrieved for inference
 ERASE_INFERENCE_TOP_K = 10
 
-
-# -------------------------
-# ERASE Hyperparameters (Li et al., 2024)
-# https://arxiv.org/abs/2406.11830
-# -------------------------
-ERASE_INFERENCE_THRESHOLD = 0.7
-ERASE_UPDATE_TOP_K = 20
-ERASE_INFERENCE_TOP_K = 10
 
 
 # -------------------------

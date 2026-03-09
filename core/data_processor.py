@@ -9,10 +9,6 @@ import pickle
 from config.logger_config import configure_console_logger
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_text_splitters import CharacterTextSplitter
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-# from streamingqa import extraction
 
 logger = configure_console_logger(__name__)  # 使用统一配置的logger
 
@@ -48,82 +44,35 @@ class CompatibleEmbeddings:
 # 全局 embedding service
 embedding_service = CompatibleEmbeddings()
 
-# 创建 LangChain 兼容的 Embeddings 对象
-# 全局 embedding service
-embedding_service = CompatibleEmbeddings()
 
 # -------------------------
 # 数据集处理相关
 # -------------------------
 
-# def _load_wmt_dataset(counter_size=30000) -> List[Document]:
-#     """加载WMT数据集"""
-#     logger.info(f"🚀 正在加载WMT数据集")
-#     wmt_docs = []
-#     wmt_dir = Path(settings.WMT_DIR)
-#     # 假设这里配置了WMT存档文件路径和去重排序键文件路径
-#     wmt_archive_file_paths = [
-#         str(wmt_dir / 'news-docs.2019.en.filtered.gz'),
-#     ]
-#     streamingqa_dir = Path(settings.STREAMINGQA_DIR)    
-#     deduplicated_sorting_keys_file_path = str(streamingqa_dir / 'wmt_sorting_key_ids.txt.gz')
-
-#     try:
-#         wmt_doc_objects = extraction.get_deduplicated_wmt_docs(
-#             wmt_archive_files=wmt_archive_file_paths,
-#             deduplicated_sorting_keys_file=deduplicated_sorting_keys_file_path
-#         )
-#          # 随机采样文档
-#         wmt_passage_objects = extraction.get_wmt_passages_from_docs(wmt_doc_objects)
-#         counter = 0
-#         for wmt_passage in wmt_passage_objects:
-#             if counter >= counter_size:
-#                 break
-#             passage = Document(
-#                 page_content=wmt_passage.text.decode(),
-#                 metadata={
-#                     "doc_id": wmt_passage.id.split('_')[0], 
-#                     "source": "WMT"
-#                 }
-#             )
-#             wmt_docs.append(passage)
-#             counter += 1
-#     except Exception as e:
-#         logger.error(f"🔥 加载WMT数据集失败: {str(e)}")
-
-#     logger.info(f"📊 加载完成: 共 {len(wmt_docs)} 条")
-#     return wmt_docs
-
 def _load_hf_dataset(cfg=None) -> List[Document]:
-    """加载数据集，针对MMLU只保留问题和正确答案
+    """加载 HuggingFace 数据集为 LangChain Document 列表
     
     Args:
         cfg: 数据集配置，为None时使用默认配置
         
     Returns:
-        List[Document]: 加载的问答文档列表
+        List[Document]: 加载的文档列表
     """
     if not cfg:
         cfg = settings.KNOWLEDGE_DATASET_CONFIG
     
     logger.info(f"🚀 正在加载数据集 {cfg['dataset_name']} from {cfg['dataset_source']}")
     
-    # if cfg['dataset_source'] == 'local':
-    #     return _load_wmt_dataset()
-    
-    # 判断是否为MMLU数据集，以便特殊处理
-    is_mmlu = "mmlu" in cfg['dataset_name'].lower()
     documents = []
     
     # 处理配置名称
-    config_names = cfg['config_name']
+    config_names = cfg.get('config_name', 'default')
     if isinstance(config_names, str):
         config_names = [config_names]
         
     for config_name in config_names:
         logger.info(f"加载配置: {config_name}")
         try:
-            # 加载数据集
             cache_dir = Path(settings.DATA_CACHE_DIR) 
             raw_data = load_dataset(
                 cfg['dataset_name'], 
@@ -132,70 +81,29 @@ def _load_hf_dataset(cfg=None) -> List[Document]:
                 cache_dir=str(cache_dir)
             )
             
-            # MMLU特殊处理: 提取问题和正确答案
-            if is_mmlu and "question" in raw_data.column_names and "answer" in raw_data.column_names:
-                logger.info(f"检测到MMLU数据集，提取问题和正确答案...")
-                
-                valid_items = []
-                for item in raw_data:
-                    if "question" in item and "choices" in item and "answer" in item:
-                        try:
-                            # 映射答案字母到选项
-                            answer_index = item['answer']
-                            if 0 <= answer_index < len(item["choices"]):
-                                valid_items.append({
-                                    "id": item.get(cfg['id_column'], f"item_{len(valid_items)}"),
-                                    "question": item["question"],
-                                    "correct_answer": item["choices"][answer_index],
-                                    "subject": config_name.replace("_", " ")
-                                })
-                        except Exception as e:
-                            logger.error(f"处理MMLU问题时出错: {str(e)}")
-                
-                # 创建文档
-                config_docs = []
-                for item in valid_items:
-                    # 格式化内容为问题和正确答案
-                    content = f"Subject: {item['subject']}\nQuestion: {item['question']}\nAnswer: {item['correct_answer']}"
-                    
-                    doc = Document(
-                        page_content=content,
-                        metadata={ 
-                            "doc_id": f"{config_name}_{item['id']}", 
-                            "source": f"{cfg['dataset_name']}_{config_name}",
-                            "config": config_name,
-                            "subject": item['subject']
-                        }
-                    )
-                    config_docs.append(doc)
-                
-                logger.info(f"从MMLU配置 {config_name} 提取了 {len(config_docs)} 个问答对")
-                documents.extend(config_docs)
-                
             # 标准处理流程
-            else:
-                required_columns = cfg['text_columns'] + [cfg['id_column']]
-                valid_items = [
-                    item for item in raw_data 
-                    if all(k in item for k in required_columns)
-                ]
-                
-                logger.info(f"配置 {config_name} 加载完成: 有效 {len(valid_items)}条")
-                
-                # 创建标准文档
-                config_docs = [
-                    Document(
-                        page_content="\n".join(str(item[col]) for col in cfg['text_columns']),
-                        metadata={ 
-                            "doc_id": f"{config_name}_{item[cfg['id_column']]}", 
-                            "source": f"{cfg['dataset_name']}_{config_name}",
-                            "config": config_name
-                        }
-                    ) for item in valid_items
-                ]
-                
-                documents.extend(config_docs)
-                
+            required_columns = cfg['text_columns'] + [cfg['id_column']]
+            valid_items = [
+                item for item in raw_data 
+                if all(k in item for k in required_columns)
+            ]
+            
+            logger.info(f"配置 {config_name} 加载完成: 有效 {len(valid_items)}条")
+            
+            # 创建标准文档
+            config_docs = [
+                Document(
+                    page_content="\n".join(str(item[col]) for col in cfg['text_columns']),
+                    metadata={ 
+                        "doc_id": f"{config_name}_{item[cfg['id_column']]}", 
+                        "source": f"{cfg['dataset_name']}_{config_name}",
+                        "config": config_name
+                    }
+                ) for item in valid_items
+            ]
+            
+            documents.extend(config_docs)
+            
         except Exception as e:
             logger.error(f"🔥 配置 {config_name} 加载失败: {str(e)}")
     
@@ -548,76 +456,3 @@ def get_knowledge_base_updater() -> KnowledgeBaseUpdater:
     vector_db, docs_list = load_or_build_index()
     return KnowledgeBaseUpdater(vector_db, docs_list)
 
-def demo_incremental_update():
-    """演示增量更新功能"""
-    logger.info("🔬 开始增量更新演示...")
-    
-    try:
-        # 获取更新器
-        updater = get_knowledge_base_updater()
-        
-        # 显示当前状态
-        info = updater.get_document_info()
-        logger.info(f"📊 当前知识库状态: {info['total_documents']} 个文档，{info['total_chunks']} 个块")
-        
-        # 添加新文档示例
-        new_docs = [
-            Document(
-                page_content="这是一个新的测试文档，用于演示增量更新功能。它包含了关于机器学习的基础知识。",
-                metadata={"doc_id": "test_doc_1", "source": "manual_test", "topic": "machine_learning"}
-            ),
-            Document(
-                page_content="深度学习是机器学习的一个子集，它使用多层神经网络来学习数据的表示。",
-                metadata={"doc_id": "test_doc_2", "source": "manual_test", "topic": "deep_learning"}
-            )
-        ]
-        
-        # 执行增量添加
-        success = updater.add_documents(new_docs)
-        if success:
-            logger.info("✅ 新文档添加成功")
-        
-        # 更新文档示例
-        updated_success = updater.update_document(
-            "test_doc_1", 
-            "这是一个更新后的测试文档，现在包含了更多关于自然语言处理的信息。",
-            {"doc_id": "test_doc_1", "source": "manual_test", "topic": "nlp"}
-        )
-        
-        if updated_success:
-            logger.info("✅ 文档更新成功")
-        
-        # 显示更新后状态
-        final_info = updater.get_document_info()
-        logger.info(f"📊 更新后知识库状态: {final_info['total_documents']} 个文档，{final_info['total_chunks']} 个块")
-        
-        # 列出所有数据源
-        try:
-            sources = updater.list_sources()
-            logger.info(f"📋 数据源列表: {sources}")
-        except Exception as e:
-            logger.error(f"❌ 调用 list_sources 失败: {e}")
-            import traceback
-            logger.error(f"❌ 详细错误:\n{traceback.format_exc()}")
-
-        # 搜索测试
-        if updater.vector_db:
-            logger.info("🔍 测试向量搜索功能...")
-            try:
-                results = updater.vector_db.similarity_search("机器学习", k=3)
-                logger.info(f"搜索'机器学习'找到 {len(results)} 个相关块:")
-                for i, result in enumerate(results):
-                    logger.info(f"  结果 {i+1}: {result.page_content[:80]}...")
-            except Exception as e:
-                logger.warning(f"向量搜索测试失败: {e}")
-        
-        logger.info("🎉 增量更新演示完成！")
-        
-    except Exception as e:
-        logger.error(f"❌ 增量更新演示失败: {str(e)}")
-        import traceback
-        logger.error(f"❌ 详细错误信息:\n{traceback.format_exc()}")
-
-if __name__ == "__main__":
-    # 运行增量更新演示
-    demo_incremental_update()

@@ -34,3 +34,4 @@ results/
 *.tmp
 *.bak
 *~
+core/_deprecated/

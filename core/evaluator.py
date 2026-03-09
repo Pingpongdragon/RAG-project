@@ -1,144 +1,211 @@
 """
-评测模块: 基于文档内容的精确匹配
+core/evaluator.py — 通用检索与生成评估模块
+
+提供与数据源无关的评估函数:
+  - Recall@K: 检索召回率
+  - Exact Match (EM): 精确匹配
+  - Token F1: 词级 F1
+  - Answer Relevancy: LLM 评分 (可选)
+
+不再依赖硬编码的 domain shift 数据文件,
+所有数据由实验脚本传入
 """
-import json
-from pathlib import Path
-from typing import List, Dict
-import hashlib
-from RAG_project.config.logger_config import logger
+
+import logging
+import re
+from typing import List, Dict, Set, Optional, Tuple
+
 import numpy as np
 
-
-def load_test_data(shift_type: str = "sudden") -> List[Dict]:
-    """
-    加载 domain shift 测试数据，并提取 gold_doc_ids
-    """
-    HERE = Path(__file__).parent
-    data_file = HERE / "domain_shift_datasets" / "hotpot_shifts" / f"{shift_type}_4domains.jsonl"
-    
-    if not data_file.exists():
-        raise FileNotFoundError(f"❌ 数据文件不存在: {data_file}")
-    
-    # 加载KB文档以建立 content -> doc_id 映射
-    kb_content_map = _load_kb_content_mapping(HERE / "dataset_split_domain" / "hotpot_kb")
-    
-    # 加载triplet的gold_docs映射
-    triplet_gold_map = _load_triplet_gold_docs(HERE / "dataset_split_domain" / "hotpot_triplets")
-    
-    queries = []
-    with open(data_file, 'r', encoding='utf-8') as f:
-        for line_num, line in enumerate(f, 1):
-            obj = json.loads(line)
-            
-            # 跳过metadata行
-            if "metadata" in obj:
-                logger.info(f"📋 数据集元信息: {obj['metadata'].get('shift_type')}")
-                continue
-            
-            triplet_id = obj.get("triplet_id", "")
-            if not triplet_id:
-                continue
-            
-            # 从triplet获取gold_docs（文本列表）
-            gold_docs_text = triplet_gold_map.get(triplet_id, [])
-            
-            # 转换为doc_id
-            gold_doc_ids = []
-            for doc_text in gold_docs_text:
-                # 用前100字符作为key去映射中查找
-                key = doc_text.strip()[:100]
-                if key in kb_content_map:
-                    gold_doc_ids.append(kb_content_map[key])
-            
-            queries.append({
-                "query": obj["query"],
-                "answer": obj["answer"],
-                "gold_doc_ids": gold_doc_ids,
-                "domain": obj.get("domain", "unknown"),
-                "topic": obj.get("topic", ""),
-                "triplet_id": triplet_id
-            })
-    
-    valid_count = sum(1 for q in queries if q['gold_doc_ids'])
-    logger.info(f"✅ 加载 {shift_type} 数据集: {len(queries)} 条（有效gold: {valid_count}）")
-    return queries
+logger = logging.getLogger(__name__)
 
 
-def _load_kb_content_mapping(kb_dir: Path) -> Dict[str, str]:
-    """
-    建立 content前缀 -> doc_id 的映射
-    返回: {content[:100]: doc_id}
-    """
-    mapping = {}
-    domains = ["0_entertainment", "1_stem", "2_humanities", "3_lifestyle"]
-    
-    for domain in domains:
-        kb_file = kb_dir / f"{domain}.jsonl"
-        if not kb_file.exists():
-            continue
-        
-        with open(kb_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                obj = json.loads(line)
-                doc_id = obj.get("doc_id")
-                text = obj.get("text", "")
-                
-                if doc_id and text:
-                    key = text.strip()[:100]
-                    mapping[key] = doc_id
-    
-    logger.info(f"✅ 建立 KB content映射: {len(mapping)} 条")
-    return mapping
+# ============================================================
+# 文本规范化
+# ============================================================
+
+def normalize_answer(s: str) -> str:
+    """规范化答案文本 (小写 + 去标点 + 去冠词 + 压缩空白)"""
+    s = s.lower().strip()
+    # 去标点
+    s = re.sub(r"[^\w\s]", " ", s)
+    # 去冠词
+    s = re.sub(r"\b(a|an|the)\b", " ", s)
+    # 压缩空白
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
 
 
-def _load_triplet_gold_docs(triplet_dir: Path) -> Dict[str, List[str]]:
-    """
-    加载triplet的gold_docs（文本）
-    返回: {triplet_id: [doc_text1, doc_text2, ...]}
-    """
-    mapping = {}
-    domains = ["0_entertainment", "1_stem", "2_humanities", "3_lifestyle"]
-    
-    for domain in domains:
-        triplet_file = triplet_dir / f"{domain}.jsonl"
-        if not triplet_file.exists():
-            continue
-        
-        with open(triplet_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                obj = json.loads(line)
-                triplet_id = obj.get("triplet_id")
-                gold_docs = obj.get("gold_docs", [])
-                
-                if triplet_id and gold_docs:
-                    mapping[triplet_id] = gold_docs
-    
-    logger.info(f"✅ 加载 triplet gold_docs: {len(mapping)} 条")
-    return mapping
+# ============================================================
+# 检索指标
+# ============================================================
 
+def recall_at_k(
+    retrieved_ids: List[str],
+    gold_ids: List[str],
+) -> float:
+    """
+    Recall@K = |retrieved ∩ gold| / |gold|
 
-def compute_retrieval_score(kb, domain: str, query_vec: np.ndarray, gold_doc_ids: List[str], step: int, top_k: int = 10) -> float:
+    Args:
+        retrieved_ids: 检索返回的文档 ID 列表
+        gold_ids:      真实相关文档 ID 列表
     """
-    计算检索得分 (Recall@k)
-    """
-    if not gold_doc_ids or not query_vec.any():
+    if not gold_ids:
         return 0.0
-    
-    
-    retrieved_docs = kb.search(query_vec, domain, step=step, top_k=top_k)
-    
-    if not retrieved_docs:
+    return len(set(retrieved_ids) & set(gold_ids)) / len(gold_ids)
+
+
+def precision_at_k(
+    retrieved_ids: List[str],
+    gold_ids: List[str],
+) -> float:
+    """Precision@K"""
+    if not retrieved_ids:
         return 0.0
-    
-    retrieved_ids = set(doc.doc_id for doc in retrieved_docs)
-    gold_ids = set(gold_doc_ids)
-    matched_count = len(retrieved_ids & gold_ids)
-    
-    # 调试（前3次）
-    if step < 3:
-        logger.info(f"🔍 Step {step} | Matched: {matched_count}/{len(gold_ids)}")
-        if matched_count > 0:
-            logger.info(f"   ✅ Gold: {list(gold_ids)[:2]}")
-            logger.info(f"   ✅ Retrieved: {list(retrieved_ids)[:2]}")
-    
-    return matched_count / len(gold_ids)
+    return len(set(retrieved_ids) & set(gold_ids)) / len(retrieved_ids)
+
+
+def gold_in_kb_rate(
+    kb_doc_ids: Set[str],
+    gold_ids: List[str],
+) -> float:
+    """KB 中包含多少比例的 gold 文档"""
+    if not gold_ids:
+        return 0.0
+    return len(set(gold_ids) & kb_doc_ids) / len(gold_ids)
+
+
+def mean_reciprocal_rank(
+    retrieved_ids: List[str],
+    gold_ids: List[str],
+) -> float:
+    """MRR — 第一个命中的倒数排名"""
+    gold_set = set(gold_ids)
+    for i, doc_id in enumerate(retrieved_ids):
+        if doc_id in gold_set:
+            return 1.0 / (i + 1)
+    return 0.0
+
+
+# ============================================================
+# 生成指标
+# ============================================================
+
+def exact_match(prediction: str, gold: str) -> float:
+    """Exact Match (规范化后)"""
+    return float(normalize_answer(prediction) == normalize_answer(gold))
+
+
+def token_f1(prediction: str, gold: str) -> float:
+    """Token-level F1"""
+    pred_tokens = set(normalize_answer(prediction).split())
+    gold_tokens = set(normalize_answer(gold).split())
+    if not gold_tokens:
+        return 0.0
+    if not pred_tokens:
+        return 0.0
+    common = pred_tokens & gold_tokens
+    if not common:
+        return 0.0
+    precision = len(common) / len(pred_tokens)
+    recall = len(common) / len(gold_tokens)
+    return 2 * precision * recall / (precision + recall)
+
+
+# ============================================================
+# 批量评估
+# ============================================================
+
+def evaluate_retrieval_batch(
+    all_retrieved: List[List[str]],
+    all_gold: List[List[str]],
+) -> Dict[str, float]:
+    """
+    批量评估检索质量
+
+    Args:
+        all_retrieved: 每条查询的检索结果 ID 列表
+        all_gold:      每条查询的 gold 文档 ID 列表
+
+    Returns:
+        {"recall@k": float, "precision@k": float, "mrr": float}
+    """
+    recalls, precisions, mrrs = [], [], []
+    for retrieved, gold in zip(all_retrieved, all_gold):
+        recalls.append(recall_at_k(retrieved, gold))
+        precisions.append(precision_at_k(retrieved, gold))
+        mrrs.append(mean_reciprocal_rank(retrieved, gold))
+
+    return {
+        "recall@k": float(np.mean(recalls)) if recalls else 0.0,
+        "precision@k": float(np.mean(precisions)) if precisions else 0.0,
+        "mrr": float(np.mean(mrrs)) if mrrs else 0.0,
+    }
+
+
+def evaluate_generation_batch(
+    predictions: List[str],
+    golds: List[str],
+) -> Dict[str, float]:
+    """
+    批量评估生成质量
+
+    Returns:
+        {"em": float, "f1": float}
+    """
+    ems, f1s = [], []
+    for pred, gold in zip(predictions, golds):
+        ems.append(exact_match(pred, gold))
+        f1s.append(token_f1(pred, gold))
+
+    return {
+        "em": float(np.mean(ems)) if ems else 0.0,
+        "f1": float(np.mean(f1s)) if f1s else 0.0,
+    }
+
+
+# ============================================================
+# 时间序列分析 (用于实验结果后处理)
+# ============================================================
+
+def compute_adaptation_speed(
+    metric_series: List[float],
+    window_size: int = 20,
+    threshold_ratio: float = 0.9,
+) -> float:
+    """
+    计算适应速度: 从 metric 下降到恢复至阈值 (peak * ratio) 所需的窗口数
+
+    Args:
+        metric_series: 时间序列 (如 recall 曲线)
+        window_size:   滑动窗口大小
+        threshold_ratio: 恢复阈值比例
+
+    Returns:
+        恢复所需的窗口数 (越小越好), 未恢复返回 len(series)/window_size
+    """
+    if len(metric_series) < window_size * 2:
+        return float(len(metric_series)) / window_size
+
+    # 滑动窗口平均
+    n_windows = len(metric_series) // window_size
+    window_avgs = []
+    for i in range(n_windows):
+        start = i * window_size
+        end = start + window_size
+        window_avgs.append(np.mean(metric_series[start:end]))
+
+    if not window_avgs:
+        return 0.0
+
+    peak = max(window_avgs)
+    threshold = peak * threshold_ratio
+
+    # 找最低点后首次恢复到阈值的窗口
+    trough_idx = int(np.argmin(window_avgs))
+    for i in range(trough_idx, len(window_avgs)):
+        if window_avgs[i] >= threshold:
+            return float(i - trough_idx)
+
+    return float(len(window_avgs) - trough_idx)

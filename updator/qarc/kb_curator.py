@@ -1,22 +1,54 @@
 """
-QARC KB Curator: Submodular Document Selection + Incremental KB Replacement
+QARC KB 策展器: 子模函数文档选择 + 增量 KB 替换
 
-Part of the QARC (Query-Aligned Retrieval-augmented Knowledge Curation) framework.
+所属框架: QARC (Query-Aligned Retrieval-augmented Knowledge Curation)
 
-Responsibilities:
-1. Phase 0 Bootstrap:  Diversity-max initialization of KB from document pool
-2. ReCurate():         Interest-weighted submodular selection + incremental replacement
-3. ERASE consistency:  Run ERASE-style fact checking on newly added documents
+=== 本文件的核心职责 ===
 
-Key Concepts:
-- Submodular objective:  f(S) = Σ α_i · max_{d∈S} sim(c_i, d) + η · Facility Location diversity
-- Greedy optimization:   O(|candidates| · budget) — guaranteed (1 - 1/e) approximation
-- Incremental replacement: bounded by λ_max to prevent catastrophic KB disruption
+这是 QARC 与 ComRAG/ERASE 最本质的区别所在:
+QARC 的 KB 不是静态的，也不是修改事实的，而是"从文档池中动态选择文档"。
 
-Differences from static KB:
-- ERASE: document-driven push (documents arrive → update facts)
-- ComRAG: query-driven but KB-frozen (routes queries, never changes KB)
-- QARC: query-driven pull (interest shifts → re-select documents from pool)
+具体来说:
+  文档池 D_pool (巨大的外部文档集) ──子模选择──→ KB K (小型、对齐用户兴趣)
+
+本文件实现:
+  1. Phase 0 Bootstrap: 多样性最大化初始化 KB (还没有用户查询时)
+  2. ReCurate():        兴趣加权子模选择 + 增量替换 (检测到兴趣变化时)
+  3. ERASE 一致性检查:  对新加入的文档执行 ERASE 风格的事实核查 (可选)
+
+=== 子模目标函数 (Submodular Objective) ===
+
+f(S) = f_interest(S) + η · f_diversity(S)
+
+其中:
+  f_interest(S) = Σ_{i=1}^{m} α_i · max_{d∈S} CosSim(c_i, d)
+    - m 个兴趣簇（AutoKMeans 输出的中心 c_i 和权重 α_i）
+    - 对每个兴趣簇，找 KB 中最匹配的文档
+    - 加权求和: 权重大的兴趣簇贡献更多
+
+  f_diversity(S) = (1/|D_pool|) · Σ_{d∈D_pool} max_{d'∈S} CosSim(d, d')
+    - Facility Location 函数: 衡量 KB 对文档池的"覆盖度"
+    - 保证 KB 不会过于狭窄地聚焦于某个话题
+
+这两个都是单调递增的子模函数，因此:
+  贪心算法保证 (1 - 1/e) ≈ 0.63 的近似比！
+
+=== 增量替换 (Incremental Replacement) ===
+
+每次重新策展时不是推翻整个 KB 重来，而是:
+  K_ideal = GreedySubmodSelect(candidates, centroids, weights)
+  to_add   = K_ideal - K_old
+  to_remove = K_old - K_ideal
+  实际替换量 ≤ λ_max × |K|  (防止灾难性 KB 震荡)
+
+λ_max 的取值:
+  Phase 1 (Explore): λ_max = 0.5 (激进替换，快速追踪兴趣)
+  Phase 2 (Exploit): λ_max = 0.2 (保守替换，维持稳定性)
+
+=== 与其他方法的对比 ===
+- ERASE: 文档驱动 (document push) — 文档到来 → 修改事实
+- ComRAG: 查询驱动但 KB 冻结 (KB frozen) — 只更新 QA 记忆
+- QARC:  查询驱动 + 兴趣拉取 (interest pull) — 兴趣变化 → 重选文档
 """
 
 import numpy as np
@@ -28,15 +60,15 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Data Structures
+# 数据结构
 # ============================================================
 
 @dataclass
 class Document:
-    """A document in the pool or KB."""
+    """文档池或 KB 中的一篇文档"""
     doc_id: str
     text: str
-    embedding: np.ndarray        # L2-normalized dense vector
+    embedding: np.ndarray        # L2 归一化的稠密向量
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __repr__(self):
@@ -53,53 +85,55 @@ class Document:
 
 @dataclass
 class CurationResult:
-    """Result of a ReCurate operation."""
-    added_ids: List[str]         # Document IDs added to KB
-    removed_ids: List[str]       # Document IDs removed from KB
-    kb_size: int                 # KB size after curation
-    objective_before: float      # Submodular objective before
-    objective_after: float       # Submodular objective after
-    replacement_ratio: float     # Actual |added| / |KB| ratio
+    """一次 ReCurate 操作的结果"""
+    added_ids: List[str]         # 新加入 KB 的文档 ID
+    removed_ids: List[str]       # 从 KB 移除的文档 ID
+    kb_size: int                 # 操作后 KB 大小
+    objective_before: float      # 操作前子模目标值
+    objective_after: float       # 操作后子模目标值
+    replacement_ratio: float     # 实际替换比例 |added| / |KB|
 
 
 # ============================================================
-# Document Pool (FAISS-compatible in-memory store)
+# 文档池 (Document Pool)
 # ============================================================
 
 class DocumentPool:
     """
-    In-memory document pool with dense retrieval.
+    内存文档池 — 支持稠密向量检索。
 
-    In production, this would wrap a FAISS index.
-    For clarity, we use brute-force cosine similarity here.
+    在生产环境中，这里会封装 FAISS 索引。
+    为清晰起见，当前使用暴力 cosine similarity 检索。
+
+    文档池 D_pool 通常很大（数千~数万篇），
+    而 KB K 只从中选取一小部分（几十~几百篇）。
     """
 
     def __init__(self):
         self.documents: Dict[str, Document] = {}
         self._embedding_matrix: Optional[np.ndarray] = None
         self._id_list: List[str] = []
-        self._dirty = True
+        self._dirty = True  # 有新增文档时标记为脏，需要重建索引
 
     def add_document(self, doc: Document):
-        """Add a document to the pool."""
+        """添加单篇文档到池中"""
         self.documents[doc.doc_id] = doc
         self._dirty = True
 
     def add_documents(self, docs: List[Document]):
-        """Batch add documents."""
+        """批量添加文档"""
         for doc in docs:
             self.documents[doc.doc_id] = doc
         self._dirty = True
 
     def _rebuild_index(self):
-        """Rebuild the embedding matrix for fast retrieval."""
+        """重建 embedding 矩阵（懒加载，仅在脏标记时重建）"""
         if not self._dirty:
             return
         self._id_list = list(self.documents.keys())
         if self._id_list:
             embeddings = [self.documents[did].embedding for did in self._id_list]
             self._embedding_matrix = np.vstack(embeddings)
-            # Normalize
             norms = np.linalg.norm(self._embedding_matrix, axis=1, keepdims=True)
             self._embedding_matrix = self._embedding_matrix / np.clip(norms, 1e-10, None)
         else:
@@ -113,15 +147,15 @@ class DocumentPool:
         exclude_ids: Optional[Set[str]] = None,
     ) -> List[Tuple[Document, float]]:
         """
-        Retrieve top-k documents similar to query.
+        检索与查询最相似的 top-k 文档。
 
-        Args:
-            query_embedding: (d,) normalized embedding
-            top_k:          Number of results
-            exclude_ids:    Document IDs to exclude
+        参数:
+            query_embedding: (d,) 归一化查询向量
+            top_k:          返回数量
+            exclude_ids:    要排除的文档 ID 集合
 
-        Returns:
-            List of (Document, similarity) sorted descending
+        返回:
+            [(Document, similarity)] 按相似度降序
         """
         self._rebuild_index()
 
@@ -133,15 +167,13 @@ class DocumentPool:
         if qnorm > 1e-10:
             query = query / qnorm
 
-        sims = (self._embedding_matrix @ query.T).flatten()  # (n_docs,)
+        sims = (self._embedding_matrix @ query.T).flatten()
 
-        # Apply exclusion mask
         if exclude_ids:
             for i, did in enumerate(self._id_list):
                 if did in exclude_ids:
                     sims[i] = -2.0
 
-        # Top-k
         if len(sims) <= top_k:
             top_idx = np.argsort(sims)[::-1]
         else:
@@ -157,14 +189,14 @@ class DocumentPool:
         return results
 
     def get_all_embeddings(self) -> np.ndarray:
-        """Return (n, d) embedding matrix for all documents."""
+        """返回所有文档的 (n, d) embedding 矩阵"""
         self._rebuild_index()
         if self._embedding_matrix is None:
             return np.empty((0, 0))
         return self._embedding_matrix.copy()
 
     def get_all_ids(self) -> List[str]:
-        """Return list of all doc IDs in insertion order."""
+        """返回所有文档 ID"""
         self._rebuild_index()
         return self._id_list.copy()
 
@@ -174,7 +206,7 @@ class DocumentPool:
 
 
 # ============================================================
-# Submodular Objective Functions
+# 子模目标函数
 # ============================================================
 
 def _interest_coverage(
@@ -183,24 +215,30 @@ def _interest_coverage(
     weights: np.ndarray,
 ) -> float:
     """
-    Compute interest coverage objective:
-    f_interest(S) = Σ_{i=1}^{m} α_i · max_{d∈S} sim(c_i, d)
+    兴趣覆盖目标函数:
+      f_interest(S) = Σ_{i=1}^{m} α_i · max_{d∈S} CosSim(c_i, d)
 
-    Args:
-        selected_embs: (|S|, d) embeddings of selected documents
-        centroids:     (m, d) interest centroids
-        weights:       (m,) interest weights α_i
+    直觉: 对每个兴趣簇 i (由 AutoKMeans 发现):
+      - 找 KB 中最匹配该兴趣的文档
+      - 乘以该兴趣的权重 α_i (查询占比)
+      - 权重大的兴趣点贡献更多
 
-    Returns:
-        Scalar objective value
+    这是一个单调递增的子模函数:
+      - 单调: 加入更多文档，覆盖只会增加不会减少
+      - 子模: 边际收益递减 (已经覆盖的兴趣，再加文档收益小)
+
+    参数:
+        selected_embs: (|S|, d) 已选文档 embedding
+        centroids:     (m, d) 兴趣簇中心
+        weights:       (m,) 兴趣权重 α_i
     """
     if selected_embs.shape[0] == 0 or centroids.shape[0] == 0:
         return 0.0
 
-    # (m, |S|)
+    # (m, |S|) — 每个兴趣中心与每个文档的相似度
     sim_matrix = centroids @ selected_embs.T
 
-    # max sim for each centroid
+    # 每个兴趣中心的最大相似度
     max_sims = sim_matrix.max(axis=1)  # (m,)
 
     return float((weights * max_sims).sum())
@@ -211,24 +249,25 @@ def _diversity_coverage(
     pool_embs: np.ndarray,
 ) -> float:
     """
-    Facility Location diversity objective:
-    f_div(S) = Σ_{d∈D_pool} max_{d'∈S} sim(d, d')
+    多样性覆盖目标 (Facility Location):
+      f_div(S) = (1/|D_pool|) · Σ_{d∈D_pool} max_{d'∈S} CosSim(d, d')
 
-    This is a submodular function that encourages coverage of the entire pool.
+    直觉: 对文档池中的每篇文档:
+      - 找 KB 中最"代表"它的那篇
+      - 取平均 → 衡量 KB 对整个文档池的覆盖度
 
-    Args:
-        selected_embs: (|S|, d) embeddings of selected documents
-        pool_embs:     (|D_pool|, d) embeddings of all pool documents
+    这也是一个经典的子模函数 (Facility Location)。
+    加入 η 系数可以防止 KB 过度聚焦于某个特定话题。
 
-    Returns:
-        Scalar objective (normalized by |D_pool|)
+    参数:
+        selected_embs: (|S|, d) 已选文档 embedding
+        pool_embs:     (|D_pool|, d) 文档池所有 embedding
     """
     if selected_embs.shape[0] == 0 or pool_embs.shape[0] == 0:
         return 0.0
 
-    # (|D_pool|, |S|)
     sim_matrix = pool_embs @ selected_embs.T
-    max_sims = sim_matrix.max(axis=1)  # (|D_pool|,)
+    max_sims = sim_matrix.max(axis=1)
 
     return float(max_sims.mean())
 
@@ -241,18 +280,16 @@ def submodular_objective(
     eta: float = 0.1,
 ) -> float:
     """
-    Combined submodular objective:
-    f(S) = f_interest(S) + η · f_diversity(S)
+    组合子模目标函数:
+      f(S) = f_interest(S) + η · f_diversity(S)
 
-    Args:
-        selected_embs: (|S|, d) selected document embeddings
-        centroids:     (m, d) interest cluster centroids
-        weights:       (m,) interest weights
-        pool_embs:     (|D_pool|, d) all pool embeddings
-        eta:           Diversity regularization coefficient
+    η 的作用:
+      - η = 0:    纯兴趣匹配 (Phase 1 Explore 用这个，快速对齐兴趣)
+      - η = 0.1:  兴趣 + 多样性 (Phase 2 Exploit 用这个，保持探索)
+      - η = 1.0:  纯多样性 (Phase 0 Bootstrap 用这个，最大覆盖)
 
-    Returns:
-        Combined objective value
+    因为 f_int 和 f_div 都是子模的，线性组合仍然是子模的，
+    所以贪心算法仍然保证 (1-1/e) 近似比。
     """
     f_int = _interest_coverage(selected_embs, centroids, weights)
     f_div = _diversity_coverage(selected_embs, pool_embs) if eta > 0 else 0.0
@@ -260,7 +297,7 @@ def submodular_objective(
 
 
 # ============================================================
-# Greedy Submodular Maximization
+# 贪心子模最大化
 # ============================================================
 
 def greedy_submodular_select(
@@ -272,30 +309,34 @@ def greedy_submodular_select(
     eta: float = 0.1,
 ) -> List[Document]:
     """
-    Greedy submodular maximization for document selection.
+    标准贪心子模最大化 — 每步加入边际增益最大的文档。
 
-    Standard greedy: at each step, add the document with highest marginal gain.
-    Guarantees (1 - 1/e) approximation for monotone submodular functions.
+    算法:
+      S = ∅
+      for step in 1..budget:
+          d* = argmax_{d∈C\\S} [f(S ∪ {d}) - f(S)]   # 边际增益最大化
+          S = S ∪ {d*}
 
-    Complexity: O(budget × |candidates|) — each step recomputes marginal gains.
+    理论保证: 单调子模函数下，贪心算法得到 ≥ (1-1/e) ≈ 0.632 的最优近似。
+    复杂度: O(budget × |candidates|)，每步需要遍历所有候选计算边际增益。
 
-    Args:
-        candidate_docs: List of candidate documents to select from
-        centroids:      (m, d) interest cluster centroids
-        weights:        (m,) interest weights
-        pool_embs:      (|D_pool|, d) all pool embeddings (for diversity term)
-        budget:         Maximum number of documents to select
-        eta:            Diversity regularization coefficient
+    参数:
+        candidate_docs: 候选文档列表
+        centroids:      (m, d) 兴趣簇中心
+        weights:        (m,) 兴趣权重
+        pool_embs:      (|D_pool|, d) 文档池 embedding (多样性项用)
+        budget:         最多选择的文档数
+        eta:            多样性正则化系数
 
-    Returns:
-        Selected documents (up to budget)
+    返回:
+        选中的文档列表 (最多 budget 篇)
     """
     if not candidate_docs:
         return []
 
     budget = min(budget, len(candidate_docs))
 
-    # Build candidate embedding matrix
+    # 构建候选 embedding 矩阵
     cand_embs = np.vstack([d.embedding for d in candidate_docs])
     cand_norms = np.linalg.norm(cand_embs, axis=1, keepdims=True)
     cand_embs = cand_embs / np.clip(cand_norms, 1e-10, None)
@@ -307,7 +348,7 @@ def greedy_submodular_select(
         best_gain = -np.inf
         best_idx = -1
 
-        # Current selected embeddings
+        # 当前已选子集的 embedding
         if selected_indices:
             sel_embs = cand_embs[selected_indices]
         else:
@@ -316,7 +357,7 @@ def greedy_submodular_select(
         current_val = submodular_objective(sel_embs, centroids, weights, pool_embs, eta)
 
         for idx in remaining:
-            # Marginal gain of adding this candidate
+            # 计算添加候选 d 后的边际增益
             new_sel_embs = np.vstack([sel_embs, cand_embs[idx:idx+1]]) if sel_embs.shape[0] > 0 else cand_embs[idx:idx+1]
             new_val = submodular_objective(new_sel_embs, centroids, weights, pool_embs, eta)
             gain = new_val - current_val
@@ -326,33 +367,42 @@ def greedy_submodular_select(
                 best_idx = idx
 
         if best_idx < 0 or best_gain <= 0:
-            break
+            break  # 所有候选的边际增益 ≤ 0，提前终止
 
         selected_indices.append(best_idx)
         remaining.discard(best_idx)
 
         if step < 3 or step == budget - 1:
             logger.debug(
-                f"  Greedy step {step+1}/{budget}: "
-                f"added doc={candidate_docs[best_idx].doc_id}, "
-                f"marginal_gain={best_gain:.4f}"
+                f"  贪心第 {step+1}/{budget} 步: "
+                f"选入 doc={candidate_docs[best_idx].doc_id}, "
+                f"边际增益={best_gain:.4f}"
             )
 
     return [candidate_docs[i] for i in selected_indices]
 
 
 # ============================================================
-# KB Curator
+# KB 策展器 (KB Curator)
 # ============================================================
 
 class QARCKBCurator:
     """
-    QARC Knowledge Base Curator.
+    QARC 知识库策展器 — 管理动态 KB。
 
-    Manages a dynamic KB backed by a document pool, with:
-    - Phase 0: Diversity-max bootstrap (before any queries)
-    - ReCurate: Interest-weighted submodular selection + incremental replacement
-    - ERASE consistency check (optional, via callback)
+    核心思想: KB 是从文档池 D_pool 中选出的子集，
+    随用户兴趣变化而动态调整。
+
+    主要接口:
+      - bootstrap_diversity():     Phase 0 多样性最大化初始化
+      - bootstrap_from_queries():  有历史查询时的热启动
+      - recurate():                兴趣驱动的子模选择 + 增量替换
+      - retrieve():                从当前 KB 中检索文档 (供 RAG 使用)
+
+    与 ERASE 的区别:
+      - ERASE 修改事实内容 (f_j 的文本和真假状态)
+      - QARC 切换文档集合 (哪些文档在 KB 中)
+      两者可以配合: QARC 选文档 → ERASE 检查新文档的事实一致性
     """
 
     def __init__(
@@ -364,13 +414,13 @@ class QARCKBCurator:
         erase_check_fn: Optional[Callable] = None,
     ):
         """
-        Args:
-            document_pool:   The full document pool D_pool
-            kb_budget:       Maximum KB size (B)
-            lambda_max:      Maximum replacement ratio per re-curation (default 0.2)
-            candidate_top_k: Number of candidate docs to retrieve per centroid
-            erase_check_fn:  Optional callback for ERASE-style consistency check
-                             Signature: fn(doc: Document, kb_docs: List[Document]) -> None
+        参数:
+            document_pool:   完整文档池 D_pool
+            kb_budget:       KB 最大容量 (B)
+            lambda_max:      单次重新策展的最大替换比例 (默认 0.2)
+            candidate_top_k: 每个兴趣中心检索的候选文档数
+            erase_check_fn:  可选的 ERASE 风格一致性检查回调
+                             签名: fn(doc: Document, kb_docs: List[Document]) -> None
         """
         self.pool = document_pool
         self.kb_budget = kb_budget
@@ -378,10 +428,10 @@ class QARCKBCurator:
         self.candidate_top_k = candidate_top_k
         self.erase_check_fn = erase_check_fn
 
-        # Current KB state
-        self.kb_docs: Dict[str, Document] = {}  # doc_id -> Document
+        # 当前 KB 状态: doc_id → Document
+        self.kb_docs: Dict[str, Document] = {}
 
-        # Statistics
+        # 统计
         self.recuration_count = 0
 
     @property
@@ -389,7 +439,7 @@ class QARCKBCurator:
         return len(self.kb_docs)
 
     def get_kb_embeddings(self) -> np.ndarray:
-        """Return (n, d) matrix of current KB document embeddings."""
+        """返回当前 KB 所有文档的 (n, d) embedding 矩阵"""
         if not self.kb_docs:
             return np.empty((0, 0))
         embs = [doc.embedding for doc in self.kb_docs.values()]
@@ -404,50 +454,46 @@ class QARCKBCurator:
         return list(self.kb_docs.values())
 
     # -------------------------------------------------------
-    # Phase 0: Bootstrap — Diversity-max initialization
+    # Phase 0: Bootstrap — 多样性最大化初始化
     # -------------------------------------------------------
 
     def bootstrap_diversity(self) -> List[Document]:
         """
-        Phase 0: Initialize KB with maximum diversity from pool.
+        Phase 0: 用多样性最大化从文档池初始化 KB。
 
-        Uses Facility Location submodular function:
-        f_div(S) = Σ_{d∈D_pool} max_{d'∈S} sim(d, d')
+        在还没有任何用户查询时使用。
+        目标: 让 KB 覆盖尽可能多的话题。
 
-        This covers as many pool topics as possible before any user queries arrive.
+        使用 Facility Location 子模函数:
+          f_div(S) = Σ_{d∈D_pool} max_{d'∈S} CosSim(d, d')
 
-        Returns:
-            List of selected documents
+        直觉: 每加一篇文档，让它"代表"尽可能多的未被覆盖的文档池文档。
+
+        返回:
+            选中的文档列表
         """
         logger.info(
-            f"Phase 0 Bootstrap: selecting {self.kb_budget} docs from pool "
-            f"(pool size={self.pool.size}) via diversity-max"
+            f"Phase 0 Bootstrap: 从文档池 (大小={self.pool.size}) "
+            f"选择 {self.kb_budget} 篇文档"
         )
 
         if self.pool.size == 0:
-            logger.warning("Empty document pool — cannot bootstrap KB")
+            logger.warning("文档池为空 — 无法初始化 KB")
             return []
 
         pool_embs = self.pool.get_all_embeddings()
         pool_ids = self.pool.get_all_ids()
-
-        # Collect all pool docs as candidates
         all_docs = [self.pool.documents[did] for did in pool_ids]
-
-        # For pure diversity selection, we use uniform interest (dummy centroids)
-        # by setting eta=1.0 and the interest term to zero
-        # Equivalently, use the facility location as the ONLY objective
         budget = min(self.kb_budget, len(all_docs))
 
-        # Greedy facility location: iteratively pick doc with max marginal coverage
+        # 贪心 Facility Location 选择
         selected = self._greedy_facility_location(all_docs, pool_embs, budget)
 
-        # Set as current KB
         self.kb_docs.clear()
         for doc in selected:
             self.kb_docs[doc.doc_id] = doc
 
-        logger.info(f"Phase 0 Bootstrap complete: KB size={self.kb_size}")
+        logger.info(f"Phase 0 Bootstrap 完成: KB 大小={self.kb_size}")
         return selected
 
     def bootstrap_from_queries(
@@ -458,23 +504,19 @@ class QARCKBCurator:
         eta: float = 0.05,
     ) -> List[Document]:
         """
-        Bootstrap KB using historical query logs (warm start variant).
+        热启动: 利用历史查询日志初始化 KB。
 
-        Instead of pure diversity, uses pre-computed interest model to select
-        documents that already align with known query patterns.
+        与纯多样性不同，这里使用已知的兴趣模型来选择文档，
+        使得初始 KB 就已经较好地对齐了用户兴趣。
 
-        Args:
-            query_embeddings: Historical query embeddings
-            centroids:        Interest centroids from historical queries
-            weights:          Interest weights
-            eta:              Small diversity term
-
-        Returns:
-            Selected documents
+        参数:
+            query_embeddings: 历史查询 embedding
+            centroids:        兴趣中心
+            weights:          兴趣权重
+            eta:              小的多样性项 (防止过度聚焦)
         """
         logger.info(
-            f"Warm Bootstrap: selecting {self.kb_budget} docs using "
-            f"{len(centroids)} historical interest clusters"
+            f"热启动: 使用 {len(centroids)} 个历史兴趣簇选择 {self.kb_budget} 篇文档"
         )
 
         candidates = self._gather_candidates(centroids)
@@ -493,11 +535,11 @@ class QARCKBCurator:
         for doc in selected:
             self.kb_docs[doc.doc_id] = doc
 
-        logger.info(f"Warm Bootstrap complete: KB size={self.kb_size}")
+        logger.info(f"热启动完成: KB 大小={self.kb_size}")
         return selected
 
     # -------------------------------------------------------
-    # ReCurate: Interest-weighted submodular selection + replacement
+    # ReCurate: 兴趣加权子模选择 + 增量替换
     # -------------------------------------------------------
 
     def recurate(
@@ -508,34 +550,40 @@ class QARCKBCurator:
         eta: float = 0.1,
     ) -> CurationResult:
         """
-        Re-curate KB based on current interest profile.
+        基于当前兴趣模型重新策展 KB — QARC 的核心操作。
 
-        Steps:
-        A. Candidate retrieval: each centroid probes pool for similar docs
-        B. Submodular selection: greedy maximize f(S) over candidates
-        C. Incremental replacement: bounded diff between K_old and K_ideal
-        D. ERASE consistency check on newly added docs (if callback provided)
+        四个步骤:
+          A. 候选检索: 用每个兴趣中心去文档池中检索相似文档
+          B. 子模选择: 贪心最大化 f(S) = f_interest(S) + η·f_diversity(S)
+          C. 增量替换: K_ideal vs K_old 的差集，受 λ_max 限制
+          D. ERASE 一致性检查: 对新加入的文档做事实核查 (可选)
 
-        Args:
-            centroids: (m, d) interest cluster centroids from AutoKMeans
-            weights:   (m,) interest weights
-            lambda_max: Override replacement cap (default uses self.lambda_max)
-            eta:       Diversity regularization coefficient
+        增量替换的设计意图:
+          - 不能一次换掉太多文档，否则 RAG 系统的回答质量会突然变化
+          - 通过 λ_max 控制每次最多替换 KB 的 20% (Phase 2) 或 50% (Phase 1)
+          - 优先添加边际增益最大的文档，优先移除与当前兴趣最不相关的文档
 
-        Returns:
-            CurationResult with details of changes
+        参数:
+            centroids:  (m, d) AutoKMeans 输出的兴趣簇中心
+            weights:    (m,) 兴趣权重
+            lambda_max: 替换上限 (默认用 self.lambda_max)
+            eta:        多样性正则化系数
+
+        返回:
+            CurationResult 包含添加/移除的文档 ID 和目标函数变化
         """
         self.recuration_count += 1
         lam = lambda_max if lambda_max is not None else self.lambda_max
 
         logger.info(
             f"ReCurate #{self.recuration_count}: "
-            f"{len(centroids)} interest clusters, λ_max={lam:.2f}, η={eta:.2f}"
+            f"{len(centroids)} 个兴趣簇, λ_max={lam:.2f}, η={eta:.2f}"
         )
 
-        # A. Candidate retrieval
+        # === A. 候选检索 ===
+        # 每个兴趣中心去文档池检索 top-k 相似文档
         candidates = self._gather_candidates(centroids)
-        logger.info(f"  Gathered {len(candidates)} unique candidate docs")
+        logger.info(f"  候选检索: 共 {len(candidates)} 篇不重复候选文档")
 
         if not candidates:
             return CurationResult(
@@ -545,7 +593,8 @@ class QARCKBCurator:
                 replacement_ratio=0.0,
             )
 
-        # B. Submodular selection
+        # === B. 子模选择 ===
+        # 贪心最大化: 选出"理想 KB"
         pool_embs = self.pool.get_all_embeddings()
         budget = max(self.kb_budget, self.kb_size)
 
@@ -561,35 +610,34 @@ class QARCKBCurator:
         ideal_ids = {d.doc_id for d in k_ideal}
         current_ids = self.get_kb_doc_ids()
 
-        # C. Incremental replacement (bounded by lambda_max)
-        to_add_ids = ideal_ids - current_ids
-        to_remove_ids = current_ids - ideal_ids
+        # === C. 增量替换 ===
+        # 计算需要添加和移除的差集
+        to_add_ids = ideal_ids - current_ids     # 理想中有但当前没有的
+        to_remove_ids = current_ids - ideal_ids  # 当前有但理想中没有的
 
+        # 限制最大变化量
         max_changes = max(1, int(lam * self.kb_size)) if self.kb_size > 0 else len(to_add_ids)
 
-        # If changes exceed budget, select the most impactful
+        # 如果需要添加的超过限额 → 按边际增益排序，取 top-max_changes
         if len(to_add_ids) > max_changes:
-            # Rank additions by marginal gain
             add_candidates = [d for d in k_ideal if d.doc_id in to_add_ids]
             add_candidates = self._rank_by_marginal_gain(
                 add_candidates, centroids, weights, pool_embs, eta
             )
             to_add_ids = {d.doc_id for d in add_candidates[:max_changes]}
 
+        # 如果需要移除的超过限额 → 按兴趣相关度升序，移除最不相关的
         if len(to_remove_ids) > max_changes:
-            # Remove those least aligned with current interests
             remove_candidates = [self.kb_docs[did] for did in to_remove_ids]
             remove_candidates = self._rank_by_interest_score(
                 remove_candidates, centroids, weights
             )
-            # Remove the LEAST relevant
             to_remove_ids = {d.doc_id for d in remove_candidates[:max_changes]}
 
-        # Balance: don't remove more than we add (keep KB size stable)
+        # 平衡: 不移除超过添加数量的文档 (保持 KB 大小稳定)
         n_add = len(to_add_ids)
         n_remove = min(len(to_remove_ids), n_add + max(0, self.kb_size - self.kb_budget))
 
-        # Trim removal set
         if n_remove < len(to_remove_ids):
             remove_candidates = [self.kb_docs[did] for did in to_remove_ids]
             remove_candidates = self._rank_by_interest_score(
@@ -597,12 +645,12 @@ class QARCKBCurator:
             )
             to_remove_ids = {d.doc_id for d in remove_candidates[:n_remove]}
 
-        # Compute objective before
+        # 计算替换前的目标函数值
         obj_before = submodular_objective(
             self.get_kb_embeddings(), centroids, weights, pool_embs, eta
         ) if self.kb_size > 0 else 0.0
 
-        # D. Apply changes
+        # === D. 执行替换 + ERASE 一致性检查 ===
         for did in to_remove_ids:
             del self.kb_docs[did]
 
@@ -610,14 +658,14 @@ class QARCKBCurator:
             if doc.doc_id in to_add_ids:
                 self.kb_docs[doc.doc_id] = doc
 
-                # ERASE consistency check on new docs
+                # 对新加入的文档执行 ERASE 风格的事实核查 (可选)
                 if self.erase_check_fn is not None:
                     try:
                         self.erase_check_fn(doc, self.get_kb_docs_list())
                     except Exception as e:
-                        logger.warning(f"ERASE check failed for {doc.doc_id}: {e}")
+                        logger.warning(f"ERASE 一致性检查失败 [{doc.doc_id}]: {e}")
 
-        # Compute objective after
+        # 计算替换后的目标函数值
         obj_after = submodular_objective(
             self.get_kb_embeddings(), centroids, weights, pool_embs, eta
         ) if self.kb_size > 0 else 0.0
@@ -634,15 +682,15 @@ class QARCKBCurator:
         )
 
         logger.info(
-            f"  ReCurate done: +{len(to_add_ids)} / -{len(to_remove_ids)} docs, "
-            f"KB size={self.kb_size}, "
-            f"obj {obj_before:.4f} → {obj_after:.4f}"
+            f"  ReCurate 完成: +{len(to_add_ids)} / -{len(to_remove_ids)} 篇文档, "
+            f"KB 大小={self.kb_size}, "
+            f"目标函数 {obj_before:.4f} → {obj_after:.4f}"
         )
 
         return result
 
     # -------------------------------------------------------
-    # Retrieval from KB (for RAG)
+    # 从 KB 检索 (供 RAG 使用)
     # -------------------------------------------------------
 
     def retrieve(
@@ -651,14 +699,10 @@ class QARCKBCurator:
         top_k: int = 5,
     ) -> List[Tuple[Document, float]]:
         """
-        Retrieve top-k documents from current KB for a query.
+        从当前 KB 中检索 top-k 文档 — RAG 的检索步骤。
 
-        Args:
-            query_embedding: (d,) normalized query embedding
-            top_k:          Number of docs to return
-
-        Returns:
-            List of (Document, similarity) sorted descending
+        注意: 这里只在 KB (小型) 中检索，不是在整个文档池中检索。
+        QARC 的思想: 先通过策展让 KB 对齐兴趣，然后检索就自然准确了。
         """
         if not self.kb_docs:
             return []
@@ -685,14 +729,14 @@ class QARCKBCurator:
         return results
 
     # -------------------------------------------------------
-    # Internal helpers
+    # 内部辅助方法
     # -------------------------------------------------------
 
     def _gather_candidates(
         self,
         centroids: np.ndarray,
     ) -> List[Document]:
-        """Gather candidate documents by probing pool with each interest centroid."""
+        """用每个兴趣中心在文档池中检索候选文档（去重）"""
         seen_ids: Set[str] = set()
         candidates: List[Document] = []
 
@@ -700,7 +744,7 @@ class QARCKBCurator:
             results = self.pool.search(
                 query_embedding=centroid,
                 top_k=self.candidate_top_k,
-                exclude_ids=None,  # Include everything, even currently in KB
+                exclude_ids=None,  # 不排除任何文档，包括当前已在 KB 中的
             )
             for doc, sim in results:
                 if doc.doc_id not in seen_ids:
@@ -716,19 +760,22 @@ class QARCKBCurator:
         budget: int,
     ) -> List[Document]:
         """
-        Greedy facility location for diversity-max selection (Phase 0).
+        贪心 Facility Location — Phase 0 多样性最大化。
 
-        f_div(S) = Σ_{d∈D_pool} max_{d'∈S} sim(d, d')
+        f_div(S) = Σ_{d∈D_pool} max_{d'∈S} CosSim(d, d')
+
+        优化: 维护 current_max[j] = 当前 KB 对文档池第 j 篇文档的最大覆盖度，
+        每步只需计算新候选的边际增益: max(0, sim(pool_j, candidate) - current_max[j])
         """
         n_pool = pool_embs.shape[0]
         doc_embs = np.vstack([d.embedding for d in docs])
         doc_norms = np.linalg.norm(doc_embs, axis=1, keepdims=True)
         doc_embs = doc_embs / np.clip(doc_norms, 1e-10, None)
 
-        # Precompute similarities: (n_pool, n_docs)
+        # 预计算所有相似度: (n_pool, n_docs)
         all_sims = pool_embs @ doc_embs.T
 
-        # Track current max coverage per pool doc
+        # 跟踪当前每个文档池文档的最大覆盖度
         current_max = np.full(n_pool, -np.inf)
 
         selected_indices = []
@@ -739,8 +786,7 @@ class QARCKBCurator:
             best_idx = -1
 
             for idx in remaining:
-                # Marginal gain: amount by which this doc increases coverage
-                # For each pool doc: max(0, sim(pool_doc, candidate) - current_max[pool_doc])
+                # 边际增益 = 新候选能增加多少覆盖度
                 gains = np.maximum(0, all_sims[:, idx] - current_max)
                 total_gain = gains.sum()
 
@@ -754,13 +800,13 @@ class QARCKBCurator:
             selected_indices.append(best_idx)
             remaining.discard(best_idx)
 
-            # Update current max coverage
+            # 更新覆盖度
             current_max = np.maximum(current_max, all_sims[:, best_idx])
 
             if step < 3 or step == budget - 1:
                 logger.debug(
-                    f"  FacilityLoc step {step+1}/{budget}: "
-                    f"doc={docs[best_idx].doc_id}, gain={best_gain:.4f}"
+                    f"  FacilityLoc 第 {step+1}/{budget} 步: "
+                    f"doc={docs[best_idx].doc_id}, 增益={best_gain:.4f}"
                 )
 
         return [docs[i] for i in selected_indices]
@@ -773,7 +819,7 @@ class QARCKBCurator:
         pool_embs: np.ndarray,
         eta: float,
     ) -> List[Document]:
-        """Rank documents by their marginal gain to the interest objective (descending)."""
+        """按边际增益降序排列文档 — 用于限额时选择最有价值的添加"""
         if not docs:
             return []
 
@@ -800,9 +846,10 @@ class QARCKBCurator:
         weights: np.ndarray,
     ) -> List[Document]:
         """
-        Rank documents by interest relevance score (ascending = least relevant first).
+        按兴趣相关度升序排列文档 — 用于限额时选择最不相关的移除。
 
-        score(d) = Σ α_i · sim(c_i, d)  — how well this doc serves current interests
+        score(d) = Σ α_i · CosSim(c_i, d)  
+        分数低 = 与当前兴趣最不相关 → 优先移除
         """
         if not docs:
             return []
@@ -813,16 +860,16 @@ class QARCKBCurator:
             emb_norm = np.linalg.norm(emb)
             if emb_norm > 1e-10:
                 emb = emb / emb_norm
-            sims = (centroids @ emb.T).flatten()  # (m,)
+            sims = (centroids @ emb.T).flatten()
             score = float((weights * sims).sum())
             scores.append((doc, score))
 
-        # Ascending: least relevant first (for removal)
+        # 升序: 最不相关的排在前面 (便于 [:n] 取最不相关的)
         scores.sort(key=lambda x: x[1])
         return [d for d, _ in scores]
 
     def get_statistics(self) -> Dict[str, Any]:
-        """Return curator statistics."""
+        """返回策展器统计信息"""
         return {
             "kb_size": self.kb_size,
             "kb_budget": self.kb_budget,

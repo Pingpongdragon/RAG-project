@@ -4,8 +4,12 @@ from core.utils.context_utils import format_context
 from config import settings
 from config.logger_config import configure_console_logger
 from openai import OpenAI
-from swift.llm import InferRequest, RequestConfig
 import os
+try:
+    from swift.llm import InferRequest, RequestConfig
+    HAS_SWIFT = True
+except ImportError:
+    HAS_SWIFT = False
 
 logger = configure_console_logger(__name__)
 
@@ -87,44 +91,13 @@ Format requirements:
 [Answer And References]
 '''
 
-CONTEXT_PROMPT_MMLU_TEMPLATE_EN = '''
-You are answering a multiple-choice question from the MMLU (Massive Multitask Language Understanding) benchmark, 
-give the answer (in English), without including the reasoning process:
 
-Format requirements:
-1. Give your answer like "The answer is X", where X is one of: A, B, C, or D, and include the full content of the chosen option
-2. Begin with your answer and include the full content of the references at the end
-3. References should contain content rather than just numbers
-4. Clearly state if there is no relevant evidence
-
-[contexts]
-{context}
-
-[Question]
-{query}
-
-[Answer And References]
-'''
-
-NO_CONTEXT_PROMPT_MMLU_TEMPLATE_EN = '''
+NO_CONTEXT_PROMPT_TEMPLATE_EN = '''
 Answer directly in 1-2 sentences (in English):
 
 Format requirements:
-1. Do not include any additional text after your answer to the question
+1. Give a concise answer to the question
 2. Suggest research directions if uncertain
-
-Question: {query}
-
-[Answer]
-'''
-
-NO_CONTEXT_PROMPT_TEMPLATE_EN = '''
-You are answering a multiple-choice question from the MMLU (Massive Multitask Language Understanding) benchmark, answer directly in 1-2 sentences (in English):
-
-Format requirements:
-1. Give your answer like "The answer is X", where X is one of: A, B, C, or D, and include the full content of the chosen option
-2. Do not include any additional text after your answer to the question
-3. Suggest research directions if uncertain
 
 Question: {query}
 
@@ -151,20 +124,13 @@ def generate_llm_response(
     if use_context:
         context_str = format_context(context, top_n=context_top_n, language=language)
         if language == "en":
-            if settings.IS_MMLU:
-                prompt = CONTEXT_PROMPT_MMLU_TEMPLATE_EN.format(context=context_str, query=query)
-            else:
-                prompt = CONTEXT_PROMPT_TEMPLATE_EN.format(context=context_str, query=query)
+            prompt = CONTEXT_PROMPT_TEMPLATE_EN.format(context=context_str, query=query)
         else:
             prompt = CONTEXT_PROMPT_TEMPLATE_ZH.format(context=context_str, query=query)
     else:
         if language == "en":
-            if settings.IS_MMLU:
-                prompt = NO_CONTEXT_PROMPT_MMLU_TEMPLATE_EN.format(query=query)
-                logger.info("No valid context found, enabling generic response mode for MMLU.")
-            else:
-                prompt = NO_CONTEXT_PROMPT_TEMPLATE_EN.format(query=query)
-                logger.info("No valid context found, enabling generic response mode.")
+            prompt = NO_CONTEXT_PROMPT_TEMPLATE_EN.format(query=query)
+            logger.info("No valid context found, enabling generic response mode.")
         else:
             prompt = NO_CONTEXT_PROMPT_TEMPLATE_ZH.format(query=query)
             logger.info("无有效上下文,启用通用回答模式")
@@ -225,19 +191,13 @@ def generate_batch_llm_response(
             context_str = format_context(context, top_n=settings.CONTEXT_TOP_N, language=language)
             
         if language == "en":
-            if settings.IS_MMLU:
-                prompt = CONTEXT_PROMPT_MMLU_TEMPLATE_EN.format(context=context_str, query=query)
-            else:
-                prompt = CONTEXT_PROMPT_TEMPLATE_EN.format(context=context_str, query=query)
+            prompt = CONTEXT_PROMPT_TEMPLATE_EN.format(context=context_str, query=query)
         else:
             prompt = CONTEXT_PROMPT_TEMPLATE_ZH.format(context=context_str, query=query)
             
         if not use_context:
             if language == "en":
-                if settings.IS_MMLU:
-                    prompt = NO_CONTEXT_PROMPT_MMLU_TEMPLATE_EN.format(query=query)
-                else:
-                    prompt = NO_CONTEXT_PROMPT_TEMPLATE_EN.format(query=query)
+                prompt = NO_CONTEXT_PROMPT_TEMPLATE_EN.format(query=query)
             else:
                 prompt = NO_CONTEXT_PROMPT_TEMPLATE_ZH.format(query=query)
         
@@ -303,10 +263,6 @@ def _post_process(raw_response: str, has_context: bool, language: str = "zh") ->
     processed_text = match.group(1).strip() if match else raw_response.strip()
 
     # 保持原始格式，不进行额外的换行或空格处理
-    if language == "en":
-        processed_text = f"{processed_text}"
-    else:
-        processed_text = f"{processed_text}"
 
     # 返回处理后的文本
     return processed_text

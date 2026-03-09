@@ -1,18 +1,45 @@
 """
-ERASE Knowledge Base: Editable External Knowledge Store
+ERASE 可编辑知识库: 支持事实级增删改查 + 时间线追踪
 
-Paper: "Language Modeling with Editable External Knowledge" (Li et al., 2024)
-https://arxiv.org/abs/2406.11830
+论文: "Language Modeling with Editable External Knowledge" (Li et al., 2024)
+链接: https://arxiv.org/abs/2406.11830
+简称: ERASE = Enhancing Retrieval Augmentation with Self-consistent Editing
 
-Each entry in the knowledge base consists of:
-  - fact f_j:    a natural-language atomic fact string
-  - history H_j: [(timestamp, truth_value), ...] recording when the fact was
-                  known to be true or false
+=== 论文核心思想 ===
 
-The KB supports:
-  - Dense vector retrieval (cosine similarity)
-  - Fact-level CRUD: add, reinforce, make_false, rewrite, remove
-  - History tracking for temporal reasoning at inference time
+ERASE 的出发点: 世界知识会随时间变化！
+例如 "英国女王是伊丽莎白二世" → 2022年后变成 "英国国王是查尔斯三世"。
+传统 RAG 的 KB 是静态的，放进去什么就是什么，不处理知识过时的问题。
+
+ERASE 让 KB 中的每条事实都变成"可编辑的":
+  - 每条事实 f_j 附带一个历史记录 H_j = [(时间戳, 真/假), ...]
+  - 新信息到来时，通过 LLM 判断已有事实的真假是否发生变化
+  - 被推翻的事实可以被改写成新的真事实 (而非简单删除)
+
+=== KB 数据模型 (论文 Section 3) ===
+
+知识库 K = {(f_1, H_1), (f_2, H_2), ...}
+- f_j:  原子事实 (atomic fact)，例如 "Elizabeth II is the Queen of England"
+- H_j:  历史记录，例如 [(2020, True), (2022-09, False)]
+         表示该事实在 2020年为真，2022年9月后为假
+
+支持的操作:
+  - add_fact():     添加新事实 (Step 3 提取的新原子事实)
+  - reinforce():    标记事实仍然为真 (Step 2 的 "Reinforce" 判定)
+  - make_false():   标记事实已变假 (Step 2 的 "Make False" 判定)
+  - rewrite():      将假事实改写为真事实 (Step 2 第二轮 LLM 尝试)
+  - retrieve():     稠密向量检索 top-k 相关事实
+
+=== 与 ComRAG/QARC 的关键区别 ===
+- ERASE 修改的是事实级别的内容 (f_j 的真假和文本)，而非文档集合
+- ERASE 是文档驱动的 (document arrives → update KB)，不感知用户兴趣变化
+- ComRAG 根本不修改 KB，只维护 QA 记忆
+- QARC 修改的是文档级别的 KB 组成 (哪些文档在 KB 中)，不修改文档内容
+
+=== 推理时的使用方式 (论文 Appendix A.3) ===
+检索事实时，把历史变化信息一起给 LLM:
+  "Elizabeth II is the Queen of England (true at 2020, false at 2022-09)"
+这让 LLM 能理解知识的时间演变，做出更准确的回答。
 """
 
 import numpy as np
@@ -26,14 +53,14 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Data Structures
+# 数据结构
 # ============================================================
 
 @dataclass
 class FactHistory:
-    """A single history entry recording truth status at a point in time."""
+    """事实的单条历史记录 — 记录某个时间点的真假状态。"""
     timestamp: str
-    truth_value: bool  # True = fact is true, False = fact is false
+    truth_value: bool  # True = 事实为真, False = 事实为假
 
     def __repr__(self):
         status = "true" if self.truth_value else "false"
@@ -43,15 +70,14 @@ class FactHistory:
 @dataclass
 class FactEntry:
     """
-    A single entry in the ERASE knowledge base.
+    ERASE 知识库中的一条事实条目。
 
-    Attributes:
-        fact:      The atomic fact as natural language string
-        embedding: Dense vector representation of the fact
-        history:   List of (timestamp, truth_value) records
-        fact_id:   Unique identifier
-        source:    Source document that introduced/last modified this fact
-        metadata:  Additional metadata
+    对应论文中知识库 K 的元素 (f_j, H_j):
+    - fact (f_j):      原子事实的自然语言文本
+    - history (H_j):   真假状态的时间序列
+    - embedding:       事实文本的稠密向量 (用于检索)
+    - fact_id:         唯一标识符
+    - source:          引入/最后修改该事实的文档来源
     """
     fact: str
     embedding: np.ndarray
@@ -62,9 +88,9 @@ class FactEntry:
 
     @property
     def is_currently_true(self) -> bool:
-        """Check if the fact is currently considered true (latest history entry)."""
+        """当前是否为真 — 取历史记录中最新的状态。"""
         if not self.history:
-            return True  # Default: assume true if no history
+            return True  # 无历史时默认为真
         return self.history[-1].truth_value
 
     @property
@@ -74,15 +100,15 @@ class FactEntry:
         return self.history[-1].timestamp
 
     def reinforce(self, timestamp: str):
-        """Mark fact as still true at the given timestamp."""
+        """Reinforce: 标记该事实在指定时间仍然为真。"""
         self.history.append(FactHistory(timestamp=timestamp, truth_value=True))
 
     def make_false(self, timestamp: str):
-        """Mark fact as false at the given timestamp."""
+        """Make False: 标记该事实在指定时间已变为假。"""
         self.history.append(FactHistory(timestamp=timestamp, truth_value=False))
 
     def format_history_string(self) -> str:
-        """Format history for LLM context (paper Appendix A.3)."""
+        """将历史格式化为字符串 — 论文 Appendix A.3 推理时给 LLM 看。"""
         if not self.history:
             return "(no history)"
         parts = [str(h) for h in self.history]
@@ -95,39 +121,41 @@ class FactEntry:
 
 @dataclass
 class RetrievalResult:
-    """Result of retrieving a fact from the knowledge base."""
+    """从知识库检索的单条结果。"""
     entry: FactEntry
     similarity: float
 
 
 # ============================================================
-# ERASE Knowledge Base
+# ERASE 知识库
 # ============================================================
 
 class ERASEKnowledgeBase:
     """
-    Editable knowledge base with dense retrieval and fact history tracking.
+    可编辑外部知识库 — ERASE 的核心数据结构。
 
-    Core operations:
-    - add_fact():     Add a new fact with initial history
-    - retrieve():     Dense vector retrieval of top-k similar facts
-    - reinforce():    Mark a fact as still true
-    - make_false():   Mark a fact as false
-    - rewrite():      Replace a fact with a new version
-    - remove():       Delete a fact entirely
-    - get_true_facts(): Get all currently-true facts
+    支持稠密向量检索 + 事实级增删改查 + 历史追踪。
+
+    核心操作:
+    - add_fact():       添加新事实，初始状态为真
+    - retrieve():       稠密向量检索 top-k 相似事实
+    - reinforce():      标记事实仍为真 (Step 2 "Reinforce")
+    - make_false():     标记事实已变假 (Step 2 "Make False")
+    - rewrite():        将假事实改写为新的真事实 (Step 2 第二轮)
+    - remove():         彻底删除事实
+    - get_true_facts(): 获取所有当前为真的事实
     """
 
     def __init__(self, similarity_threshold: float = 0.7):
         """
         Args:
-            similarity_threshold: Minimum similarity for retrieval (paper uses 0.7
-                                  for inference-time retrieval, Appendix A.3)
+            similarity_threshold: 推理时的最低检索相似度阈值
+                                  (论文 Appendix A.3 使用 0.7)
         """
-        self.entries: Dict[str, FactEntry] = {}  # fact_id -> FactEntry
+        self.entries: Dict[str, FactEntry] = {}  # fact_id → FactEntry
         self.similarity_threshold = similarity_threshold
 
-        # Statistics
+        # 统计
         self._total_added = 0
         self._total_reinforced = 0
         self._total_made_false = 0
@@ -143,17 +171,10 @@ class ERASEKnowledgeBase:
         metadata: Optional[Dict] = None,
     ) -> FactEntry:
         """
-        Add a new fact to the knowledge base (Step 3 of ERASE).
+        添加一条新事实 — 对应 ERASE Step 3。
 
-        Args:
-            fact:      Atomic fact string
-            embedding: Dense vector
-            timestamp: When this fact was introduced
-            source:    Source document
-            metadata:  Additional info
-
-        Returns:
-            The created FactEntry
+        新事实来源于 LLM 对新文档的原子事实提取:
+          文档 → LLM → ["fact1", "fact2", ...] → 分别 embed → 加入 KB
         """
         embedding = self._normalize(embedding)
         entry = FactEntry(
@@ -165,8 +186,7 @@ class ERASEKnowledgeBase:
         )
         self.entries[entry.fact_id] = entry
         self._total_added += 1
-
-        logger.debug(f"Added fact [{entry.fact_id}]: {fact[:80]}")
+        logger.debug(f"添加事实 [{entry.fact_id}]: {fact[:80]}")
         return entry
 
     def retrieve(
@@ -177,18 +197,15 @@ class ERASEKnowledgeBase:
         only_true: bool = False,
     ) -> List[RetrievalResult]:
         """
-        Dense vector retrieval of facts similar to query.
+        稠密向量检索 — 对应论文 Eq (2)。
 
-        Paper Eq (2): Retrieve(K, d) = arg top-k_{(f_j, H_j) in K} E(d)^T E(f_j)
+        公式: Retrieve(K, d) = arg top-k_{(f_j, H_j) ∈ K} E(d)^T E(f_j)
 
-        Args:
-            query_embedding: Query vector (either document or question embedding)
-            top_k:          Number of results to return
-            threshold:      Minimum similarity (overrides self.similarity_threshold)
-            only_true:      If True, only return currently-true facts (for inference)
-
-        Returns:
-            List of RetrievalResult sorted by similarity (descending)
+        参数:
+            query_embedding: 查询向量 (文档或问题的 embedding)
+            top_k:           返回数量
+            threshold:       最低相似度阈值
+            only_true:       True = 只返回当前为真的事实 (推理时用)
         """
         if not self.entries:
             return []
@@ -200,7 +217,6 @@ class ERASEKnowledgeBase:
         for entry in self.entries.values():
             if only_true and not entry.is_currently_true:
                 continue
-
             sim = float(np.dot(query_embedding, entry.embedding))
             if sim >= thresh:
                 results.append(RetrievalResult(entry=entry, similarity=sim))
@@ -214,38 +230,29 @@ class ERASEKnowledgeBase:
         top_k: int = 20,
     ) -> List[RetrievalResult]:
         """
-        Retrieve facts for the update step (Step 1 of ERASE).
+        为更新步骤检索候选事实 — 对应 ERASE Step 1。
 
-        Uses a lower threshold than inference (we want to find ALL potentially
-        affected facts, not just highly relevant ones).
-
-        Args:
-            document_embedding: Embedding of the new document
-            top_k:             Number of candidates
-
-        Returns:
-            List of RetrievalResult (all facts, not just true ones)
+        使用更低的阈值 (0.3)，因为更新时需要找到所有"可能受影响"的事实，
+        而不只是高度相关的。宁可多找一些让 LLM 判断，也不要漏掉。
         """
         return self.retrieve(
             query_embedding=document_embedding,
             top_k=top_k,
-            threshold=0.3,  # lower threshold for update retrieval
-            only_true=False,
+            threshold=0.3,  # 更新时用更低阈值
+            only_true=False,  # 包含已变假的事实
         )
 
     def reinforce_fact(self, fact_id: str, timestamp: str):
-        """Reinforce: mark fact as still true (Step 2 of ERASE)."""
+        """Reinforce: 标记事实仍为真 — Step 2 第一轮 LLM 判定。"""
         if fact_id in self.entries:
             self.entries[fact_id].reinforce(timestamp)
             self._total_reinforced += 1
-            logger.debug(f"Reinforced fact [{fact_id}]")
 
     def make_fact_false(self, fact_id: str, timestamp: str):
-        """Make False: mark fact as no longer true (Step 2 of ERASE)."""
+        """Make False: 标记事实已变假 — Step 2 第一轮 LLM 判定。"""
         if fact_id in self.entries:
             self.entries[fact_id].make_false(timestamp)
             self._total_made_false += 1
-            logger.debug(f"Made false fact [{fact_id}]")
 
     def rewrite_fact(
         self,
@@ -255,19 +262,10 @@ class ERASEKnowledgeBase:
         timestamp: str,
     ) -> Optional[FactEntry]:
         """
-        Rewrite: replace old fact with new version (Step 2 of ERASE).
+        改写事实 — Step 2 第二轮 LLM 尝试将假事实改写为真。
 
-        The old entry is replaced with a new one that has a fresh history
-        starting with (timestamp, True).
-
-        Args:
-            fact_id:       ID of the fact to rewrite
-            new_fact:      The rewritten fact text
-            new_embedding: Embedding of the rewritten fact
-            timestamp:     Current timestamp
-
-        Returns:
-            The new FactEntry, or None if fact_id not found
+        例如: "Elizabeth II is Queen" → "Charles III is King"
+        保留原 fact_id 以便追踪改写历史。
         """
         if fact_id not in self.entries:
             return None
@@ -275,12 +273,11 @@ class ERASEKnowledgeBase:
         old_entry = self.entries[fact_id]
         new_embedding = self._normalize(new_embedding)
 
-        # Create new entry, preserving the id for traceability
         new_entry = FactEntry(
             fact=new_fact,
             embedding=new_embedding,
             history=[FactHistory(timestamp=timestamp, truth_value=True)],
-            fact_id=fact_id,  # keep same ID
+            fact_id=fact_id,
             source=old_entry.source,
             metadata={
                 **old_entry.metadata,
@@ -290,14 +287,10 @@ class ERASEKnowledgeBase:
         )
         self.entries[fact_id] = new_entry
         self._total_rewritten += 1
-
-        logger.debug(
-            f"Rewrote fact [{fact_id}]: '{old_entry.fact[:40]}' -> '{new_fact[:40]}'"
-        )
+        logger.debug(f"改写事实 [{fact_id}]: '{old_entry.fact[:40]}' → '{new_fact[:40]}'")
         return new_entry
 
     def remove_fact(self, fact_id: str) -> bool:
-        """Remove a fact entirely from the knowledge base."""
         if fact_id in self.entries:
             del self.entries[fact_id]
             self._total_removed += 1
@@ -305,34 +298,26 @@ class ERASEKnowledgeBase:
         return False
 
     def get_true_facts(self) -> List[FactEntry]:
-        """Get all facts currently considered true."""
         return [e for e in self.entries.values() if e.is_currently_true]
 
     def get_false_facts(self) -> List[FactEntry]:
-        """Get all facts currently considered false."""
         return [e for e in self.entries.values() if not e.is_currently_true]
 
     def get_all_facts(self) -> List[FactEntry]:
-        """Get all facts regardless of truth status."""
         return list(self.entries.values())
 
     def size(self) -> int:
-        """Total number of facts in the KB."""
         return len(self.entries)
 
-    def format_facts_for_inference(
-        self,
-        facts: List[RetrievalResult],
-    ) -> str:
+    def format_facts_for_inference(self, facts: List[RetrievalResult]) -> str:
         """
-        Format retrieved facts with history for LLM inference context.
+        格式化事实 + 历史信息供 LLM 推理 — 论文 Appendix A.3。
 
-        Paper Appendix A.3 format:
-          f_i (v_{i0} at tau_{i0}, v_{i1} at tau_{i1}, ...)
+        格式: f_i (v_{i0} at τ_{i0}, v_{i1} at τ_{i1}, ...)
+        例: "Elizabeth II is Queen (true at 2020, false at 2022-09)"
         """
         if not facts:
             return "(No relevant facts found)"
-
         lines = []
         for i, r in enumerate(facts, 1):
             entry = r.entry
@@ -341,7 +326,6 @@ class ERASEKnowledgeBase:
         return "\n".join(lines)
 
     def get_statistics(self) -> Dict:
-        """Get KB statistics."""
         true_count = sum(1 for e in self.entries.values() if e.is_currently_true)
         false_count = len(self.entries) - true_count
         return {
@@ -357,7 +341,6 @@ class ERASEKnowledgeBase:
 
     @staticmethod
     def _normalize(vec: np.ndarray) -> np.ndarray:
-        """L2 normalize a vector."""
         vec = np.asarray(vec, dtype=np.float32).flatten()
         norm = np.linalg.norm(vec)
         if norm > 0:
