@@ -169,6 +169,55 @@ def evaluate_generation_batch(
 # 时间序列分析 (用于实验结果后处理)
 # ============================================================
 
+
+
+def kb_turnover_rate(
+    kb_history: List[Set[str]],
+) -> float:
+    """
+    KB 周转率 — 衡量 KB 文档集合在流式处理过程中的变更程度
+
+    per-step turnover = |KB_t Δ KB_{t-1}| / |KB_t ∪ KB_{t-1}|
+    总体 turnover = mean(per-step turnover)
+
+    越高说明 KB 在积极适应查询分布变化, 越低说明 KB 接近静态
+    """
+    if len(kb_history) < 2:
+        return 0.0
+    turnovers = []
+    for i in range(1, len(kb_history)):
+        prev, curr = kb_history[i - 1], kb_history[i]
+        union = prev | curr
+        if not union:
+            turnovers.append(0.0)
+        else:
+            turnovers.append(len(prev.symmetric_difference(curr)) / len(union))
+    return float(np.mean(turnovers))
+
+
+def sliding_window_recall(
+    recalls: List[float],
+    window_size: int = 20,
+) -> List[float]:
+    """
+    滑动窗口平均 recall 曲线
+
+    返回每个窗口的平均 recall, 用于可视化方法在漂移过程中的适应能力
+    """
+    if not recalls:
+        return []
+    n_windows = len(recalls) // window_size
+    avgs = []
+    for i in range(n_windows):
+        start = i * window_size
+        end = start + window_size
+        avgs.append(float(np.mean(recalls[start:end])))
+    # 尾部不足一个窗口的也扫进来
+    remainder = len(recalls) % window_size
+    if remainder > 0 and n_windows > 0:
+        avgs.append(float(np.mean(recalls[n_windows * window_size:])))
+    return avgs
+
 def compute_adaptation_speed(
     metric_series: List[float],
     window_size: int = 20,
@@ -209,3 +258,168 @@ def compute_adaptation_speed(
             return float(i - trough_idx)
 
     return float(len(window_avgs) - trough_idx)
+
+
+# ============================================================
+# 成本-精度综合评估框架 (Cost-Accuracy Tradeoff)
+# ============================================================
+
+def update_efficiency(
+    avg_recall: float,
+    total_updates: int,
+) -> float:
+    """
+    更新效率 (UE) — 每次更新带来的边际 recall 收益
+
+    公式: UE = Recall / (1 + log₂(updates + 1))
+
+    设计思路:
+    - 对数惩罚: 更新次数的边际收益递减
+    - 10 次更新和 100 次更新只有 ≈3× 的惩罚 (而非 10×)
+    - UE 越高说明方法用更少更新达到了更高 recall
+
+    优势展示: QARC 用精准的漂移检测避免无效更新,
+              同等 recall 下 UE 应该最高
+    """
+    if total_updates < 0:
+        total_updates = 0
+    return avg_recall / (1.0 + np.log2(total_updates + 1))
+
+
+def cost_adjusted_recall(
+    avg_recall: float,
+    kb_turnover: float,
+    alpha: float = 2.0,
+) -> float:
+    """
+    成本调整召回率 (CAR) — 惩罚频繁 KB 变更的 recall
+
+    公式: CAR = Recall × (1 - α·turnover)
+
+    设计思路:
+    - turnover 越高说明 KB 越不稳定, 实际部署中意味着更高的索引重建开销
+    - α 控制惩罚力度: α=2 时 turnover=0.01 只扣 2% recall,
+      但 turnover=0.05 扣 10%
+    - CAR 越高说明方法在保持 KB 稳定的同时获得了高 recall
+
+    QARC 优势: 窗口级批量更新比 ERASE 逐条更新更稳定
+    """
+    penalty = max(0.0, 1.0 - alpha * kb_turnover)
+    return avg_recall * penalty
+
+
+def update_precision(
+    recalls: List[float],
+    total_updates: int,
+    window_size: int = 20,
+) -> float:
+    """
+    更新精准度 — 更新后 recall 是否真的提升了
+
+    方法: 对比更新前后滑动窗口的 recall 差异
+    如果 后一窗口recall > 前一窗口recall → 有效更新
+
+    公式: precision = Σ max(0, Δrecall_after_update) / total_updates
+
+    QARC 优势: 只在检测到漂移时更新, 每次更新都应带来 recall 提升
+    ERASE 劣势: 基于简单阈值更新, 可能有很多无效更新
+    """
+    if total_updates <= 0 or len(recalls) < window_size * 2:
+        return 0.0
+
+    # 滑动窗口平均
+    n_windows = len(recalls) // window_size
+    window_avgs = []
+    for i in range(n_windows):
+        start = i * window_size
+        end = start + window_size
+        window_avgs.append(float(np.mean(recalls[start:end])))
+
+    if len(window_avgs) < 2:
+        return 0.0
+
+    # 统计正向变化
+    positive_deltas = sum(
+        max(0.0, window_avgs[i] - window_avgs[i - 1])
+        for i in range(1, len(window_avgs))
+    )
+    return positive_deltas / max(total_updates, 1)
+
+
+def comprehensive_score(
+    avg_recall: float,
+    total_updates: int,
+    kb_turnover: float,
+    recalls: List[float],
+    total_queries: int,
+    w_recall: float = 0.4,
+    w_efficiency: float = 0.3,
+    w_stability: float = 0.2,
+    w_precision: float = 0.1,
+) -> Dict[str, float]:
+    """
+    综合评分 (Composite Score) — 多维度加权评估
+
+    包含四个维度:
+      1. Recall (w=0.4):      绝对检索精度
+      2. Efficiency (w=0.3):  更新效率 (recall / log(updates))
+      3. Stability (w=0.2):   KB 稳定性 (1 - turnover, 归一化)
+      4. Precision (w=0.1):   更新精准度 (更新后 recall 提升幅度)
+
+    设计哲学:
+    - 不只看谁 recall 最高, 而是看谁能以最低代价维持高 recall
+    - 这反映了实际部署中的核心需求: 高性能 + 低维护成本
+
+    QARC 论文主张:
+    "Query-aligned curation achieves comparable accuracy with
+     significantly fewer, more targeted KB updates"
+
+    Returns:
+        {
+            "composite": 综合分 (0~1),
+            "recall_score": recall 分项 (归一化到 0~1),
+            "efficiency_score": 效率分项,
+            "stability_score": 稳定性分项,
+            "precision_score": 精准度分项,
+            "update_efficiency": 原始 UE 值,
+            "cost_adjusted_recall": 原始 CAR 值,
+        }
+    """
+    ue = update_efficiency(avg_recall, total_updates)
+    car = cost_adjusted_recall(avg_recall, kb_turnover)
+    up = update_precision(recalls, total_updates)
+
+    # 归一化到 [0, 1]
+    recall_score = min(avg_recall, 1.0)
+
+    # 效率: 0 次更新 = 无作为, 效率设为 0 而非 1
+    # 有更新时: UE/recall ∈ (0, 1], 更新越少越接近 1
+    if total_updates == 0:
+        efficiency_score = 0.0   # 不更新 ≠ 高效, 是无作为
+    else:
+        efficiency_score = min(ue / max(avg_recall, 0.01), 1.0)
+
+    # 稳定性: turnover=0 最稳定=1.0, turnover>0.01 开始惩罚
+    # 但 0 更新的稳定性不应被奖励 (乘以 recall gate)
+    raw_stability = max(0.0, 1.0 - kb_turnover * 50.0)
+    stability_score = raw_stability * min(recall_score / 0.15, 1.0)
+
+    # 精准度: 更新真的带来 recall 提升的程度
+    precision_score = min(up * 10.0, 1.0)
+
+    composite = (
+        w_recall * recall_score
+        + w_efficiency * efficiency_score
+        + w_stability * stability_score
+        + w_precision * precision_score
+    )
+
+    return {
+        "composite": float(composite),
+        "recall_score": float(recall_score),
+        "efficiency_score": float(efficiency_score),
+        "stability_score": float(stability_score),
+        "precision_score": float(precision_score),
+        "update_efficiency": float(ue),
+        "cost_adjusted_recall": float(car),
+    }

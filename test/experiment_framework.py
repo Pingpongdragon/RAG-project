@@ -19,6 +19,7 @@ import json
 import logging
 import re
 import time
+from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -71,7 +72,7 @@ class EmbeddingHelper:
             [text], convert_to_numpy=True, normalize_embeddings=True
         )[0]
 
-    def embed_batch(self, texts: List[str], batch_size: int = 16) -> np.ndarray:
+    def embed_batch(self, texts: List[str], batch_size: int = 32) -> np.ndarray:
         if self.use_random:
             v = np.random.randn(len(texts), self.dim).astype(np.float32)
             norms = np.linalg.norm(v, axis=1, keepdims=True)
@@ -234,11 +235,15 @@ def topic_alignment_score(
 # Method Adapter Protocol
 # ============================================================
 
-class MethodAdapter:
-    """Common interface for all evaluated methods."""
+class MethodAdapter(ABC):
+    """所有 KB 更新方法的实验适配器接口。
+
+    每个方法 (QARC/ComRAG/ERASE/Static/Random) 实现此接口,
+    由 ExperimentRunner 统一调度。"""
 
     name: str = "base"
 
+    @abstractmethod
     def initialize(
         self,
         pool_docs: List[PoolDocument],
@@ -247,6 +252,7 @@ class MethodAdapter:
     ):
         raise NotImplementedError
 
+    @abstractmethod
     def process_query(
         self,
         query_text: str,
@@ -255,14 +261,16 @@ class MethodAdapter:
         """Return (retrieved doc IDs, answer or None)."""
         raise NotImplementedError
 
+    @abstractmethod
     def get_kb_doc_ids(self) -> set:
         raise NotImplementedError
 
+    @abstractmethod
     def get_kb_topic_distribution(
         self, pool_docs_map: Dict[str, PoolDocument],
     ) -> Dict[str, float]:
         """Topic distribution of current KB."""
-        raise NotImplementedError
+        ...
 
     def on_window_end(self):
         """Hook called at end of each evaluation window."""
@@ -283,7 +291,7 @@ class QARCAdapter(MethodAdapter):
         self.pipeline = None
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
         from updator.qarc.pipeline import QARCPipeline
 
         pool = DocumentPool()
@@ -299,11 +307,13 @@ class QARCAdapter(MethodAdapter):
             lambda_max=self.extra_kw.get("exploit_lambda_max", 0.2),
             candidate_top_k=self.extra_kw.get("candidate_top_k", 100),
         )
-        self.pipeline = QARCPipeline(
-            curator=curator, window_size=self.window_size,
-            **{k: v for k, v in self.extra_kw.items()
-               if k not in ("candidate_top_k",)},
-        )
+        from updator.qarc.config import QARCConfig
+        # 从 extra_kw 构建 QARCConfig (仅传入有效字段)
+        cfg_overrides = {k: v for k, v in self.extra_kw.items()
+                         if k not in ("candidate_top_k", "exploit_lambda_max")}
+        cfg_overrides["window_size"] = self.window_size
+        cfg = QARCConfig.from_dict(cfg_overrides)
+        self.pipeline = QARCPipeline(curator=curator, cfg=cfg)
         self.pipeline.bootstrap()
 
     def process_query(self, query_text, query_embedding):
@@ -359,7 +369,7 @@ class ComRAGAdapter(MethodAdapter):
         self.memory = None  # DynamicMemory
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
         from updator.comrag.memory import DynamicMemory
 
         # 1. Same diversity-bootstrap KB as other methods
@@ -458,7 +468,7 @@ class ERASEAdapter(MethodAdapter):
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
         from updator.erase.knowledge_base import ERASEKnowledgeBase
-        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
 
         self._doc_embeddings = doc_embeddings
         self._pool_map = {pd.doc_id: pd for pd in pool_docs}
@@ -593,7 +603,7 @@ class StaticKBAdapter(MethodAdapter):
         self._pool_map: Dict[str, PoolDocument] = {}
 
     def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc.kb_curator import Document, DocumentPool, QARCKBCurator
+        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
 
         pool = DocumentPool()
         for pd in pool_docs:

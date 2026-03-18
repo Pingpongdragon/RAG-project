@@ -43,6 +43,7 @@ class QueryItem:
     answer: str
     topic: str                                    # natural WoW topic label
     gold_doc_ids: List[str] = field(default_factory=list)
+    topic_doc_ids: List[str] = field(default_factory=list)  # topic 级别 gold (同 topic 所有文档)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -353,15 +354,17 @@ def build_gradual_drift(
     topics: Optional[List[str]] = None,
     sigma: float = 0.18,
     seed: int = 42,
+    pool_size: int = 5000,
+    wow_split: str = "validation",
 ) -> ExperimentDataset:
     """
     Exp 1 — Gradual Drift.
     Gaussian activations  =>  topics smoothly overlap and transition.
     """
-    logger.info(f"Building Gradual Drift: {total_queries} queries, sigma={sigma}")
-    wow = _load_wow("validation")
+    logger.info(f"Building Gradual Drift: {total_queries} queries, sigma={sigma}, pool_size={pool_size}")
+    wow = _load_wow(wow_split)
     if topics is None:
-        topics = _select_topics(wow, 5, preferred=BIG_TOPICS, seed=seed)
+        topics = _select_topics(wow, 10, preferred=BIG_TOPICS, seed=seed)
     logger.info(f"Topics: {topics}")
 
     tq, td = _extract_topic_data(wow, topics)
@@ -369,7 +372,7 @@ def build_gradual_drift(
     stream, slog = _build_stream(schedule, tq, total_queries, seed)
 
     gold_ids = {gid for q in stream for gid in q.gold_doc_ids}
-    pool = _merge_pool(td, gold_doc_ids=gold_ids, seed=seed)
+    pool = _merge_pool(td, gold_doc_ids=gold_ids, max_total=pool_size, seed=seed)
     logger.info(f"Gradual Drift: {len(stream)} queries, {len(pool)} pool docs")
     return ExperimentDataset(
         name="gradual_drift", description=f"Gaussian drift sigma={sigma}",
@@ -384,15 +387,17 @@ def build_sudden_shift(
     topics: Optional[List[str]] = None,
     steepness: float = 30.0,
     seed: int = 42,
+    pool_size: int = 5000,
+    wow_split: str = "validation",
 ) -> ExperimentDataset:
     """
     Exp 2 — Sudden Shift.
     Steep sigmoid transitions between semantically distant topics.
     """
-    logger.info(f"Building Sudden Shift: {total_queries} queries, k={steepness}")
-    wow = _load_wow("validation")
+    logger.info(f"Building Sudden Shift: {total_queries} queries, k={steepness}, pool_size={pool_size}")
+    wow = _load_wow(wow_split)
     if topics is None:
-        topics = _select_topics(wow, 5, preferred=DIVERSE_TOPICS, seed=seed)
+        topics = _select_topics(wow, 10, preferred=DIVERSE_TOPICS, seed=seed)
     logger.info(f"Topics: {topics}")
 
     tq, td = _extract_topic_data(wow, topics)
@@ -400,7 +405,7 @@ def build_sudden_shift(
     stream, slog = _build_stream(schedule, tq, total_queries, seed)
 
     gold_ids = {gid for q in stream for gid in q.gold_doc_ids}
-    pool = _merge_pool(td, gold_doc_ids=gold_ids, seed=seed)
+    pool = _merge_pool(td, gold_doc_ids=gold_ids, max_total=pool_size, seed=seed)
     logger.info(f"Sudden Shift: {len(stream)} queries, {len(pool)} pool docs")
     return ExperimentDataset(
         name="sudden_shift", description=f"Sigmoid shift k={steepness}",
@@ -416,6 +421,8 @@ def build_cyclic_return(
     n_cycles: int = 2,
     sigma: float = 0.08,
     seed: int = 42,
+    pool_size: int = 5000,
+    wow_split: str = "validation",
 ) -> ExperimentDataset:
     """
     Exp 3 — Cyclic Return.
@@ -425,14 +432,15 @@ def build_cyclic_return(
                 f"cycles={n_cycles}, sigma={sigma}")
     wow = _load_wow("validation")
     if topics is None:
-        topics = _select_topics(wow, 3, preferred=CYCLE_TOPICS, seed=seed)
+        topics = _select_topics(wow, 5, preferred=CYCLE_TOPICS, seed=seed)
     logger.info(f"Topics: {topics}")
 
     tq, td = _extract_topic_data(wow, topics)
     schedule = CyclicSchedule(topics, n_cycles=n_cycles, sigma=sigma)
     stream, slog = _build_stream(schedule, tq, total_queries, seed)
 
-    pool = _merge_pool(td)
+    gold_ids = {gid for q in stream for gid in q.gold_doc_ids}
+    pool = _merge_pool(td, gold_doc_ids=gold_ids, max_total=pool_size, seed=seed)
     logger.info(f"Cyclic Return: {len(stream)} queries, {len(pool)} pool docs, "
                 f"pattern={'->'.join(topics)} x{n_cycles}")
     return ExperimentDataset(
@@ -578,7 +586,7 @@ def _hotpotqa_item_to_query_and_docs(
 def build_hotpotqa_entity_walk(
     total_queries: int = 400,
     seed: int = 42,
-    max_pool: int = 5000,
+    max_pool: int = 50000,
 ) -> ExperimentDataset:
     """
     HotpotQA: entity-graph greedy walk.
@@ -665,16 +673,22 @@ def _merge_pool(
         merged = gold + other[:budget]
         logger.info(f"Pool subsampled: {len(merged)} docs "
                      f"({len(gold)} gold kept, {min(budget, len(other))} sampled)")
+
+    # 打散顺序，避免初始 KB 取 pool[:budget] 时的 topic 偏倚
+    rng_shuffle = random.Random(seed)
+    rng_shuffle.shuffle(merged)
     return merged
 
 
 def build_all_datasets(
     seed: int = 42,
     total_queries: int = 300,
+    pool_size: int = 5000,
+    wow_split: str = "validation",
 ) -> Dict[str, ExperimentDataset]:
     return {
-        "gradual_drift": build_gradual_drift(total_queries=total_queries, seed=seed),
-        "sudden_shift":  build_sudden_shift(total_queries=total_queries, seed=seed),
-        "cyclic_return":  build_cyclic_return(total_queries=total_queries, seed=seed),
-        "hotpotqa_walk":  build_hotpotqa_entity_walk(total_queries=total_queries, seed=seed),
+        "gradual_drift": build_gradual_drift(total_queries=total_queries, seed=seed, pool_size=pool_size, wow_split=wow_split),
+        "sudden_shift":  build_sudden_shift(total_queries=total_queries, seed=seed, pool_size=pool_size, wow_split=wow_split),
+        "cyclic_return":  build_cyclic_return(total_queries=total_queries, seed=seed, pool_size=pool_size, wow_split=wow_split),
+        "hotpotqa_walk":  build_hotpotqa_entity_walk(total_queries=total_queries, seed=seed, max_pool=pool_size),
     }

@@ -1,0 +1,2187 @@
+{
+  "QARC": {
+    "method": "QARC",
+    "experiment": "cyclic_return",
+    "total_queries": 400,
+    "total_time_s": 11.53,
+    "avg_recall@k": 0.2098,
+    "avg_gold_in_kb": 0.2508,
+    "avg_topic_alignment": 0.7258,
+    "avg_retrieval_sim": 0.6688,
+    "adaptation_speed": 0.78,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Pizza": 0.45,
+          "Physical fitness": 0.4,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.7277,
+        "avg_sim": 0.6469,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.24,
+          "Chronic fatigue syndrome": 0.12,
+          "Baking": 0.22,
+          "Pizza": 0.14,
+          "Physical fitness": 0.28
+        },
+        "latency_ms": 61.9
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Pizza": 0.55,
+          "Physical fitness": 0.3,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.8131,
+        "avg_sim": 0.6939,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.18,
+          "Chronic fatigue syndrome": 0.12,
+          "Baking": 0.18,
+          "Pizza": 0.24,
+          "Physical fitness": 0.28
+        },
+        "latency_ms": 71.3
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Physical fitness": 0.2,
+          "Obesity": 0.45,
+          "Pizza": 0.35
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.943,
+        "avg_sim": 0.6963,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.12,
+          "Baking": 0.04,
+          "Pizza": 0.2,
+          "Physical fitness": 0.24
+        },
+        "latency_ms": 51.0
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Physical fitness": 0.1,
+          "Obesity": 0.5,
+          "Pizza": 0.2,
+          "Baking": 0.2
+        },
+        "recall@k": 0.0625,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.8918,
+        "avg_sim": 0.7011,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.12,
+          "Baking": 0.04,
+          "Pizza": 0.2,
+          "Physical fitness": 0.24
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Obesity": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.9116,
+        "avg_sim": 0.6585,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.48,
+          "Baking": 0.24,
+          "Physical fitness": 0.12,
+          "Pizza": 0.04,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 75.7
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Obesity": 0.45,
+          "Baking": 0.45,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.2778,
+        "gold_in_kb": 0.3889,
+        "topic_align": 0.9189,
+        "avg_sim": 0.6686,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.48,
+          "Baking": 0.24,
+          "Physical fitness": 0.12,
+          "Pizza": 0.04,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Baking": 0.45,
+          "Obesity": 0.1,
+          "Physical fitness": 0.1
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.6336,
+        "avg_sim": 0.6786,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.48,
+          "Baking": 0.24,
+          "Physical fitness": 0.12,
+          "Pizza": 0.04,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.4,
+          "Obesity": 0.1,
+          "Physical fitness": 0.25,
+          "Baking": 0.25
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.0526,
+        "topic_align": 0.6069,
+        "avg_sim": 0.6692,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.48,
+          "Baking": 0.24,
+          "Physical fitness": 0.12,
+          "Pizza": 0.04,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.45,
+          "Physical fitness": 0.35
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.4224,
+        "avg_sim": 0.6787,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.48,
+          "Baking": 0.24,
+          "Physical fitness": 0.12,
+          "Pizza": 0.04,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Physical fitness": 0.5,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.3
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.7231,
+        "avg_sim": 0.6492,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Baking": 0.18,
+          "Physical fitness": 0.32,
+          "Pizza": 0.14,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 95.5
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Physical fitness": 0.6,
+          "Pizza": 0.15,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.7621,
+        "avg_sim": 0.6678,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Baking": 0.18,
+          "Physical fitness": 0.32,
+          "Pizza": 0.14,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Pizza": 0.6,
+          "Physical fitness": 0.2,
+          "Obesity": 0.1,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.5805,
+        "avg_sim": 0.6794,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Baking": 0.18,
+          "Physical fitness": 0.32,
+          "Pizza": 0.14,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Physical fitness": 0.25,
+          "Pizza": 0.45,
+          "Obesity": 0.3
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.779,
+        "avg_sim": 0.6695,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Baking": 0.18,
+          "Physical fitness": 0.32,
+          "Pizza": 0.14,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Pizza": 0.4,
+          "Obesity": 0.45,
+          "Baking": 0.15
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.8021,
+        "avg_sim": 0.6438,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Baking": 0.18,
+          "Physical fitness": 0.26,
+          "Pizza": 0.18,
+          "Chronic fatigue syndrome": 0.06
+        },
+        "latency_ms": 86.1
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Obesity": 0.35,
+          "Pizza": 0.2,
+          "Physical fitness": 0.05,
+          "Baking": 0.4
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.8371,
+        "avg_sim": 0.6565,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Baking": 0.18,
+          "Physical fitness": 0.26,
+          "Pizza": 0.18,
+          "Chronic fatigue syndrome": 0.06
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Obesity": 0.25,
+          "Chronic fatigue syndrome": 0.35
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6032,
+        "avg_sim": 0.6823,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Baking": 0.18,
+          "Physical fitness": 0.26,
+          "Pizza": 0.18,
+          "Chronic fatigue syndrome": 0.06
+        },
+        "latency_ms": 1.9
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.4,
+          "Baking": 0.2
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.6417,
+        "avg_sim": 0.673,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Baking": 0.18,
+          "Physical fitness": 0.26,
+          "Pizza": 0.18,
+          "Chronic fatigue syndrome": 0.06
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.6,
+          "Baking": 0.35,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7135,
+        "avg_sim": 0.6537,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.3,
+          "Baking": 0.22,
+          "Physical fitness": 0.14,
+          "Pizza": 0.1,
+          "Chronic fatigue syndrome": 0.24
+        },
+        "latency_ms": 108.8
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Baking": 0.25,
+          "Chronic fatigue syndrome": 0.75
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6258,
+        "avg_sim": 0.6502,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.3,
+          "Baking": 0.22,
+          "Physical fitness": 0.14,
+          "Pizza": 0.1,
+          "Chronic fatigue syndrome": 0.24
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.5781,
+        "avg_sim": 0.6589,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.3,
+          "Baking": 0.22,
+          "Physical fitness": 0.14,
+          "Pizza": 0.1,
+          "Chronic fatigue syndrome": 0.24
+        },
+        "latency_ms": 2.0
+      }
+    ]
+  },
+  "ComRAG": {
+    "method": "ComRAG",
+    "experiment": "cyclic_return",
+    "total_queries": 400,
+    "total_time_s": 0.25,
+    "avg_recall@k": 0.1264,
+    "avg_gold_in_kb": 0.1367,
+    "avg_topic_alignment": 0.6605,
+    "avg_retrieval_sim": 0.6606,
+    "adaptation_speed": 0.56,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Pizza": 0.45,
+          "Physical fitness": 0.4,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.509,
+        "avg_sim": 0.6469,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Pizza": 0.55,
+          "Physical fitness": 0.3,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.4641,
+        "avg_sim": 0.67,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Physical fitness": 0.2,
+          "Obesity": 0.45,
+          "Pizza": 0.35
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5924,
+        "avg_sim": 0.6694,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Physical fitness": 0.1,
+          "Obesity": 0.5,
+          "Pizza": 0.2,
+          "Baking": 0.2
+        },
+        "recall@k": 0.0625,
+        "gold_in_kb": 0.0625,
+        "topic_align": 0.7655,
+        "avg_sim": 0.6945,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.3
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Obesity": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.5732,
+        "avg_sim": 0.6452,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.3
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Obesity": 0.45,
+          "Baking": 0.45,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.845,
+        "avg_sim": 0.6575,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.4
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Baking": 0.45,
+          "Obesity": 0.1,
+          "Physical fitness": 0.1
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.8854,
+        "avg_sim": 0.6761,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.4
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.4,
+          "Obesity": 0.1,
+          "Physical fitness": 0.25,
+          "Baking": 0.25
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.8489,
+        "avg_sim": 0.6752,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.5
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.45,
+          "Physical fitness": 0.35
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.0526,
+        "topic_align": 0.7248,
+        "avg_sim": 0.6624,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.6
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Physical fitness": 0.5,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.3
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5328,
+        "avg_sim": 0.6487,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.6
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Physical fitness": 0.6,
+          "Pizza": 0.15,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.549,
+        "avg_sim": 0.6596,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.6
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Pizza": 0.6,
+          "Physical fitness": 0.2,
+          "Obesity": 0.1,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.4418,
+        "avg_sim": 0.6504,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.6
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Physical fitness": 0.25,
+          "Pizza": 0.45,
+          "Obesity": 0.3
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.5512,
+        "avg_sim": 0.6438,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.7
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Pizza": 0.4,
+          "Obesity": 0.45,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.6345,
+        "avg_sim": 0.6272,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.8
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Obesity": 0.35,
+          "Pizza": 0.2,
+          "Physical fitness": 0.05,
+          "Baking": 0.4
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.8642,
+        "avg_sim": 0.6515,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.8
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Obesity": 0.25,
+          "Chronic fatigue syndrome": 0.35
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.8818,
+        "avg_sim": 0.6862,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 1.0
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.4,
+          "Baking": 0.2
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.786,
+        "avg_sim": 0.671,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.9
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.6,
+          "Baking": 0.35,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.6983,
+        "avg_sim": 0.6542,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 1.0
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Baking": 0.25,
+          "Chronic fatigue syndrome": 0.75
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.5726,
+        "avg_sim": 0.6536,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 1.0
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.4903,
+        "avg_sim": 0.6686,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 1.0
+      }
+    ]
+  },
+  "ERASE": {
+    "method": "ERASE",
+    "experiment": "cyclic_return",
+    "total_queries": 400,
+    "total_time_s": 0.1,
+    "avg_recall@k": 0.2161,
+    "avg_gold_in_kb": 0.3106,
+    "avg_topic_alignment": 0.6618,
+    "avg_retrieval_sim": 0.6517,
+    "adaptation_speed": 0.78,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Pizza": 0.45,
+          "Physical fitness": 0.4,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.6242,
+        "avg_sim": 0.6465,
+        "kb_size": 50,
+        "kb_topics": {
+          "Baking": 0.3,
+          "Obesity": 0.18,
+          "Chronic fatigue syndrome": 0.16,
+          "Pizza": 0.16,
+          "Physical fitness": 0.2
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Pizza": 0.55,
+          "Physical fitness": 0.3,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6485,
+        "avg_sim": 0.6778,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.18,
+          "Baking": 0.28,
+          "Chronic fatigue syndrome": 0.14,
+          "Pizza": 0.18,
+          "Physical fitness": 0.22
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Physical fitness": 0.2,
+          "Obesity": 0.45,
+          "Pizza": 0.35
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.7788,
+        "avg_sim": 0.6666,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.2,
+          "Pizza": 0.22,
+          "Physical fitness": 0.24,
+          "Baking": 0.22,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Physical fitness": 0.1,
+          "Obesity": 0.5,
+          "Pizza": 0.2,
+          "Baking": 0.2
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.3125,
+        "topic_align": 0.8151,
+        "avg_sim": 0.6701,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.22,
+          "Pizza": 0.24,
+          "Physical fitness": 0.24,
+          "Baking": 0.18,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Obesity": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.6499,
+        "avg_sim": 0.6305,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Pizza": 0.22,
+          "Physical fitness": 0.24,
+          "Baking": 0.18,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Obesity": 0.45,
+          "Baking": 0.45,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.6376,
+        "avg_sim": 0.6445,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Pizza": 0.28,
+          "Physical fitness": 0.24,
+          "Baking": 0.12,
+          "Chronic fatigue syndrome": 0.08
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Baking": 0.45,
+          "Obesity": 0.1,
+          "Physical fitness": 0.1
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.5199,
+        "avg_sim": 0.6544,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.24,
+          "Pizza": 0.28,
+          "Physical fitness": 0.24,
+          "Baking": 0.12,
+          "Chronic fatigue syndrome": 0.12
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.4,
+          "Obesity": 0.1,
+          "Physical fitness": 0.25,
+          "Baking": 0.25
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.7278,
+        "avg_sim": 0.659,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.2,
+          "Pizza": 0.26,
+          "Physical fitness": 0.24,
+          "Baking": 0.12,
+          "Chronic fatigue syndrome": 0.18
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.45,
+          "Physical fitness": 0.35
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.6665,
+        "avg_sim": 0.6509,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.22,
+          "Pizza": 0.24,
+          "Physical fitness": 0.24,
+          "Baking": 0.14,
+          "Chronic fatigue syndrome": 0.16
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Physical fitness": 0.5,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.3
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.8531,
+        "avg_sim": 0.6438,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.22,
+          "Pizza": 0.22,
+          "Physical fitness": 0.3,
+          "Baking": 0.1,
+          "Chronic fatigue syndrome": 0.16
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Physical fitness": 0.6,
+          "Pizza": 0.15,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.8397,
+        "avg_sim": 0.6537,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.22,
+          "Pizza": 0.22,
+          "Physical fitness": 0.3,
+          "Baking": 0.08,
+          "Chronic fatigue syndrome": 0.18
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Pizza": 0.6,
+          "Physical fitness": 0.2,
+          "Obesity": 0.1,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.7535,
+        "avg_sim": 0.6706,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.2,
+          "Pizza": 0.22,
+          "Physical fitness": 0.32,
+          "Baking": 0.08,
+          "Chronic fatigue syndrome": 0.18
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Physical fitness": 0.25,
+          "Pizza": 0.45,
+          "Obesity": 0.3
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.45,
+        "topic_align": 0.8562,
+        "avg_sim": 0.6665,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.24,
+          "Pizza": 0.22,
+          "Physical fitness": 0.28,
+          "Baking": 0.08,
+          "Chronic fatigue syndrome": 0.18
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Pizza": 0.4,
+          "Obesity": 0.45,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.7168,
+        "avg_sim": 0.6283,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.26,
+          "Pizza": 0.2,
+          "Physical fitness": 0.3,
+          "Baking": 0.1,
+          "Chronic fatigue syndrome": 0.14
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Obesity": 0.35,
+          "Pizza": 0.2,
+          "Physical fitness": 0.05,
+          "Baking": 0.4
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.6674,
+        "avg_sim": 0.6281,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Pizza": 0.26,
+          "Physical fitness": 0.28,
+          "Chronic fatigue syndrome": 0.1,
+          "Baking": 0.04
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Obesity": 0.25,
+          "Chronic fatigue syndrome": 0.35
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.4267,
+        "avg_sim": 0.6601,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.3,
+          "Pizza": 0.28,
+          "Physical fitness": 0.28,
+          "Chronic fatigue syndrome": 0.08,
+          "Baking": 0.06
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.4,
+          "Baking": 0.2
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.6262,
+        "avg_sim": 0.6645,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.32,
+          "Pizza": 0.3,
+          "Physical fitness": 0.2,
+          "Chronic fatigue syndrome": 0.12,
+          "Baking": 0.06
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.6,
+          "Baking": 0.35,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.4375,
+        "topic_align": 0.465,
+        "avg_sim": 0.6148,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.3,
+          "Pizza": 0.26,
+          "Physical fitness": 0.16,
+          "Chronic fatigue syndrome": 0.16,
+          "Baking": 0.12
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Baking": 0.25,
+          "Chronic fatigue syndrome": 0.75
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.55,
+        "topic_align": 0.4854,
+        "avg_sim": 0.638,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Pizza": 0.26,
+          "Physical fitness": 0.14,
+          "Chronic fatigue syndrome": 0.2,
+          "Baking": 0.12
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.477,
+        "avg_sim": 0.6644,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Pizza": 0.24,
+          "Physical fitness": 0.14,
+          "Chronic fatigue syndrome": 0.2,
+          "Baking": 0.14
+        },
+        "latency_ms": 0.2
+      }
+    ]
+  },
+  "StaticKB": {
+    "method": "StaticKB",
+    "experiment": "cyclic_return",
+    "total_queries": 400,
+    "total_time_s": 0.02,
+    "avg_recall@k": 0.1264,
+    "avg_gold_in_kb": 0.1367,
+    "avg_topic_alignment": 0.6605,
+    "avg_retrieval_sim": 0.6606,
+    "adaptation_speed": 0.56,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Pizza": 0.45,
+          "Physical fitness": 0.4,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.509,
+        "avg_sim": 0.6469,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Pizza": 0.55,
+          "Physical fitness": 0.3,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.4641,
+        "avg_sim": 0.67,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Physical fitness": 0.2,
+          "Obesity": 0.45,
+          "Pizza": 0.35
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5924,
+        "avg_sim": 0.6694,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Physical fitness": 0.1,
+          "Obesity": 0.5,
+          "Pizza": 0.2,
+          "Baking": 0.2
+        },
+        "recall@k": 0.0625,
+        "gold_in_kb": 0.0625,
+        "topic_align": 0.7655,
+        "avg_sim": 0.6945,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Obesity": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.5732,
+        "avg_sim": 0.6452,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Obesity": 0.45,
+          "Baking": 0.45,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.845,
+        "avg_sim": 0.6575,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Baking": 0.45,
+          "Obesity": 0.1,
+          "Physical fitness": 0.1
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.8854,
+        "avg_sim": 0.6761,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.4,
+          "Obesity": 0.1,
+          "Physical fitness": 0.25,
+          "Baking": 0.25
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.8489,
+        "avg_sim": 0.6752,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.45,
+          "Physical fitness": 0.35
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.0526,
+        "topic_align": 0.7248,
+        "avg_sim": 0.6624,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Physical fitness": 0.5,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.3
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5328,
+        "avg_sim": 0.6487,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Physical fitness": 0.6,
+          "Pizza": 0.15,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.549,
+        "avg_sim": 0.6596,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Pizza": 0.6,
+          "Physical fitness": 0.2,
+          "Obesity": 0.1,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.4418,
+        "avg_sim": 0.6504,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Physical fitness": 0.25,
+          "Pizza": 0.45,
+          "Obesity": 0.3
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.5512,
+        "avg_sim": 0.6438,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Pizza": 0.4,
+          "Obesity": 0.45,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.6345,
+        "avg_sim": 0.6272,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Obesity": 0.35,
+          "Pizza": 0.2,
+          "Physical fitness": 0.05,
+          "Baking": 0.4
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.8642,
+        "avg_sim": 0.6515,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Obesity": 0.25,
+          "Chronic fatigue syndrome": 0.35
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.8818,
+        "avg_sim": 0.6862,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.4,
+          "Baking": 0.2
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.786,
+        "avg_sim": 0.671,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.6,
+          "Baking": 0.35,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.6983,
+        "avg_sim": 0.6542,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Baking": 0.25,
+          "Chronic fatigue syndrome": 0.75
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.5726,
+        "avg_sim": 0.6536,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.4903,
+        "avg_sim": 0.6686,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.32,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      }
+    ]
+  },
+  "RandomKB": {
+    "method": "RandomKB",
+    "experiment": "cyclic_return",
+    "total_queries": 400,
+    "total_time_s": 0.03,
+    "avg_recall@k": 0.0104,
+    "avg_gold_in_kb": 0.0132,
+    "avg_topic_alignment": 0.6724,
+    "avg_retrieval_sim": 0.5661,
+    "adaptation_speed": 0.11,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Pizza": 0.45,
+          "Physical fitness": 0.4,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.6055,
+        "avg_sim": 0.6127,
+        "kb_size": 50,
+        "kb_topics": {
+          "Baking": 0.24,
+          "Physical fitness": 0.2,
+          "Chronic fatigue syndrome": 0.18,
+          "Pizza": 0.12,
+          "Obesity": 0.26
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Pizza": 0.55,
+          "Physical fitness": 0.3,
+          "Obesity": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.4943,
+        "avg_sim": 0.5773,
+        "kb_size": 50,
+        "kb_topics": {
+          "Pizza": 0.1,
+          "Baking": 0.24,
+          "Chronic fatigue syndrome": 0.22,
+          "Physical fitness": 0.18,
+          "Obesity": 0.26
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Physical fitness": 0.2,
+          "Obesity": 0.45,
+          "Pizza": 0.35
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.0526,
+        "topic_align": 0.7463,
+        "avg_sim": 0.576,
+        "kb_size": 50,
+        "kb_topics": {
+          "Baking": 0.16,
+          "Chronic fatigue syndrome": 0.26,
+          "Obesity": 0.26,
+          "Pizza": 0.18,
+          "Physical fitness": 0.14
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Physical fitness": 0.1,
+          "Obesity": 0.5,
+          "Pizza": 0.2,
+          "Baking": 0.2
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7192,
+        "avg_sim": 0.5397,
+        "kb_size": 50,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.18,
+          "Physical fitness": 0.26,
+          "Pizza": 0.14,
+          "Baking": 0.24,
+          "Obesity": 0.18
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Obesity": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.714,
+        "avg_sim": 0.5947,
+        "kb_size": 50,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.16,
+          "Physical fitness": 0.2,
+          "Baking": 0.22,
+          "Obesity": 0.3,
+          "Pizza": 0.12
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Obesity": 0.45,
+          "Baking": 0.45,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.8221,
+        "avg_sim": 0.5757,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.24,
+          "Baking": 0.22,
+          "Chronic fatigue syndrome": 0.1,
+          "Obesity": 0.32,
+          "Pizza": 0.12
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Baking": 0.45,
+          "Obesity": 0.1,
+          "Physical fitness": 0.1
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.6895,
+        "avg_sim": 0.5442,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.3,
+          "Baking": 0.24,
+          "Pizza": 0.18,
+          "Obesity": 0.18,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.4,
+          "Obesity": 0.1,
+          "Physical fitness": 0.25,
+          "Baking": 0.25
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7491,
+        "avg_sim": 0.5722,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.28,
+          "Pizza": 0.1,
+          "Baking": 0.22,
+          "Physical fitness": 0.3,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.45,
+          "Physical fitness": 0.35
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7966,
+        "avg_sim": 0.5582,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.26,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.06,
+          "Baking": 0.24,
+          "Obesity": 0.24
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Physical fitness": 0.5,
+          "Chronic fatigue syndrome": 0.2,
+          "Pizza": 0.3
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.8214,
+        "avg_sim": 0.5508,
+        "kb_size": 50,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.16,
+          "Physical fitness": 0.42,
+          "Baking": 0.24,
+          "Obesity": 0.1,
+          "Pizza": 0.08
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Physical fitness": 0.6,
+          "Pizza": 0.15,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.6742,
+        "avg_sim": 0.6037,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Obesity": 0.22,
+          "Baking": 0.12,
+          "Pizza": 0.26,
+          "Chronic fatigue syndrome": 0.22
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Pizza": 0.6,
+          "Physical fitness": 0.2,
+          "Obesity": 0.1,
+          "Chronic fatigue syndrome": 0.1
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.5461,
+        "avg_sim": 0.5326,
+        "kb_size": 50,
+        "kb_topics": {
+          "Baking": 0.2,
+          "Chronic fatigue syndrome": 0.28,
+          "Physical fitness": 0.26,
+          "Obesity": 0.14,
+          "Pizza": 0.12
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Physical fitness": 0.25,
+          "Pizza": 0.45,
+          "Obesity": 0.3
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7228,
+        "avg_sim": 0.5984,
+        "kb_size": 50,
+        "kb_topics": {
+          "Pizza": 0.12,
+          "Physical fitness": 0.28,
+          "Chronic fatigue syndrome": 0.14,
+          "Baking": 0.2,
+          "Obesity": 0.26
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Pizza": 0.4,
+          "Obesity": 0.45,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7454,
+        "avg_sim": 0.5614,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.34,
+          "Chronic fatigue syndrome": 0.18,
+          "Physical fitness": 0.22,
+          "Pizza": 0.12,
+          "Baking": 0.14
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Obesity": 0.35,
+          "Pizza": 0.2,
+          "Physical fitness": 0.05,
+          "Baking": 0.4
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.7716,
+        "avg_sim": 0.5422,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.32,
+          "Pizza": 0.08,
+          "Chronic fatigue syndrome": 0.1,
+          "Baking": 0.22,
+          "Obesity": 0.28
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Obesity": 0.25,
+          "Chronic fatigue syndrome": 0.35
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7347,
+        "avg_sim": 0.5927,
+        "kb_size": 50,
+        "kb_topics": {
+          "Pizza": 0.1,
+          "Obesity": 0.22,
+          "Baking": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Physical fitness": 0.28
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Obesity": 0.4,
+          "Chronic fatigue syndrome": 0.4,
+          "Baking": 0.2
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.7286,
+        "avg_sim": 0.5402,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.22,
+          "Chronic fatigue syndrome": 0.16,
+          "Baking": 0.32,
+          "Obesity": 0.2,
+          "Pizza": 0.1
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.6,
+          "Baking": 0.35,
+          "Obesity": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.5126,
+        "avg_sim": 0.5626,
+        "kb_size": 50,
+        "kb_topics": {
+          "Obesity": 0.2,
+          "Physical fitness": 0.36,
+          "Baking": 0.16,
+          "Pizza": 0.1,
+          "Chronic fatigue syndrome": 0.18
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Baking": 0.25,
+          "Chronic fatigue syndrome": 0.75
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.583,
+        "avg_sim": 0.551,
+        "kb_size": 50,
+        "kb_topics": {
+          "Physical fitness": 0.18,
+          "Chronic fatigue syndrome": 0.2,
+          "Obesity": 0.26,
+          "Pizza": 0.1,
+          "Baking": 0.26
+        },
+        "latency_ms": 0.0
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.85,
+          "Baking": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.0,
+        "topic_align": 0.2712,
+        "avg_sim": 0.5352,
+        "kb_size": 50,
+        "kb_topics": {
+          "Baking": 0.32,
+          "Obesity": 0.22,
+          "Chronic fatigue syndrome": 0.08,
+          "Pizza": 0.1,
+          "Physical fitness": 0.28
+        },
+        "latency_ms": 0.0
+      }
+    ]
+  }
+}

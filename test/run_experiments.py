@@ -56,11 +56,11 @@ def _make_methods(kb_budget: int, window_size: int):
     ]
 
 
-def run_gradual_drift(embedder, kb_budget, window_size, total_queries, out_dir):
+def run_gradual_drift(embedder, kb_budget, window_size, total_queries, out_dir, pool_size=50000, wow_split='train'):
     logger.info("\n" + "=" * 80)
     logger.info("EXPERIMENT 1: Gradual Drift (Gaussian schedule)")
     logger.info("=" * 80)
-    ds = build_gradual_drift(total_queries=total_queries)
+    ds = build_gradual_drift(total_queries=total_queries, pool_size=pool_size, wow_split=wow_split)
     methods = _make_methods(kb_budget, window_size)
     return run_comparison(
         ds, methods, embedder,
@@ -69,11 +69,11 @@ def run_gradual_drift(embedder, kb_budget, window_size, total_queries, out_dir):
     )
 
 
-def run_sudden_shift(embedder, kb_budget, window_size, total_queries, out_dir):
+def run_sudden_shift(embedder, kb_budget, window_size, total_queries, out_dir, pool_size=50000, wow_split='train'):
     logger.info("\n" + "=" * 80)
     logger.info("EXPERIMENT 2: Sudden Shift (Sigmoid schedule)")
     logger.info("=" * 80)
-    ds = build_sudden_shift(total_queries=total_queries)
+    ds = build_sudden_shift(total_queries=total_queries, pool_size=pool_size, wow_split=wow_split)
     methods = _make_methods(kb_budget, window_size)
     return run_comparison(
         ds, methods, embedder,
@@ -82,11 +82,11 @@ def run_sudden_shift(embedder, kb_budget, window_size, total_queries, out_dir):
     )
 
 
-def run_cyclic_return(embedder, kb_budget, window_size, total_queries, out_dir):
+def run_cyclic_return(embedder, kb_budget, window_size, total_queries, out_dir, pool_size=50000, wow_split='train'):
     logger.info("\n" + "=" * 80)
     logger.info("EXPERIMENT 3: Cyclic Return (Periodic schedule)")
     logger.info("=" * 80)
-    ds = build_cyclic_return(total_queries=total_queries)
+    ds = build_cyclic_return(total_queries=total_queries, pool_size=pool_size, wow_split=wow_split)
     methods = _make_methods(kb_budget, window_size)
     return run_comparison(
         ds, methods, embedder,
@@ -97,11 +97,11 @@ def run_cyclic_return(embedder, kb_budget, window_size, total_queries, out_dir):
 
 
 
-def run_hotpotqa_walk(embedder, kb_budget, window_size, total_queries, out_dir):
+def run_hotpotqa_walk(embedder, kb_budget, window_size, total_queries, out_dir, pool_size=50000):
     logger.info("\n" + "=" * 80)
     logger.info("EXPERIMENT 4: HotpotQA Entity Walk (no hard classification)")
     logger.info("=" * 80)
-    ds = build_hotpotqa_entity_walk(total_queries=total_queries)
+    ds = build_hotpotqa_entity_walk(total_queries=total_queries, max_pool=pool_size)
     methods = _make_methods(kb_budget, window_size)
     return run_comparison(
         ds, methods, embedder,
@@ -129,13 +129,20 @@ def main():
     parser.add_argument("--kb-budget", type=int, default=50)
     parser.add_argument("--window-size", type=int, default=20)
     parser.add_argument("--queries", type=int, default=None,
-                        help="Total queries per experiment (default: 200 quick / 400 full)")
+                        help="Total queries per experiment (default: 200 quick / 5000 full)")
+    parser.add_argument("--pool-size", type=int, default=None,
+                        help="Document pool size (default: 5000 quick / 50000 full)")
+    parser.add_argument("--wow-split", type=str, default=None,
+                        choices=["validation", "train"],
+                        help="WoW dataset split (default: validation quick / train full)")
     parser.add_argument("--output-dir", type=str, default=None)
     args = parser.parse_args()
 
     # Defaults
     use_random = args.quick or not args.full
-    total_queries = args.queries or (200 if use_random else 400)
+    total_queries = args.queries or (200 if use_random else 5000)
+    pool_size = args.pool_size or (5000 if use_random else 50000)
+    wow_split = args.wow_split or ("validation" if use_random else "train")
     out_dir = args.output_dir or os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "results")
 
@@ -145,20 +152,28 @@ def main():
         datefmt="%H:%M:%S",
     )
 
+    device = 'cpu' if use_random else 'cuda'
+
     logger.info(f"Mode: {'quick (random emb)' if use_random else 'full (real emb)'}")
     logger.info(f"KB budget: {args.kb_budget}, Window: {args.window_size}, "
-                f"Queries: {total_queries}")
+                f"Queries: {total_queries}, Pool: {pool_size}")
+    logger.info(f"WoW split: {wow_split}, Device: {device}")
     logger.info(f"Output: {out_dir}")
 
-    embedder = EmbeddingHelper(use_random=use_random, device='cpu')
+    embedder = EmbeddingHelper(use_random=use_random, device=device)
 
     all_results = {}
     exps_to_run = [args.exp] if args.exp else list(EXPERIMENTS.keys())
 
     for exp_name in exps_to_run:
         fn = EXPERIMENTS[exp_name]
-        all_results[exp_name] = fn(
-            embedder, args.kb_budget, args.window_size, total_queries, out_dir)
+        kwargs = dict(embedder=embedder, kb_budget=args.kb_budget,
+                      window_size=args.window_size,
+                      total_queries=total_queries, out_dir=out_dir,
+                      pool_size=pool_size)
+        if exp_name != "hotpotqa_walk":
+            kwargs["wow_split"] = wow_split
+        all_results[exp_name] = fn(**kwargs)
 
     # Final summary
     print("\n" + "=" * 85)
