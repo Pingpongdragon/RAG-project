@@ -103,8 +103,8 @@ class QARCPipeline:
             gap_k=cfg.agent_gap_k,
             lambda_mild=cfg.agent_lambda_mild,
             lambda_aggressive=cfg.agent_lambda_aggressive,
-            eta_mild=cfg.agent_eta_mild,
-            eta_aggressive=cfg.agent_eta_aggressive,
+
+
             cooldown_windows=cfg.agent_cooldown_windows,
             recalibrate_after_n_drifts=cfg.agent_recalibrate_after,
         )
@@ -143,7 +143,6 @@ class QARCPipeline:
                 query_embeddings=X,
                 centroids=centroids,
                 weights=weights,
-                eta=0.05,
             )
             # 记入 query 历史
             for emb in X:
@@ -316,7 +315,6 @@ class QARCPipeline:
                 centroids=centroids,
                 weights=weights,
                 lambda_max=decision.lambda_max,
-                eta=decision.eta,
             )
             self.total_recurations += 1
 

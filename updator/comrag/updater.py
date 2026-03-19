@@ -145,9 +145,9 @@ class ComRAGUpdater:
     @staticmethod
     def _default_scorer(question: str, answer: str, reference: str) -> float:
         """
-        默认评分器 — 论文 Section 5.4 使用 BERT-Score F1。
-
-        如果 bert_score 未安装，回退到简单的词重叠 F1。
+        Default scoring using BERT-Score (paper Section 5.4).
+        
+        Falls back to simple overlap ratio if bert_score not available.
         """
         try:
             from bert_score import score as bert_score

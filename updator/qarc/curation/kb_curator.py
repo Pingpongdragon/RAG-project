@@ -108,8 +108,8 @@ class DocumentPool:
     在生产环境中，这里会封装 FAISS 索引。
     为清晰起见，当前使用暴力 cosine similarity 检索。
 
-    文档池 D_pool 通常很大（数千~数万篇），
-    而 KB K 只从中选取一小部分（几十~几百篇）。
+    文档池 D_pool 通常很大，
+    而 KB K 只从中选取一小部分
     """
 
     def __init__(self):
@@ -279,24 +279,14 @@ def submodular_objective(
     selected_embs: np.ndarray,
     centroids: np.ndarray,
     weights: np.ndarray,
-    pool_embs: np.ndarray,
-    eta: float = 0.1,
 ) -> float:
     """
-    组合子模目标函数:
-      f(S) = f_interest(S) + η · f_diversity(S)
+    纯兴趣驱动子模目标函数:
+      f(S) = f_interest(S)
 
-    η 的作用:
-      - η = 0:    纯兴趣匹配 (Phase 1 Explore 用这个，快速对齐兴趣)
-      - η = 0.1:  兴趣 + 多样性 (Phase 2 Exploit 用这个，保持探索)
-      - η = 1.0:  纯多样性 (Phase 0 Bootstrap 用这个，最大覆盖)
-
-    因为 f_int 和 f_div 都是子模的，线性组合仍然是子模的，
-    所以贪心算法仍然保证 (1-1/e) 近似比。
+    贪心算法保证 (1-1/e) 近似比。
     """
-    f_int = _interest_coverage(selected_embs, centroids, weights)
-    f_div = _diversity_coverage(selected_embs, pool_embs) if eta > 0 else 0.0
-    return f_int + eta * f_div
+    return _interest_coverage(selected_embs, centroids, weights)
 
 
 # ============================================================
@@ -307,9 +297,7 @@ def greedy_submodular_select(
     candidate_docs: List[Document],
     centroids: np.ndarray,
     weights: np.ndarray,
-    pool_embs: np.ndarray,
     budget: int,
-    eta: float = 0.1,
 ) -> List[Document]:
     """
     增量贪心子模最大化 — 用增量边际增益替代全量重算。
@@ -328,9 +316,7 @@ def greedy_submodular_select(
         candidate_docs: 候选文档列表
         centroids:      (m, d) 兴趣簇中心
         weights:        (m,) 兴趣权重
-        pool_embs:      (|D_pool|, d) 文档池 embedding (多样性项用)
         budget:         最多选择的文档数
-        eta:            多样性正则化系数
 
     返回:
         选中的文档列表 (最多 budget 篇)
@@ -340,7 +326,6 @@ def greedy_submodular_select(
 
     budget = min(budget, len(candidate_docs))
     n_cand = len(candidate_docs)
-    n_pool = pool_embs.shape[0]
     m = centroids.shape[0]  # 兴趣簇数
 
     # 构建候选 embedding 矩阵 (n_cand, dim)
@@ -351,53 +336,50 @@ def greedy_submodular_select(
     # 预计算: 兴趣中心 vs 候选 (m, n_cand)
     interest_sims = centroids @ cand_embs.T
 
-    # 预计算: pool vs 候选 (n_pool, n_cand) — 多样性项用
-    if eta > 0:
-        div_sims = pool_embs @ cand_embs.T
-    else:
-        div_sims = None
-
     # 增量状态
     max_interest_sim = np.full(m, -np.inf)       # 每个兴趣簇的当前最大覆盖
-    max_div_coverage = np.full(n_pool, -np.inf)   # 每个 pool 文档的当前最大覆盖
 
     selected_indices: List[int] = []
     remaining = set(range(n_cand))
 
+    import heapq as _heapq
+
+    # 转置为行优先访问
+    interest_sims_T = interest_sims.T  # (n_cand, m)
+
+    def _compute_gain(idx):
+        int_deltas = np.maximum(0, interest_sims_T[idx] - max_interest_sim)
+        return float((weights * int_deltas).sum())
+
+    # 初始化堆
+    heap = [(-_compute_gain(i), i, -1) for i in range(n_cand)]
+    _heapq.heapify(heap)
+    selected_set = set()
+
     for step in range(budget):
-        best_gain = -np.inf
         best_idx = -1
+        best_gain = -1.0
 
-        for idx in remaining:
-            # 兴趣边际增益: Σ α_i · max(0, sim(c_i, d) - current_max_i)
-            int_deltas = np.maximum(0, interest_sims[:, idx] - max_interest_sim)
-            int_gain = float((weights * int_deltas).sum())
-
-            # 多样性边际增益
-            if div_sims is not None:
-                div_deltas = np.maximum(0, div_sims[:, idx] - max_div_coverage)
-                div_gain = float(div_deltas.mean())
-            else:
-                div_gain = 0.0
-
-            gain = int_gain + eta * div_gain
-
-            if gain > best_gain:
-                best_gain = gain
+        while heap:
+            neg_gain, idx, last_step = _heapq.heappop(heap)
+            if idx in selected_set:
+                continue
+            if last_step == step:
                 best_idx = idx
+                best_gain = -neg_gain
+                break
+            gain = _compute_gain(idx)
+            _heapq.heappush(heap, (-gain, idx, step))
 
         if best_idx < 0 or best_gain <= 0:
             break
 
         selected_indices.append(best_idx)
-        remaining.discard(best_idx)
+        selected_set.add(best_idx)
 
-        # 更新增量状态
-        max_interest_sim = np.maximum(max_interest_sim, interest_sims[:, best_idx])
-        if div_sims is not None:
-            max_div_coverage = np.maximum(max_div_coverage, div_sims[:, best_idx])
+        max_interest_sim = np.maximum(max_interest_sim, interest_sims_T[best_idx])
 
-        if step < 3 or step == budget - 1:
+        if step % 500 == 0 or step == budget - 1:
             logger.debug(
                 f"  贪心第 {step+1}/{budget} 步: "
                 f"选入 doc={candidate_docs[best_idx].doc_id}, "
@@ -527,34 +509,26 @@ class QARCKBCurator(BaseKBCurator):
         query_embeddings: np.ndarray,
         centroids: np.ndarray,
         weights: np.ndarray,
-        eta: float = 0.05,
     ) -> List[Document]:
         """
-        热启动: 利用历史查询日志初始化 KB。
-
-        与纯多样性不同，这里使用已知的兴趣模型来选择文档，
-        使得初始 KB 就已经较好地对齐了用户兴趣。
+        热启动: 利用历史查询日志初始化 KB (纯兴趣驱动)。
 
         参数:
             query_embeddings: 历史查询 embedding
             centroids:        兴趣中心
             weights:          兴趣权重
-            eta:              小的多样性项 (防止过度聚焦)
         """
         logger.info(
             f"热启动: 使用 {len(centroids)} 个历史兴趣簇选择 {self.kb_budget} 篇文档"
         )
 
         candidates = self._gather_candidates(centroids)
-        pool_embs = self.pool.get_all_embeddings()
 
         selected = greedy_submodular_select(
             candidate_docs=candidates,
             centroids=centroids,
             weights=weights,
-            pool_embs=pool_embs,
             budget=self.kb_budget,
-            eta=eta,
         )
 
         self.kb_docs.clear()
@@ -573,27 +547,19 @@ class QARCKBCurator(BaseKBCurator):
         centroids: np.ndarray,
         weights: np.ndarray,
         lambda_max: Optional[float] = None,
-        eta: float = 0.1,
     ) -> CurationResult:
         """
-        基于当前兴趣模型重新策展 KB — QARC 的核心操作。
+        基于当前兴趣模型重新策展 KB — QARC 的核心操作 (纯兴趣驱动)。
 
-        四个步骤:
+        三个步骤:
           A. 候选检索: 用每个兴趣中心去文档池中检索相似文档
-          B. 子模选择: 贪心最大化 f(S) = f_interest(S) + η·f_diversity(S)
+          B. 子模选择: 贪心最大化 f(S) = f_interest(S)
           C. 增量替换: K_ideal vs K_old 的差集，受 λ_max 限制
-          D. ERASE 一致性检查: 对新加入的文档做事实核查 (可选)
-
-        增量替换的设计意图:
-          - 不能一次换掉太多文档，否则 RAG 系统的回答质量会突然变化
-          - 通过 λ_max 控制每次最多替换 KB 的 20% (Phase 2) 或 50% (Phase 1)
-          - 优先添加边际增益最大的文档，优先移除与当前兴趣最不相关的文档
 
         参数:
             centroids:  (m, d) AutoKMeans 输出的兴趣簇中心
             weights:    (m,) 兴趣权重
             lambda_max: 替换上限 (默认用 self.lambda_max)
-            eta:        多样性正则化系数
 
         返回:
             CurationResult 包含添加/移除的文档 ID 和目标函数变化
@@ -603,7 +569,7 @@ class QARCKBCurator(BaseKBCurator):
 
         logger.info(
             f"ReCurate #{self.recuration_count}: "
-            f"{len(centroids)} 个兴趣簇, λ_max={lam:.2f}, η={eta:.2f}"
+            f"{len(centroids)} 个兴趣簇, λ_max={lam:.2f}"
         )
 
         # === A. 候选检索 ===
@@ -620,17 +586,14 @@ class QARCKBCurator(BaseKBCurator):
             )
 
         # === B. 子模选择 ===
-        # 贪心最大化: 选出"理想 KB"
-        pool_embs = self.pool.get_all_embeddings()
+        # 贪心最大化: 选出"理想 KB" (纯兴趣驱动)
         budget = max(self.kb_budget, self.kb_size)
 
         k_ideal = greedy_submodular_select(
             candidate_docs=candidates,
             centroids=centroids,
             weights=weights,
-            pool_embs=pool_embs,
             budget=budget,
-            eta=eta,
         )
 
         ideal_ids = {d.doc_id for d in k_ideal}
@@ -648,7 +611,7 @@ class QARCKBCurator(BaseKBCurator):
         if len(to_add_ids) > max_changes:
             add_candidates = [d for d in k_ideal if d.doc_id in to_add_ids]
             add_candidates = self._rank_by_marginal_gain(
-                add_candidates, centroids, weights, pool_embs, eta
+                add_candidates, centroids, weights
             )
             to_add_ids = {d.doc_id for d in add_candidates[:max_changes]}
 
@@ -673,7 +636,7 @@ class QARCKBCurator(BaseKBCurator):
 
         # 计算替换前的目标函数值
         obj_before = submodular_objective(
-            self.get_kb_embeddings(), centroids, weights, pool_embs, eta
+            self.get_kb_embeddings(), centroids, weights
         ) if self.kb_size > 0 else 0.0
 
         # === D. 执行替换 + ERASE 一致性检查 ===
@@ -693,7 +656,7 @@ class QARCKBCurator(BaseKBCurator):
 
         # 计算替换后的目标函数值
         obj_after = submodular_objective(
-            self.get_kb_embeddings(), centroids, weights, pool_embs, eta
+            self.get_kb_embeddings(), centroids, weights
         ) if self.kb_size > 0 else 0.0
 
         replacement_ratio = len(to_add_ids) / max(self.kb_size, 1)
@@ -787,50 +750,66 @@ class QARCKBCurator(BaseKBCurator):
     ) -> List[Document]:
         """
         贪心 Facility Location — Phase 0 多样性最大化。
-
-        f_div(S) = Σ_{d∈D_pool} max_{d'∈S} CosSim(d, d')
-
-        优化: 维护 current_max[j] = 当前 KB 对文档池第 j 篇文档的最大覆盖度，
-        每步只需计算新候选的边际增益: max(0, sim(pool_j, candidate) - current_max[j])
+        使用 lazy greedy 加速 + 行优先访问优化缓存命中率。
         """
+        import heapq
+
         n_pool = pool_embs.shape[0]
+        n_docs = len(docs)
         doc_embs = np.vstack([d.embedding for d in docs])
         doc_norms = np.linalg.norm(doc_embs, axis=1, keepdims=True)
         doc_embs = doc_embs / np.clip(doc_norms, 1e-10, None)
 
-        # 预计算所有相似度: (n_pool, n_docs)
-        all_sims = pool_embs @ doc_embs.T
+        if n_docs <= budget:
+            return list(docs)
 
-        # 跟踪当前每个文档池文档的最大覆盖度
+        # (n_docs, n_pool) 行优先，缓存友好
+        logger.info(f"  FacilityLoc: 计算相似度矩阵 ({n_docs}, {n_pool})...")
+        all_sims_T = doc_embs @ pool_embs.T  # (n_docs, n_pool)
+
         current_max = np.full(n_pool, -np.inf)
-
         selected_indices = []
-        remaining = set(range(len(docs)))
+        selected_set = set()
 
+        # 初始化: 批量计算所有候选的初始增益
+        logger.info(f"  FacilityLoc: 计算初始增益...")
+        chunk_sz = 2000
+        init_gains = np.empty(n_docs, dtype=np.float64)
+        for cs in range(0, n_docs, chunk_sz):
+            ce = min(cs + chunk_sz, n_docs)
+            marginals = np.maximum(0, all_sims_T[cs:ce] - current_max[None, :])
+            init_gains[cs:ce] = marginals.sum(axis=1)
+
+        # 惰性贪心堆: (-gain, idx, last_step)
+        heap = [(-init_gains[i], i, -1) for i in range(n_docs)]
+        heapq.heapify(heap)
+
+        logger.info(f"  FacilityLoc: 开始贪心选择 {budget} 篇文档...")
         for step in range(budget):
-            best_gain = -np.inf
             best_idx = -1
+            best_gain = -1.0
 
-            for idx in remaining:
-                # 边际增益 = 新候选能增加多少覆盖度
-                gains = np.maximum(0, all_sims[:, idx] - current_max)
-                total_gain = gains.sum()
-
-                if total_gain > best_gain:
-                    best_gain = total_gain
+            while heap:
+                neg_gain, idx, last_step = heapq.heappop(heap)
+                if idx in selected_set:
+                    continue
+                if last_step == step:
                     best_idx = idx
+                    best_gain = -neg_gain
+                    break
+                # 重新计算增益
+                gain = float(np.maximum(0, all_sims_T[idx] - current_max).sum())
+                heapq.heappush(heap, (-gain, idx, step))
 
             if best_idx < 0 or best_gain <= 0:
                 break
 
             selected_indices.append(best_idx)
-            remaining.discard(best_idx)
+            selected_set.add(best_idx)
+            current_max = np.maximum(current_max, all_sims_T[best_idx])
 
-            # 更新覆盖度
-            current_max = np.maximum(current_max, all_sims[:, best_idx])
-
-            if step < 3 or step == budget - 1:
-                logger.debug(
+            if step % 500 == 0 or step == budget - 1:
+                logger.info(
                     f"  FacilityLoc 第 {step+1}/{budget} 步: "
                     f"doc={docs[best_idx].doc_id}, 增益={best_gain:.4f}"
                 )
@@ -842,15 +821,13 @@ class QARCKBCurator(BaseKBCurator):
         docs: List[Document],
         centroids: np.ndarray,
         weights: np.ndarray,
-        pool_embs: np.ndarray,
-        eta: float,
     ) -> List[Document]:
-        """按边际增益降序排列文档 — 用于限额时选择最有价值的添加"""
+        """按边际增益降序排列文档 — 用于限额时选择最有价值的添加 (纯兴趣)"""
         if not docs:
             return []
 
         current_embs = self.get_kb_embeddings()
-        base_val = submodular_objective(current_embs, centroids, weights, pool_embs, eta)
+        base_val = submodular_objective(current_embs, centroids, weights)
 
         gains = []
         for doc in docs:
@@ -859,7 +836,7 @@ class QARCKBCurator(BaseKBCurator):
             if doc_norm > 1e-10:
                 doc_emb = doc_emb / doc_norm
             augmented = np.vstack([current_embs, doc_emb]) if current_embs.shape[0] > 0 else doc_emb
-            new_val = submodular_objective(augmented, centroids, weights, pool_embs, eta)
+            new_val = submodular_objective(augmented, centroids, weights)
             gains.append((doc, new_val - base_val))
 
         gains.sort(key=lambda x: x[1], reverse=True)

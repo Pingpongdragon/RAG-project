@@ -3,16 +3,19 @@ Experiment Runner CLI (v2)
 
 Usage:
     # Quick test (random embeddings, small scale)
-    python -m test.run_experiments --quick
+    python -m benchmarks.run_experiments --quick
 
     # Full run (real embeddings, full scale)
-    python -m test.run_experiments --full
+    python -m benchmarks.run_experiments --full
 
     # Single experiment
-    python -m test.run_experiments --exp gradual_drift --full
+    python -m benchmarks.run_experiments --exp gradual_drift --full
+
+    # Use pre-generated JSON datasets (skip building from raw data)
+    python -m benchmarks.run_experiments --quick --from-json benchmarks/data/
 
     # Custom parameters
-    python -m test.run_experiments --quick --kb-budget 30 --window-size 15 --queries 200
+    python -m benchmarks.run_experiments --quick --kb-budget 30 --window-size 15 --queries 200
 """
 
 import argparse
@@ -25,13 +28,13 @@ from pathlib import Path
 # Ensure project root on path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from test.experiment_datasets import (
+from benchmarks.builders import (
     build_gradual_drift,
     build_sudden_shift,
     build_cyclic_return,
     build_hotpotqa_entity_walk,
 )
-from test.experiment_framework import (
+from benchmarks.experiment_framework import (
     EmbeddingHelper,
     QARCAdapter,
     ComRAGAdapter,
@@ -46,13 +49,16 @@ logger = logging.getLogger(__name__)
 
 def _make_methods(kb_budget: int, window_size: int):
     """Instantiate all methods to compare."""
+    candidate_top_k = 200  # 每个兴趣簇从pool取200候选，总候选≈200*m
     return [
         QARCAdapter(kb_budget=kb_budget, window_size=window_size,
-                    candidate_top_k=100),
-        ComRAGAdapter(kb_budget=kb_budget),
-        ERASEAdapter(kb_budget=kb_budget, update_threshold=0.7),
-        StaticKBAdapter(kb_budget=kb_budget),
-        RandomKBAdapter(kb_budget=kb_budget, seed=42),
+                    candidate_top_k=candidate_top_k,
+                    agent_warmup_windows=1,
+                    agent_lambda_aggressive=0.5),
+        ComRAGAdapter(kb_budget=kb_budget, top_k=10),
+        ERASEAdapter(kb_budget=kb_budget, update_threshold=0.7, top_k=10),
+        StaticKBAdapter(kb_budget=kb_budget, top_k=10),
+        RandomKBAdapter(kb_budget=kb_budget, top_k=10, seed=42),
     ]
 
 
@@ -135,6 +141,8 @@ def main():
     parser.add_argument("--wow-split", type=str, default=None,
                         choices=["validation", "train"],
                         help="WoW dataset split (default: validation quick / train full)")
+    parser.add_argument("--from-json", type=str, default=None,
+                        help="Load pre-built datasets from this directory (JSON files)")
     parser.add_argument("--output-dir", type=str, default=None)
     args = parser.parse_args()
 
@@ -165,15 +173,36 @@ def main():
     all_results = {}
     exps_to_run = [args.exp] if args.exp else list(EXPERIMENTS.keys())
 
+    # JSON pre-built dataset mapping
+    JSON_NAME_MAP = {
+        "gradual_drift": "gradual_drift.json",
+        "sudden_shift": "sudden_shift.json",
+        "cyclic_return": "cyclic_return.json",
+        "hotpotqa_walk": "hotpotqa_entity_walk.json",
+    }
+
     for exp_name in exps_to_run:
-        fn = EXPERIMENTS[exp_name]
-        kwargs = dict(embedder=embedder, kb_budget=args.kb_budget,
-                      window_size=args.window_size,
-                      total_queries=total_queries, out_dir=out_dir,
-                      pool_size=pool_size)
-        if exp_name != "hotpotqa_walk":
-            kwargs["wow_split"] = wow_split
-        all_results[exp_name] = fn(**kwargs)
+        if args.from_json:
+            # Load pre-built dataset from JSON
+            from benchmarks.data_structures import ExperimentDataset
+            json_path = os.path.join(args.from_json, JSON_NAME_MAP[exp_name])
+            logger.info(f"Loading pre-built dataset: {json_path}")
+            ds = ExperimentDataset.load_json(json_path)
+            methods = _make_methods(args.kb_budget, args.window_size)
+            all_results[exp_name] = run_comparison(
+                ds, methods, embedder,
+                eval_window_size=args.window_size,
+                output_path=os.path.join(out_dir, f"{exp_name}.json"),
+            )
+        else:
+            fn = EXPERIMENTS[exp_name]
+            kwargs = dict(embedder=embedder, kb_budget=args.kb_budget,
+                          window_size=args.window_size,
+                          total_queries=total_queries, out_dir=out_dir,
+                          pool_size=pool_size)
+            if exp_name != "hotpotqa_walk":
+                kwargs["wow_split"] = wow_split
+            all_results[exp_name] = fn(**kwargs)
 
     # Final summary
     print("\n" + "=" * 85)

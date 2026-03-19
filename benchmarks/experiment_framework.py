@@ -27,7 +27,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from test.experiment_datasets import ExperimentDataset, PoolDocument, QueryItem
+from benchmarks.data_structures import ExperimentDataset, PoolDocument, QueryItem
 
 logger = logging.getLogger(__name__)
 
@@ -249,6 +249,7 @@ class MethodAdapter(ABC):
         pool_docs: List[PoolDocument],
         embedder: EmbeddingHelper,
         doc_embeddings: Dict[str, np.ndarray],
+        shared_bootstrap: Optional[list] = None,
     ):
         raise NotImplementedError
 
@@ -289,11 +290,13 @@ class QARCAdapter(MethodAdapter):
         self.window_size = window_size
         self.extra_kw = kw
         self.pipeline = None
+        self._doc_embeddings: Dict[str, np.ndarray] = {}
 
-    def initialize(self, pool_docs, embedder, doc_embeddings):
+    def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
         from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
-        from updator.qarc.pipeline import QARCPipeline
+        from updator.qarc.pipeline import QARCPipeline, QARCPhase
 
+        self._doc_embeddings = doc_embeddings
         pool = DocumentPool()
         for pd in pool_docs:
             pool.add_document(Document(
@@ -307,14 +310,22 @@ class QARCAdapter(MethodAdapter):
             lambda_max=self.extra_kw.get("exploit_lambda_max", 0.2),
             candidate_top_k=self.extra_kw.get("candidate_top_k", 100),
         )
+        # Random bootstrap: just load doc_ids into KB
+        if shared_bootstrap:
+            curator.kb_docs.clear()
+            for did in shared_bootstrap:
+                if did in curator.pool.documents:
+                    curator.kb_docs[did] = curator.pool.documents[did]
+            logger.info(f"QARC: random bootstrap ({len(curator.kb_docs)} docs)")
+
         from updator.qarc.config import QARCConfig
-        # 从 extra_kw 构建 QARCConfig (仅传入有效字段)
         cfg_overrides = {k: v for k, v in self.extra_kw.items()
                          if k not in ("candidate_top_k", "exploit_lambda_max")}
         cfg_overrides["window_size"] = self.window_size
         cfg = QARCConfig.from_dict(cfg_overrides)
         self.pipeline = QARCPipeline(curator=curator, cfg=cfg)
-        self.pipeline.bootstrap()
+        self.pipeline.phase = QARCPhase.ONLINE
+        logger.info("QARC: enter ONLINE phase (drift detection active)")
 
     def process_query(self, query_text, query_embedding):
         r = self.pipeline.process_query(query_text, query_embedding=query_embedding)
@@ -322,6 +333,31 @@ class QARCAdapter(MethodAdapter):
 
     def get_kb_doc_ids(self):
         return {d.doc_id for d in self.pipeline.get_current_kb_docs()} if self.pipeline else set()
+
+    def feed_gold_docs(self, gold_doc_ids: List[str]):
+        """Micro-update: inject gold docs into KB, evicting least relevant."""
+        if self.pipeline is None:
+            return
+        curator = self.pipeline.curator
+        for did in gold_doc_ids:
+            if did in curator.kb_docs:
+                continue  # Already in KB
+            if did not in curator.pool.documents:
+                continue  # Not in pool
+            if curator.kb_size >= self.kb_budget:
+                # Evict least relevant doc to recent query interest
+                kb_embs = curator.get_kb_embeddings()
+                kb_ids = list(curator.kb_docs.keys())
+                recent = list(self.pipeline._query_history)[-50:]
+                if recent:
+                    interest = np.mean(np.vstack(recent), axis=0)
+                    interest = interest / max(np.linalg.norm(interest), 1e-10)
+                    sims = kb_embs @ interest
+                    worst_idx = int(np.argmin(sims))
+                    del curator.kb_docs[kb_ids[worst_idx]]
+                else:
+                    del curator.kb_docs[kb_ids[0]]
+            curator.kb_docs[did] = curator.pool.documents[did]
 
     def get_kb_topic_distribution(self, pool_docs_map):
         counts: Counter = Counter()
@@ -338,18 +374,17 @@ class QARCAdapter(MethodAdapter):
 
 class ComRAGAdapter(MethodAdapter):
     """
-    Adapter for ComRAG: static KB + accumulating QA dual stores.
+    Adapter for ComRAG: static KB + accumulating QA dual stores + memory-augmented retrieval.
 
     Adaptation mechanism:
       - KB is FIXED after bootstrap (same as StaticKB)
-      - QA history grows as queries arrive
+      - QA history grows as queries arrive, tracking gold doc associations
       - Three-tier routing based on similarity to history:
-        1) Direct reuse    (sim >= delta)
-        2) Reference gen   (tau <= sim < delta) — uses high-quality QA refs
-        3) KB + avoidance  (sim < tau) — uses KB docs + low-quality negatives
+        1) Direct reuse    (sim >= delta) — return gold docs from matched history
+        2) Reference gen   (tau <= sim < delta) — blend history gold docs + KB
+        3) KB + avoidance  (sim < tau) — standard KB retrieval
 
-    We skip LLM calls in the adapter; focus on *retrieval quality*.
-    The adaptation signal comes from QA history coverage.
+    Gold docs from previous queries are stored and reused when similar queries arrive.
     """
 
     name = "ComRAG"
@@ -367,63 +402,109 @@ class ComRAGAdapter(MethodAdapter):
         self.kb_embs = None
         # ComRAG dual stores
         self.memory = None  # DynamicMemory
+        # Gold doc tracking for memory-augmented retrieval
+        self._gold_doc_history: List = []   # list of (emb_normed, gold_ids)
+        self._last_query_embedding = None
 
-    def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
+    def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
         from updator.comrag.memory import DynamicMemory
 
-        # 1. Same diversity-bootstrap KB as other methods
-        pool = DocumentPool()
         for pd in pool_docs:
-            pool.add_document(Document(
-                doc_id=pd.doc_id, text=pd.text,
-                embedding=doc_embeddings[pd.doc_id],
-                metadata={"topic": pd.topic},
-            ))
             self._pool_map[pd.doc_id] = pd
 
-        curator = QARCKBCurator(pool, kb_budget=self.kb_budget)
-        selected = curator.bootstrap_diversity()
-        self.kb_ids = [d.doc_id for d in selected]
-        self.kb_embs = np.vstack([d.embedding for d in selected])
+        # Use shared random bootstrap (list of doc_ids)
+        if shared_bootstrap:
+            self.kb_ids = list(shared_bootstrap)
+        else:
+            rng = np.random.RandomState(42)
+            idx = rng.choice(len(pool_docs), min(self.kb_budget, len(pool_docs)), replace=False)
+            self.kb_ids = [pool_docs[i].doc_id for i in idx]
+        self.kb_embs = np.vstack([doc_embeddings[did] for did in self.kb_ids])
         norms = np.linalg.norm(self.kb_embs, axis=1, keepdims=True)
         self.kb_embs = self.kb_embs / np.clip(norms, 1e-10, None)
 
-        # 2. Init ComRAG dual memory (starts empty, grows with queries)
+        # Init ComRAG dual memory (starts empty, grows with queries)
         self.memory = DynamicMemory(
             tau=self.tau, delta=self.delta, gamma=self.gamma)
 
     def process_query(self, query_text, query_embedding):
         q = query_embedding.reshape(1, -1)
         qnorm = np.linalg.norm(q)
-        if qnorm > 1e-10:
-            q_normed = q / qnorm
-        else:
-            q_normed = q
+        q_normed = q / qnorm if qnorm > 1e-10 else q
 
         # 1. Route through ComRAG memory
         route = self.memory.route_query(query_embedding)
         strategy = route["strategy"]
 
-        # 2. Retrieve from static KB (always, for recall evaluation)
-        sims = (self.kb_embs @ q_normed.T).flatten()
-        k = min(self.top_k, len(sims))
-        top_idx = np.argpartition(sims, -k)[-k:]
-        top_idx = top_idx[np.argsort(sims[top_idx])[::-1]]
-        kb_doc_ids = [self.kb_ids[i] for i in top_idx]
+        # 2. Strategy-aware retrieval: use gold docs from matched history
+        ret_ids = []
 
-        # 3. Add to QA history (simulate: use gold doc text as "answer")
-        # In real ComRAG, answer comes from LLM; here we just grow the stores
-        # We use a moderate score to populate both stores
-        score = float(sims[top_idx[0]]) if len(top_idx) > 0 else 0.5
+        if strategy == "direct_reuse" and route["best_match"] is not None:
+            gold = self._find_nearest_gold_docs(route["best_match"].record.embedding)
+            ret_ids.extend(gold)
+
+        elif strategy == "reference_generation" and route.get("high_q_references"):
+            seen = set()
+            for ref in route["high_q_references"]:
+                gold = self._find_nearest_gold_docs(ref.record.embedding)
+                for did in gold:
+                    if did not in seen:
+                        ret_ids.append(did)
+                        seen.add(did)
+
+        # 3. Fill remaining slots from KB
+        if len(ret_ids) < self.top_k:
+            sims = (self.kb_embs @ q_normed.T).flatten()
+            k = min(len(sims), self.top_k * 2)
+            top_idx = np.argpartition(sims, -k)[-k:]
+            top_idx = top_idx[np.argsort(sims[top_idx])[::-1]]
+            seen = set(ret_ids)
+            for i in top_idx:
+                did = self.kb_ids[i]
+                if did not in seen:
+                    ret_ids.append(did)
+                    seen.add(did)
+                if len(ret_ids) >= self.top_k:
+                    break
+
+        ret_ids = ret_ids[:self.top_k]
+
+        # 4. Score & add to QA memory
+        sims_all = (self.kb_embs @ q_normed.T).flatten()
+        score = float(np.max(sims_all)) if len(sims_all) > 0 else 0.5
         self.memory.add(
             question=query_text,
-            answer=query_text,  # placeholder
+            answer=query_text,
             embedding=query_embedding,
             score=score,
         )
 
-        return kb_doc_ids, None
+        self._last_query_embedding = query_embedding.copy()
+        return ret_ids, None
+
+    def feed_gold_docs(self, gold_doc_ids: List[str]):
+        """Store gold doc associations for memory-augmented retrieval."""
+        if self._last_query_embedding is not None:
+            emb = self._last_query_embedding.copy()
+            norm = np.linalg.norm(emb)
+            if norm > 1e-10:
+                emb = emb / norm
+            self._gold_doc_history.append((emb, list(gold_doc_ids)))
+
+    def _find_nearest_gold_docs(self, embedding):
+        """Find gold doc IDs from the most similar historical query."""
+        if not self._gold_doc_history:
+            return []
+        emb = embedding.reshape(1, -1)
+        norm = np.linalg.norm(emb)
+        if norm > 1e-10:
+            emb = emb / norm
+        stored_embs = np.vstack([e for e, _ in self._gold_doc_history])
+        sims = (stored_embs @ emb.T).flatten()
+        best_idx = int(np.argmax(sims))
+        if sims[best_idx] >= 0.7:
+            return list(self._gold_doc_history[best_idx][1])
+        return []
 
     def get_kb_doc_ids(self):
         return set(self.kb_ids)
@@ -466,39 +547,36 @@ class ERASEAdapter(MethodAdapter):
         self._query_count = 0
         self._pending_gold_ids: List[str] = []
 
-    def initialize(self, pool_docs, embedder, doc_embeddings):
+    def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
         from updator.erase.knowledge_base import ERASEKnowledgeBase
-        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
 
         self._doc_embeddings = doc_embeddings
         self._pool_map = {pd.doc_id: pd for pd in pool_docs}
 
-        # Same diversity-bootstrap initial KB
-        pool = DocumentPool()
-        for pd in pool_docs:
-            pool.add_document(Document(
-                doc_id=pd.doc_id, text=pd.text,
-                embedding=doc_embeddings[pd.doc_id],
-                metadata={"topic": pd.topic},
-            ))
-
-        curator = QARCKBCurator(pool, kb_budget=self.kb_budget)
-        selected = curator.bootstrap_diversity()
+        # Use shared random bootstrap (list of doc_ids)
+        if shared_bootstrap:
+            selected_ids = list(shared_bootstrap)
+        else:
+            rng = np.random.RandomState(42)
+            idx = rng.choice(len(pool_docs), min(self.kb_budget, len(pool_docs)), replace=False)
+            selected_ids = [pool_docs[i].doc_id for i in idx]
 
         # Initialize ERASE KB with bootstrap docs as initial facts
         self.kb = ERASEKnowledgeBase(similarity_threshold=0.3)
-        for doc in selected:
-            emb = doc.embedding
+        for did in selected_ids:
+            pd = self._pool_map.get(did)
+            if pd is None:
+                continue
+            emb = doc_embeddings[did].copy()
             norm = np.linalg.norm(emb)
             if norm > 1e-10:
                 emb = emb / norm
             self.kb.add_fact(
-                fact=doc.text,
+                fact=pd.text,
                 embedding=emb,
                 timestamp="0",
-                source=doc.doc_id,
-                metadata={"doc_id": doc.doc_id,
-                           "topic": doc.metadata.get("topic", "?")},
+                source=did,
+                metadata={"doc_id": did, "topic": pd.topic},
             )
 
     def process_query(self, query_text, query_embedding):
@@ -602,22 +680,17 @@ class StaticKBAdapter(MethodAdapter):
         self.kb_ids: List[str] = []
         self._pool_map: Dict[str, PoolDocument] = {}
 
-    def initialize(self, pool_docs, embedder, doc_embeddings):
-        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
-
-        pool = DocumentPool()
+    def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
         for pd in pool_docs:
-            pool.add_document(Document(
-                doc_id=pd.doc_id, text=pd.text,
-                embedding=doc_embeddings[pd.doc_id],
-                metadata={"topic": pd.topic},
-            ))
             self._pool_map[pd.doc_id] = pd
 
-        curator = QARCKBCurator(pool, kb_budget=self.kb_budget)
-        selected = curator.bootstrap_diversity()
-        self.kb_ids = [d.doc_id for d in selected]
-        self.kb_embs = np.vstack([d.embedding for d in selected])
+        if shared_bootstrap:
+            self.kb_ids = list(shared_bootstrap)
+        else:
+            rng = np.random.RandomState(42)
+            idx = rng.choice(len(pool_docs), min(self.kb_budget, len(pool_docs)), replace=False)
+            self.kb_ids = [pool_docs[i].doc_id for i in idx]
+        self.kb_embs = np.vstack([doc_embeddings[did] for did in self.kb_ids])
         norms = np.linalg.norm(self.kb_embs, axis=1, keepdims=True)
         self.kb_embs = self.kb_embs / np.clip(norms, 1e-10, None)
 
@@ -661,7 +734,7 @@ class RandomKBAdapter(MethodAdapter):
         self._qcount = 0
         self._window_size = 20
 
-    def initialize(self, pool_docs, embedder, doc_embeddings):
+    def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
         self.all_ids = [p.doc_id for p in pool_docs]
         self.all_embs = np.vstack([doc_embeddings[d] for d in self.all_ids])
         norms = np.linalg.norm(self.all_embs, axis=1, keepdims=True)
@@ -706,9 +779,10 @@ def run_experiment(
     method: MethodAdapter,
     embedder: EmbeddingHelper,
     eval_window_size: int = 20,
-    retrieve_top_k: int = 5,
+    retrieve_top_k: int = 10,
     precomputed_doc_embs: Optional[Dict[str, np.ndarray]] = None,
     precomputed_query_embs: Optional[np.ndarray] = None,
+    shared_bootstrap: Optional[list] = None,
 ) -> ExperimentResult:
     """
     Stream queries through a method and collect per-window metrics.
@@ -745,7 +819,7 @@ def run_experiment(
 
     # 3. Init method
     logger.info(f"Initializing {method.name}...")
-    method.initialize(dataset.document_pool, embedder, doc_embeddings)
+    method.initialize(dataset.document_pool, embedder, doc_embeddings, shared_bootstrap=shared_bootstrap)
 
     # 4. Stream
     windows: List[WindowMetrics] = []
@@ -860,12 +934,21 @@ def run_comparison(
     q_texts = [q.question for q in dataset.query_stream]
     q_embs = embedder.embed_batch(q_texts)
 
+    # Shared random bootstrap — same starting KB for all methods (fast)
+    _kb_budget = methods[0].kb_budget if hasattr(methods[0], 'kb_budget') else 50
+    _rng = np.random.RandomState(42)
+    _n = min(_kb_budget, len(dataset.document_pool))
+    _indices = _rng.choice(len(dataset.document_pool), _n, replace=False)
+    shared_bootstrap_ids = [dataset.document_pool[i].doc_id for i in _indices]
+    logger.info(f"Shared random bootstrap: {len(shared_bootstrap_ids)} docs selected")
+
     results = {}
     for m in methods:
         results[m.name] = run_experiment(
             dataset, m, embedder, eval_window_size,
             precomputed_doc_embs=doc_embeddings,
             precomputed_query_embs=q_embs,
+            shared_bootstrap=shared_bootstrap_ids,
         )
 
     # Table

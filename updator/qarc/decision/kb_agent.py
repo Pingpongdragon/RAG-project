@@ -60,13 +60,11 @@ class AgentDecision:
     Attributes:
         action:             更新动作类型
         lambda_max:         替换上限 (占 KB 大小的比例)
-        eta:                多样性系数 (submodular 目标函数中的正则项)
         should_recalibrate: 是否需要重新校准 DriftLens 基线和阈值
         reason:             可读的决策原因 (日志用)
     """
     action: UpdateAction
     lambda_max: float
-    eta: float
     should_recalibrate: bool
     reason: str
 
@@ -105,8 +103,7 @@ class KBUpdateAgent(BaseUpdateAgent):
         lambda_mild: float = 0.2,
         lambda_aggressive: float = 0.5,
         # 多样性系数
-        eta_mild: float = 0.1,
-        eta_aggressive: float = 0.05,
+
         # 重校准触发
         recalibrate_after_n_drifts: int = 3,
         # 冷却
@@ -119,8 +116,7 @@ class KBUpdateAgent(BaseUpdateAgent):
             gap_k:           Gap MAD 乘数 (越大阈值越宽松)
             lambda_mild:     轻度更新替换上限 (20%)
             lambda_aggressive: 激进更新替换上限 (50%)
-            eta_mild:        轻度更新多样性系数
-            eta_aggressive:  激进更新多样性系数
+
             recalibrate_after_n_drifts: 连续漂移 N 次后重校准
             cooldown_windows: 更新后冷却窗口数
         """
@@ -129,8 +125,7 @@ class KBUpdateAgent(BaseUpdateAgent):
         self.gap_k = gap_k
         self.lambda_mild = lambda_mild
         self.lambda_aggressive = lambda_aggressive
-        self.eta_mild = eta_mild
-        self.eta_aggressive = eta_aggressive
+
         self.recalibrate_after_n_drifts = recalibrate_after_n_drifts
         self.cooldown_windows = cooldown_windows
 
@@ -206,7 +201,6 @@ class KBUpdateAgent(BaseUpdateAgent):
             decision = AgentDecision(
                 action=UpdateAction.AGGRESSIVE_UPDATE,
                 lambda_max=self.lambda_aggressive,
-                eta=self.eta_aggressive,
                 should_recalibrate=is_last_warmup,
                 reason=f"Warmup {self._window_count}/{self.warmup_windows}"
                        + (" + 重校准" if is_last_warmup else ""),
@@ -220,7 +214,7 @@ class KBUpdateAgent(BaseUpdateAgent):
             self._cooldown_remaining -= 1
             decision = AgentDecision(
                 action=UpdateAction.NO_OP,
-                lambda_max=0.0, eta=0.0,
+                lambda_max=0.0,
                 should_recalibrate=False,
                 reason=f"冷却中 (剩余 {self._cooldown_remaining + 1} 窗口)",
             )
@@ -235,7 +229,6 @@ class KBUpdateAgent(BaseUpdateAgent):
             decision = AgentDecision(
                 action=UpdateAction.RECALIBRATE,
                 lambda_max=self.lambda_aggressive,
-                eta=self.eta_aggressive,
                 should_recalibrate=True,
                 reason=(
                     f"连续 {self.recalibrate_after_n_drifts} 次漂移, "
@@ -253,7 +246,6 @@ class KBUpdateAgent(BaseUpdateAgent):
             decision = AgentDecision(
                 action=UpdateAction.AGGRESSIVE_UPDATE,
                 lambda_max=self.lambda_aggressive,
-                eta=self.eta_aggressive,
                 should_recalibrate=False,
                 reason=(
                     f"漂移 (FID={drift_result.fid_score:.4f} "
@@ -271,7 +263,6 @@ class KBUpdateAgent(BaseUpdateAgent):
             decision = AgentDecision(
                 action=UpdateAction.MILD_UPDATE,
                 lambda_max=self.lambda_mild,
-                eta=self.eta_mild,
                 should_recalibrate=False,
                 reason=(
                     f"Gap 偏高 ({gap:.4f} > "
@@ -285,7 +276,7 @@ class KBUpdateAgent(BaseUpdateAgent):
         # ─── Rule 1: 正常 → 无操作 ───
         decision = AgentDecision(
             action=UpdateAction.NO_OP,
-            lambda_max=0.0, eta=0.0,
+            lambda_max=0.0,
             should_recalibrate=False,
             reason=f"正常 (FID={drift_result.fid_score:.4f}, Gap={gap:.4f})",
         )
@@ -330,7 +321,7 @@ class KBUpdateAgent(BaseUpdateAgent):
             centroids=centroids,
             weights=weights,
             lambda_max=decision.lambda_max,
-            eta=decision.eta,
+
         )
 
         # Step 2+3: 重设 DriftLens 对齐基线 (KB 改变 → 对齐特征定义变了)
