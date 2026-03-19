@@ -1,0 +1,137 @@
+\section{Motivation}
+\label{sec:motivation}
+
+\subsection{Query Topic Drift Is Pervasive in Real-World LLM Deployments}
+\label{sec:motivation-drift}
+
+\noindent\textbf{Observation.}
+LLM-powered applications are not deployed into a static world.
+User interests shift continuously: new technologies emerge, public events unfold, and cultural trends evolve.
+We quantify this phenomenon using two complementary datasets.
+On \textbf{WildChat}~\cite{}, a large-scale log of real user--LLM conversations spanning 17 months (April~2023--August~2024), we track the monthly distribution of query topics across eight categories.
+As shown in Figure~\ref{fig:drift}(a), the proportion of \emph{Image Generation} queries grows from 1.2\% in April~2023 to 33.5\% by April~2024 — a \textbf{28$\times$ increase} — while \emph{Coding}-related queries decline from 20.5\% to 14.3\% over the same period.
+Monthly Jensen--Shannon divergence (JSD) between consecutive distributions peaks at 0.060, confirming statistically significant and sustained topic drift.
+On \textbf{Google Trends}, we track search interest for five AI-application categories (\emph{AI chatbot}, \emph{AI coding}, \emph{AI healthcare}, \emph{AI education}, \emph{AI agent}) from 2022 onward; the maximum month-over-month JSD reaches 0.128, further corroborating that public interest in AI topics shifts dramatically on short timescales.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{motivation/motivation_1/figures/user_query_topic_drift.pdf}
+  \caption{Query topic drift observed in real LLM deployments.
+    (a)~Monthly topic distribution of WildChat conversations shows rapid compositional shift over 17 months.
+    (b)~Google Trends for five AI-application categories exhibits similar non-stationary interest dynamics.}
+  \label{fig:drift}
+\end{figure}
+
+\noindent\textbf{Implication.}
+When the topic distribution of incoming queries shifts away from the knowledge base (KB), retrieval performance degrades --- a phenomenon we term \emph{query--document misalignment}.
+This motivates the need for a RAG system that \emph{continuously} monitors and corrects the alignment between user queries and KB contents.
+
+% ------------------------------------------------------------------
+
+\subsection{Query--Document Misalignment Degrades RAG Performance}
+\label{sec:motivation-misalignment}
+
+\noindent\textbf{Empirical evidence.}
+To isolate the effect of query--document misalignment, we construct a controlled experiment on the TriviaQA dataset using 20{,}000 questions clustered by topic into seven semantically coherent groups (e.g., \emph{Film Industry}, \emph{Sports History}, \emph{Geography}) via $k$-means on sentence embeddings.
+We build five knowledge bases that range from perfectly aligned (uniform topic coverage, JSD$=0.00$) to maximally skewed (one topic dominates~80\% of the KB, JSD$=0.38$).
+Results are reported in Figure~\ref{fig:misalignment}.
+
+As shown in Figure~\ref{fig:misalignment}(b), Hit@10 drops monotonically from \textbf{56.4\%} (aligned) to \textbf{37.9\%} (extreme misalignment) — a relative degradation of \textbf{32.8\%} — while gold-passage coverage falls from 64.2\% to 42.0\%.
+Critically, this degradation is \emph{retriever-agnostic}: as shown in Figure~\ref{fig:misalignment}(a), four diverse retrievers (MiniLM-L6 Dense, BGE-Small Dense, BGE-Large Dense, and BGE-Small Hybrid) all suffer a \textbf{$\sim$40\% absolute accuracy drop} upon a domain shift from SQuAD to HotpotQA (JSD $= 0.46$), and all recover to near-original accuracy once aligned documents are progressively added back (+10\% to +100\%).
+This confirms that the degradation is a data-level problem, not a model-level one.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{motivation/motivation_2/figures/query_doc_alignment.pdf}
+  \caption{Effect of query--document misalignment on RAG performance.
+    (a)~Across four retriever architectures, a domain shift causes a $\sim$40\% accuracy drop; progressively adding topic-aligned documents recovers performance.
+    (b)~As the KB topic distribution diverges from query distribution (JSD $0\to 0.38$), Hit@10 drops from 56.4\% to 37.9\%.}
+  \label{fig:misalignment}
+\end{figure}
+
+\noindent\textbf{Key insight.}
+\emph{Maintaining alignment between the KB topic distribution and the evolving query distribution is the central challenge in dynamic RAG.}
+When alignment is preserved, even a modest-sized KB supports strong retrieval; when it breaks down, retrieval degrades regardless of retriever choice or KB size.
+
+% ------------------------------------------------------------------
+
+\subsection{Existing Approaches Are Insufficient}
+\label{sec:motivation-existing}
+
+The failure mode above exposes a gap that existing ``dynamic RAG'' systems have not addressed.
+We categorize prior work into three paradigms:
+
+\noindent\textbf{(1) Full Reconstruction (Naive RAG).}
+The simplest strategy rebuilds the entire knowledge base from scratch whenever the query distribution shifts~\cite{}.
+While always producing an aligned KB, this approach incurs prohibitive cost: re-encoding millions of documents and rebuilding the index on every update cycle is computationally infeasible for real-time or high-frequency deployments.
+
+\noindent\textbf{(2) Index-Level Incremental Update.}
+A large body of work accelerates index maintenance by incrementally inserting or deleting entries in \emph{FAISS}~\cite{johnson2019billion} or graph-based indexes such as HNSW~\cite{malkov2018efficient} and DiskANN~\cite{jayaram2019diskann}.
+These methods reduce update latency but operate purely at the \emph{index} level: they assume the document collection is fixed and only optimize data structure maintenance.
+Crucially, they do not curate \emph{which} documents should enter or leave the KB based on query relevance, leaving misalignment unaddressed.
+
+\noindent\textbf{(3) Document-Level Update Without Alignment Awareness.}
+A third line of work updates the document collection itself, but without targeting query--document alignment:
+\begin{itemize}[leftmargin=1em, itemsep=2pt]
+  \item \emph{Correctness-driven curation} (e.g., ERASE~\cite{}) removes or corrects outdated or erroneous knowledge.
+    This improves factual accuracy but does not consider whether the remaining documents match the current query distribution.
+  \item \emph{Cache-based augmentation} (e.g., ComRAG~\cite{}) mines high-quality QA pairs from conversational logs and caches them for retrieval.
+    This accelerates repeated-query answering but again does not model the evolving topical alignment between queries and the KB.
+\end{itemize}
+
+\noindent\textbf{Gap.}
+None of the above approaches explicitly \emph{detects} when query--document misalignment has occurred, nor do they \emph{selectively update} the KB to restore alignment.
+As our experiments show, this gap leads to significant and sustained performance degradation.
+
+% ------------------------------------------------------------------
+
+\subsection{Goals and Technical Challenges}
+\label{sec:motivation-challenges}
+
+\noindent\textbf{Goal.}
+We aim to build a RAG system that \emph{automatically detects} query--document misalignment and \emph{dynamically curates} the knowledge base to maintain alignment with evolving user query distributions — without requiring full reconstruction or manual intervention.
+
+\noindent\textbf{Challenge~1: Detecting Misalignment Without Ground Truth.}
+Unlike correctness verification, query--document alignment has no ground-truth signal: we cannot simply compare KB contents against a reference.
+The system must infer whether the \emph{distribution} of incoming queries has diverged from the \emph{distribution} of document topics, using only implicit signals such as retrieval score patterns or coverage statistics.
+This requires lightweight, online distribution-shift detection that can run continuously alongside the retrieval pipeline.
+
+\noindent\textbf{Challenge~2: Identifying What to Update.}
+Once misalignment is detected, the system must determine \emph{which topics} are over- or under-represented in the KB relative to current query demand.
+A coarse global signal (``the KB is misaligned'') is insufficient; selective curation requires a fine-grained topic-level diagnosis that localizes the gap.
+
+\noindent\textbf{Challenge~3: Efficient Targeted Curation.}
+Given a diagnosis, the system must \emph{fetch, filter, and integrate} new documents for under-represented topics while \emph{pruning} over-represented ones — all under strict constraints on update latency and storage budget.
+Both under-updating (failing to close the gap) and over-updating (flooding the KB and causing new imbalances) must be avoided.
+
+% ------------------------------------------------------------------
+
+\subsection{Naive Scaling Is Unsustainable}
+\label{sec:motivation-scaling-cost}
+
+\noindent\textbf{Observation.}
+A natural but inadequate response to query--document misalignment is to \emph{add more documents} indiscriminately, hoping that a larger KB will eventually cover any emerging query topic.
+We demonstrate that this strategy is fundamentally unsustainable by benchmarking the retrieval overhead of brute-force dense retrieval (FAISS flat-IP index, 384-dimensional embeddings) as the KB scales from 1K to 100K documents.
+Results are shown in Figure~\ref{fig:scaling-cost}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{motivation/motivation_3/fig_kb_size_vs_latency_memory.pdf}
+  \caption{Retrieval overhead grows linearly with KB size under naive scaling.
+    (a)~Per-query latency increases \textbf{10.75$\times$} (0.04\,ms $\to$ 0.43\,ms) as the KB grows from 1K to 100K documents.
+    (b)~Memory footprint grows linearly from 1.5\,MB to 146.5\,MB (\textbf{100$\times$}).}
+  \label{fig:scaling-cost}
+\end{figure}
+
+As shown in Figure~\ref{fig:scaling-cost}(a), per-query retrieval latency grows from \textbf{0.04\,ms} at 1K documents to \textbf{0.43\,ms} at 100K documents — a \textbf{10.75$\times$} increase — while the P99 tail latency reaches 0.52\,ms.
+Memory consumption, shown in Figure~\ref{fig:scaling-cost}(b), scales linearly from \textbf{1.5\,MB} to \textbf{146.5\,MB} (\textbf{100$\times$}), following the expected $O(N \cdot d)$ growth where $N$ is the number of documents and $d = 384$ is the embedding dimension.
+Both metrics scale \emph{linearly} with KB size, confirming that naive accumulation cannot be sustained in production deployments where KB size naturally grows over time.
+
+\noindent\textbf{Why existing incremental index methods are not enough.}
+While incremental index structures (HNSW, DiskANN) reduce update cost, they do not bound the \emph{size} of the KB — they merely make it cheaper to insert new entries.
+As long as documents are added without any principled removal policy, both latency and memory continue to grow without bound.
+Moreover, the sub-linear query-time advantage of approximate graph indexes diminishes when documents are added indiscriminately, because a larger, noisier KB degrades retrieval precision alongside speed.
+
+\noindent\textbf{Implication: selective curation is necessary.}
+Sustainable RAG requires not only detecting and diagnosing misalignment (\S\ref{sec:motivation-misalignment}), but also maintaining a \emph{bounded, focused} KB through targeted addition of relevant documents and pruning of irrelevant ones.
+Indiscriminate scaling is not a viable alternative.
