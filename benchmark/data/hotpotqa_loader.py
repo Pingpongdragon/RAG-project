@@ -19,7 +19,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from benchmarks.data_structures import PoolDocument, QueryItem
+from benchmark.data.structures import PoolDocument, QueryItem
 
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

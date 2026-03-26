@@ -60,7 +60,7 @@ class QARCConfig:
     """query 历史 ring buffer 容量。用于 DriftLens 基线建立和重校准"""
 
     # ═══════ 二、KB 策展 ═══════
-    kb_budget: int = 50
+    kb_budget: int = 5000
     """KB 最大容量。越大覆盖越广但检索越慢"""
 
     candidate_top_k: int = 100

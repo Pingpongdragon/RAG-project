@@ -23,7 +23,7 @@ QARC 兴趣建模工具 — 查询窗口缓冲 + 自动聚类 + 对齐度差距
 
 import numpy as np
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
@@ -322,31 +322,46 @@ def auto_kmeans(
 def compute_alignment_gap(
     query_embeddings: np.ndarray,
     kb_embeddings: np.ndarray,
+    precomputed_max_sims: Optional[List[float]] = None,
 ) -> AlignmentGapResult:
     """计算 Interest-KB 对齐度差距 G(t)。
 
+    优先使用 precomputed_max_sims（来自 RAG 检索已计算的 max sim），
+    避免对 KB embedding 做冗余全量相似度计算。
+
+    注意: QARC 的 KB 是经 budget 约束的小型文档子集（默认 50 篇），
+    不是完整的文档池。因此即使 fallback 到暴力计算也是 O(W×B) 量级。
+
     Args:
-        query_embeddings: (n_queries, d) 窗口查询 embedding
-        kb_embeddings:    (n_docs, d) KB 文档 embedding
+        query_embeddings:     (n_queries, d) 窗口查询 embedding
+        kb_embeddings:        (n_docs, d) KB 文档 embedding
+        precomputed_max_sims: 每条 query 在 RAG 检索时已得到的
+                              max CosSim(q, KB)，如提供则直接复用。
 
     Returns:
         AlignmentGapResult
     """
-    if query_embeddings.ndim == 1:
-        query_embeddings = query_embeddings.reshape(1, -1)
+    n = query_embeddings.shape[0] if query_embeddings.ndim > 1 else 1
 
-    if kb_embeddings.size == 0:
-        n = query_embeddings.shape[0]
-        return AlignmentGapResult(gap=1.0, avg_max_sim=0.0,
-                                  per_query_sims=[0.0] * n, window_size=n)
+    # 优先复用 RAG 检索时已计算的 max_sim，避免冗余计算
+    if precomputed_max_sims is not None and len(precomputed_max_sims) == n:
+        per_query_max_sim = np.array(precomputed_max_sims)
+    else:
+        # Fallback: 重新计算（bootstrap 或无预计算值时）
+        if query_embeddings.ndim == 1:
+            query_embeddings = query_embeddings.reshape(1, -1)
 
-    q_norms = np.linalg.norm(query_embeddings, axis=1, keepdims=True)
-    query_normed = query_embeddings / np.clip(q_norms, 1e-10, None)
-    kb_norms = np.linalg.norm(kb_embeddings, axis=1, keepdims=True)
-    kb_normed = kb_embeddings / np.clip(kb_norms, 1e-10, None)
+        if kb_embeddings.size == 0:
+            return AlignmentGapResult(gap=1.0, avg_max_sim=0.0,
+                                      per_query_sims=[0.0] * n, window_size=n)
 
-    sim_matrix = query_normed @ kb_normed.T
-    per_query_max_sim = sim_matrix.max(axis=1)
+        q_norms = np.linalg.norm(query_embeddings, axis=1, keepdims=True)
+        query_normed = query_embeddings / np.clip(q_norms, 1e-10, None)
+        kb_norms = np.linalg.norm(kb_embeddings, axis=1, keepdims=True)
+        kb_normed = kb_embeddings / np.clip(kb_norms, 1e-10, None)
+
+        sim_matrix = query_normed @ kb_normed.T
+        per_query_max_sim = sim_matrix.max(axis=1)
 
     avg_max_sim = float(per_query_max_sim.mean())
     gap = 1.0 - avg_max_sim
@@ -354,10 +369,6 @@ def compute_alignment_gap(
     return AlignmentGapResult(
         gap=gap, avg_max_sim=avg_max_sim,
         per_query_sims=per_query_max_sim.tolist(),
-        window_size=query_embeddings.shape[0],
+        window_size=n,
     )
 
-
-# ─── 向后兼容说明 ───
-# AdaptiveThreshold → 已集成到 KBUpdateAgent (kb_agent.py)
-# GMMDriftDetector / DriftLensDetector → 已移至 drift_detector.py

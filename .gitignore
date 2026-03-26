@@ -9,8 +9,10 @@
 *.pyd
 .Python
 
-# Datasets
+# Datasets (大文件不上传)
 /datasets
+benchmark/datasets/
+benchmark/results/
 
 # Models (HuggingFace cache)
 models/models--*/
@@ -27,7 +29,6 @@ models/.locks/
 
 # Logs & Results
 *.log
-experiments/
 results/
 
 # Temporary files

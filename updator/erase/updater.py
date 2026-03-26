@@ -7,6 +7,7 @@ ERASE 更新器: 三步流水线 (Retrieve → Update → Add)
 
 === 核心流程 (Section 3) ===
 
+
 当一篇新文档 d 到达时，ERASE 执行三步操作来更新知识库 K:
 
   Step 1  Retrieve(K, d):

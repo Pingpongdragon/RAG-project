@@ -74,16 +74,17 @@ def select_diverse_initial_kb(
     seed: int = 42,
 ) -> Set[str]:
     """
-    基于 embedding 最大化多样性的初始 KB 选择 (贪心 MaxMin diversity)
+    基于 embedding 最大化多样性的初始 KB 选择。
 
-    基本思路: 逐步选择与已选集合距离最远的文档，保证 KB 在语义空间的均匀覆盖。
-    比 doc_pool[:budget] 更公平，不受 pool 排列顺序影响。
+    k < 500 时用贪心 MaxMin diversity (精确但 O(k*n))；
+    k >= 500 时用 FAISS KMeans 聚类 (O(n*k*iter), iter 很小)，
+    每个簇选最近质心的文档，保证覆盖且快得多。
 
     Args:
         doc_pool: 候选文档列表
         doc_embeddings: (N, D) 嵌入矩阵
         kb_budget: KB 容量
-        seed: 随机种子 (用于首条文档选择)
+        seed: 随机种子
 
     Returns:
         选中文档的 doc_id 集合
@@ -95,31 +96,79 @@ def select_diverse_initial_kb(
     if k >= n:
         return {d["doc_id"] for d in doc_pool}
 
-    # 归一化 embedding
+    # 大规模: FAISS KMeans
+    if k >= 500:
+        return _select_by_kmeans(doc_pool, doc_embeddings, k, seed)
+
+    # 小规模: 贪心 MaxMin
     norms = np.linalg.norm(doc_embeddings, axis=1, keepdims=True)
     norms = np.maximum(norms, 1e-10)
     normed = doc_embeddings / norms
 
     rng = np.random.RandomState(seed)
-    # 第一个文档随机选
     selected_indices = [int(rng.randint(0, n))]
-    # min_dist[i] = min cosine distance from doc i to any selected doc
-    min_dist = np.ones(n, dtype=np.float32) * 2.0  # 初始无穷大
+    min_dist = np.ones(n, dtype=np.float32) * 2.0
 
     for _ in range(k - 1):
-        # 更新 min_dist: 当前最后选入的文档
         last_emb = normed[selected_indices[-1]]
-        sims = normed @ last_emb  # cosine similarity
-        dists = 1.0 - sims         # cosine distance
+        sims = normed @ last_emb
+        dists = 1.0 - sims
         min_dist = np.minimum(min_dist, dists)
-        # 已选的设为 -1 防止重选
         for idx in selected_indices:
             min_dist[idx] = -1.0
-        # 贪心: 选 min_dist 最大的候选
         next_idx = int(np.argmax(min_dist))
         selected_indices.append(next_idx)
 
     return {doc_pool[i]["doc_id"] for i in selected_indices}
+
+
+def _select_by_kmeans(
+    doc_pool: List[Dict],
+    doc_embeddings: np.ndarray,
+    k: int,
+    seed: int,
+) -> Set[str]:
+    """FAISS KMeans 聚类选择: 聚 k 个簇，每簇选最近质心的文档。"""
+    import faiss
+
+    d = doc_embeddings.shape[1]
+    embs = np.ascontiguousarray(doc_embeddings, dtype=np.float32)
+
+    # L2 归一化后用内积 KMeans ≈ 余弦聚类
+    faiss.normalize_L2(embs)
+
+    kmeans = faiss.Kmeans(d, k, niter=10, seed=seed, verbose=False)
+    kmeans.train(embs)
+
+    # 每个文档分配到最近质心
+    _, assignments = kmeans.index.search(embs, 1)
+    assignments = assignments.ravel()
+
+    # 每个簇选距离质心最近的文档
+    centroids = kmeans.centroids  # (k, d)
+    faiss.normalize_L2(centroids)
+
+    selected = set()
+    for c in range(k):
+        members = np.where(assignments == c)[0]
+        if len(members) == 0:
+            continue
+        member_embs = embs[members]
+        sims = member_embs @ centroids[c]
+        best_local = int(np.argmax(sims))
+        selected.add(int(members[best_local]))
+
+    # 如果某些簇为空导致不足 k 个，随机补充
+    if len(selected) < k:
+        rng = np.random.RandomState(seed)
+        remaining = [i for i in range(len(doc_pool)) if i not in selected]
+        rng.shuffle(remaining)
+        for idx in remaining:
+            selected.add(idx)
+            if len(selected) >= k:
+                break
+
+    return {doc_pool[i]["doc_id"] for i in selected}
 
 
 # ============================================================

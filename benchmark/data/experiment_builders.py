@@ -15,25 +15,25 @@ import logging
 import random
 from typing import Dict, List, Optional
 
-from benchmarks.data_structures import ExperimentDataset, PoolDocument, QueryItem
-from benchmarks.schedules import (
+from benchmark.data.structures import ExperimentDataset, PoolDocument, QueryItem
+from benchmark.data.wow_loader import (
     CyclicSchedule,
     GaussianDriftSchedule,
     SigmoidShiftSchedule,
 )
-from benchmarks.config import BenchmarkConfig
-from benchmarks.config import (
+from benchmark.data.structures import BenchmarkConfig
+from benchmark.data.structures import (
     BIG_TOPICS, CYCLE_TOPICS, DIVERSE_TOPICS,
     GradualDriftConfig, SuddenShiftConfig, CyclicReturnConfig, HotpotQAConfig,
 )
-from benchmarks.datasets.wow_loader import (
+from benchmark.data.wow_loader import (
     build_stream,
     extract_topic_data,
     load_wow,
     merge_pool,
     select_topics,
 )
-from benchmarks.datasets.hotpotqa_loader import (
+from benchmark.data.hotpotqa_loader import (
     build_entity_graph,
     greedy_walk,
     hotpotqa_item_to_query_and_docs,

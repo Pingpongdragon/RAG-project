@@ -293,9 +293,9 @@ class QARCPipeline:
 
         drift_result = self.detector.detect(X)
 
-        # 3. AlignmentGap
+        # 3. AlignmentGap — 复用 RAG 检索时已计算的 max_sim，不重复算
         kb_embs = self.curator.get_kb_embeddings()
-        gap_result = compute_alignment_gap(X, kb_embs)
+        gap_result = compute_alignment_gap(X, kb_embs, precomputed_max_sims=sims)
         self.gap_history.append(gap_result.gap)
 
         logger.info(
