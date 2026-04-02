@@ -36,4 +36,4 @@ results/
 *.bak
 *~
 core/_deprecated/
-RAG-project/motivation/motivation_1/data/wildchat_sampled.json
+motivation/motivation_1/data/wildchat_sampled.json

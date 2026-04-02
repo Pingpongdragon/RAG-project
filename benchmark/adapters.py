@@ -11,6 +11,7 @@ benchmark/adapters.py — updator/ 三个方法的 KBUpdateStrategy 适配器
 """
 
 import sys
+import time
 import logging
 from pathlib import Path
 from typing import List, Dict, Set, Optional
@@ -241,6 +242,7 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
         self._doc_embeddings = None
         self._pool_id_to_idx = {}
         self._kb_doc_ids: Set[str] = set()
+        self._record_to_docid: Dict[str, str] = {}  # 增量维护: record_id → doc_id
 
         # ComRAG 组件 (lazy init)
         self._memory = None
@@ -274,14 +276,15 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
         init_docs = [d for d in doc_pool if d["doc_id"] in init_ids]
         for d in init_docs:
             idx = self._pool_id_to_idx[d["doc_id"]]
-            self._memory.add(
+            result = self._memory.add(
                 question=d.get("text", "")[:100],
                 answer=d.get("text", ""),
                 embedding=doc_embeddings[idx],
                 score=0.7,  # 高于 gamma=0.6 → 进入 V_high
             )
 
-        self._sync_kb_ids()
+        # 批量初始化 record→docid 映射
+        self._build_record_docid_mapping()
 
     def process_query(self, query_text, query_embedding, step, gold_doc_ids=None):
         if self._memory is None:
@@ -292,8 +295,8 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
         strategy = route_result.get("strategy", "kb_avoidance")
 
         # 从 V_high 和 V_low 检索
-        results_high = self._memory.high_store.search(query_embedding, top_k=5)
-        results_low = self._memory.low_store.search(query_embedding, top_k=5)
+        results_high = self._memory.high_store.search_centroid_first(query_embedding, top_k=5)
+        results_low = self._memory.low_store.search_centroid_first(query_embedding, top_k=5)
 
         # 合并检索结果, 映射回 doc_pool 的 doc_id (FAISS 快速 NN)
         all_results = results_high + results_low
@@ -330,9 +333,17 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
         action = add_result.get("action", "skipped")
         update_done = action in ("replaced", "new_cluster")
 
-        if update_done:
-            self._kb_ids_dirty = True
-        self._sync_kb_ids()
+        # 增量更新 record→docid 映射 (单次 FAISS 查询, 而非全量重建)
+        if action == "replaced":
+            old_rec = add_result.get("replaced_record")
+            if old_rec and old_rec.record_id in self._record_to_docid:
+                del self._record_to_docid[old_rec.record_id]
+            self._incremental_map_record(query_embedding, add_result)
+        elif action in ("added_to_cluster", "new_cluster"):
+            self._incremental_map_record(query_embedding, add_result)
+        # 从映射重建 kb_doc_ids
+        self._kb_doc_ids = set(self._record_to_docid.values())
+
         self._metrics.total_queries += 1
         if update_done:
             self._metrics.total_updates += 1
@@ -356,33 +367,45 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
     def get_kb_size(self):
         return len(self._kb_doc_ids)
 
-    def _sync_kb_ids(self):
-        """从 DynamicMemory 导出文档 ID 集合 (FAISS 批量 NN 查找, 带缓存)"""
-        if not getattr(self, '_kb_ids_dirty', True):
-            return  # 未变化则跳过
-        ids = set()
+    def _build_record_docid_mapping(self):
+        """批量构建 record_id→doc_id 映射 (初始化时调用一次)"""
+        self._record_to_docid = {}
         if self._memory is None:
-            self._kb_doc_ids = ids
+            self._kb_doc_ids = set()
             return
-        # 收集所有 memory record embeddings
         all_embs = []
+        all_rids = []
         for store in [self._memory.high_store, self._memory.low_store]:
             for cluster_records in store.clusters.values():
                 for record in cluster_records:
                     all_embs.append(record.embedding)
+                    all_rids.append(record.record_id)
         if not all_embs:
-            self._kb_doc_ids = ids
-            self._kb_ids_dirty = False
+            self._kb_doc_ids = set()
             return
-        # 批量 FAISS 查找
         import faiss as _faiss
         query_mat = np.array(all_embs, dtype=np.float32)
         _faiss.normalize_L2(query_mat)
         _, nn_ids = self._pool_index.search(query_mat, 1)
         for i in range(len(all_embs)):
-            ids.add(self._doc_pool[int(nn_ids[i, 0])]["doc_id"])
-        self._kb_doc_ids = ids
-        self._kb_ids_dirty = False
+            did = self._doc_pool[int(nn_ids[i, 0])]["doc_id"]
+            self._record_to_docid[all_rids[i]] = did
+        self._kb_doc_ids = set(self._record_to_docid.values())
+
+    def _incremental_map_record(self, embedding, add_result):
+        """增量映射单条新 record → doc_id (单次 FAISS 查询)"""
+        import faiss as _faiss
+        qv = np.array([embedding], dtype=np.float32)
+        _faiss.normalize_L2(qv)
+        _, nn_ids = self._pool_index.search(qv, 1)
+        did = self._doc_pool[int(nn_ids[0, 0])]["doc_id"]
+        # 用时间戳作为临时 record_id
+        rid = f"qa_{int(time.time() * 1000)}"
+        self._record_to_docid[rid] = did
+
+    def _sync_kb_ids(self):
+        """兼容接口: 全量重建 (仅 get_kb_doc_ids 外部调用时用)"""
+        self._build_record_docid_mapping()
 
 
 # ============================================================

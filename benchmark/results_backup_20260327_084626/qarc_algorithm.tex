@@ -1,0 +1,180 @@
+% QARC Algorithm — LaTeX
+% Compile: pdflatex qarc_algorithm.tex (standalone) or include in paper
+
+% If compiling standalone, uncomment below:
+% \documentclass{article}
+% \usepackage{algorithm,algorithmic,amsmath,amssymb}
+% \begin{document}
+
+% ============================================================
+% Algorithm 1: QARC Overall Pipeline
+% ============================================================
+\begin{algorithm}[t]
+\caption{QARC: Query-Aligned Retrieval-augmented Knowledge Curation}
+\label{alg:qarc}
+\begin{algorithmic}[1]
+\REQUIRE Document pool $\mathcal{D}_{\mathrm{pool}}$, KB budget $B$, window size $W$, \\
+\quad warmup windows $N_w$, drift threshold percentile $p$
+\ENSURE Dynamically curated knowledge base $\mathcal{K}$
+
+\STATE \textbf{Phase 0: Bootstrap}
+\STATE $\mathcal{K} \leftarrow \textsc{DiversityInit}(\mathcal{D}_{\mathrm{pool}}, B)$ \COMMENT{Facility-location greedy}
+
+\STATE \textbf{Phase 1: Online Processing}
+\STATE $t \leftarrow 0$; \; $\textit{buffer} \leftarrow \emptyset$
+\FOR{each incoming query $q$}
+    \STATE $\textit{buffer} \leftarrow \textit{buffer} \cup \{q\}$
+    \IF{$|\textit{buffer}| = W$}
+        \STATE $t \leftarrow t + 1$
+        \STATE $\mathbf{Q}_t \leftarrow \text{Encode}(\textit{buffer})$ \COMMENT{Query embeddings}
+
+        \STATE \textit{// Interest Modeling (Alg.~\ref{alg:interest})}
+        \STATE $\{(\mathbf{c}_i, \alpha_i)\}_{i=1}^{K}, \; G_t \leftarrow \textsc{InterestModel}(\mathbf{Q}_t, \mathcal{K})$
+
+        \STATE \textit{// Drift Detection (Alg.~\ref{alg:drift})}
+        \STATE $\textit{drift}_t \leftarrow \textsc{DriftDetect}(\mathbf{Q}_t, \boldsymbol{\mu}_0, \boldsymbol{\Sigma}_0)$
+
+        \STATE \textit{// Agent Decision (Alg.~\ref{alg:agent})}
+        \STATE $(\textit{action}, \lambda_{\max}) \leftarrow \textsc{AgentDecide}(\textit{drift}_t, G_t, t)$
+
+        \IF{$\textit{action} \neq \texttt{NO\_OP}$}
+            \STATE \textit{// KB Curation (Alg.~\ref{alg:curation})}
+            \STATE $\mathcal{K} \leftarrow \textsc{ReCurate}(\mathcal{K}, \mathcal{D}_{\mathrm{pool}}, \{(\mathbf{c}_i, \alpha_i)\}, \lambda_{\max})$
+        \ENDIF
+        \IF{$\textit{action} = \texttt{RECALIBRATE}$}
+            \STATE $(\boldsymbol{\mu}_0, \boldsymbol{\Sigma}_0) \leftarrow \textsc{SetBaseline}(\mathcal{K}, \textit{history})$
+        \ENDIF
+
+        \STATE $\textit{buffer} \leftarrow \emptyset$
+    \ENDIF
+    \STATE \textbf{return} $\textsc{Retrieve}(q, \mathcal{K})$ \COMMENT{Answer current query from $\mathcal{K}$}
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+
+% ============================================================
+% Algorithm 2: Interest Modeling
+% ============================================================
+\begin{algorithm}[t]
+\caption{Interest Modeling: Auto-KMeans + Alignment Gap}
+\label{alg:interest}
+\begin{algorithmic}[1]
+\REQUIRE Window query embeddings $\mathbf{Q}_t \in \mathbb{R}^{W \times d}$, KB embeddings $\mathbf{E}_{\mathcal{K}}$
+\ENSURE Interest clusters $\{(\mathbf{c}_i, \alpha_i)\}_{i=1}^{K}$, alignment gap $G_t$
+
+\STATE \textit{// Step 1: Automatic clustering (Cosine KMeans)}
+\FOR{$k = 2, 3, \ldots, k_{\max}$}
+    \STATE Run KMeans on $\mathbf{Q}_t$ with $k$ clusters
+    \STATE $s_k \leftarrow \text{Silhouette}(\mathbf{Q}_t, k)$
+\ENDFOR
+\STATE $K^* \leftarrow \arg\max_k s_k$
+\STATE $\{(\mathbf{c}_i, \alpha_i)\}_{i=1}^{K^*} \leftarrow \text{KMeans}(\mathbf{Q}_t, K^*)$
+\STATE $\alpha_i \leftarrow |\text{cluster}_i| / W$ \COMMENT{Weight = cluster proportion}
+
+\STATE \textit{// Step 2: Alignment Gap}
+\FOR{each $\mathbf{q} \in \mathbf{Q}_t$}
+    \STATE $s(\mathbf{q}) \leftarrow \max_{\mathbf{d} \in \mathcal{K}} \cos(\mathbf{q}, \mathbf{d})$
+\ENDFOR
+\STATE $G_t \leftarrow 1 - \frac{1}{W} \sum_{\mathbf{q}} s(\mathbf{q})$ \COMMENT{$G_t \approx 0$: well-aligned; $G_t \approx 1$: misaligned}
+\RETURN $\{(\mathbf{c}_i, \alpha_i)\}_{i=1}^{K^*}, G_t$
+\end{algorithmic}
+\end{algorithm}
+
+
+% ============================================================
+% Algorithm 3: Alignment-Feature Drift Detection
+% ============================================================
+\begin{algorithm}[t]
+\caption{Alignment-Feature Drift Detection (Regularized FID)}
+\label{alg:drift}
+\begin{algorithmic}[1]
+\REQUIRE Window query embeddings $\mathbf{Q}_t \in \mathbb{R}^{W \times d}$, \\
+\quad KB centroids $\{\mathbf{c}_k\}_{k=1}^{K}$, KB embeddings $\mathbf{E}_{\mathcal{K}}$, \\
+\quad baseline statistics $(\boldsymbol{\mu}_0, \boldsymbol{\Sigma}_0)$, threshold $\tau$, \\
+\quad top-$N$ parameter, regularization $\varepsilon$
+\ENSURE Drift decision $\textit{drift}_t \in \{\texttt{True}, \texttt{False}\}$, FID score
+
+\STATE \textit{// Step 1: Compute alignment features}
+\FOR{each $\mathbf{q}_j \in \mathbf{Q}_t$}
+    \STATE $\mathbf{a}_j \leftarrow \big[\underbrace{\cos(\mathbf{q}_j, \mathbf{c}_1), \ldots, \cos(\mathbf{q}_j, \mathbf{c}_K)}_{\text{centroid similarities}}, \; \underbrace{\text{top}_1(\mathbf{q}_j), \ldots, \text{top}_N(\mathbf{q}_j)}_{\text{top-}N \text{ doc similarities}} \big]$
+\ENDFOR
+\STATE $\mathbf{A}_t \leftarrow [\mathbf{a}_1; \ldots; \mathbf{a}_W] \in \mathbb{R}^{W \times (K+N)}$
+
+\STATE \textit{// Step 2: Window statistics with regularization}
+\STATE $\boldsymbol{\mu}_t \leftarrow \frac{1}{W} \sum_{j=1}^{W} \mathbf{a}_j$
+\STATE $\boldsymbol{\Sigma}_t \leftarrow \text{Cov}(\mathbf{A}_t) + \varepsilon \cdot \mathbf{I}$ \COMMENT{Regularized covariance}
+
+\STATE \textit{// Step 3: Regularized FID}
+\STATE $\text{FID}_t \leftarrow \|\boldsymbol{\mu}_0 - \boldsymbol{\mu}_t\|^2 + \text{Tr}\!\left(\boldsymbol{\Sigma}_0 + \boldsymbol{\Sigma}_t - 2\sqrt{\boldsymbol{\Sigma}_0 \boldsymbol{\Sigma}_t}\right)$
+
+\STATE $\textit{drift}_t \leftarrow (\text{FID}_t > \tau)$
+\RETURN $\textit{drift}_t$, $\text{FID}_t$
+\end{algorithmic}
+\end{algorithm}
+
+
+% ============================================================
+% Algorithm 4: Agent Decision
+% ============================================================
+\begin{algorithm}[t]
+\caption{Agent Decision: Rule-Based KB Update Policy}
+\label{alg:agent}
+\begin{algorithmic}[1]
+\REQUIRE Drift result $\textit{drift}_t$, alignment gap $G_t$, window index $t$, \\
+\quad warmup count $N_w$, EMA state $(\bar{G}, \hat{\sigma}_G)$, consecutive drift count $n_d$
+\ENSURE Action $\in \{\texttt{NO\_OP}, \texttt{MILD}, \texttt{AGGRESSIVE}, \texttt{RECALIBRATE}\}$, $\lambda_{\max}$
+
+\STATE \textit{// Update Gap EMA:} $\bar{G} \leftarrow \beta \bar{G} + (1-\beta) G_t$; \; $\hat{\sigma}_G \leftarrow \beta \hat{\sigma}_G + (1-\beta)|G_t - \bar{G}|$
+
+\IF{$t \leq N_w$} \COMMENT{Warmup phase}
+    \STATE $\textit{action} \leftarrow \texttt{AGGRESSIVE}$; \; $\lambda_{\max} \leftarrow 0.5$
+    \IF{$t = N_w$}
+        \STATE Recalibrate drift baseline $(\boldsymbol{\mu}_0, \boldsymbol{\Sigma}_0, \tau)$
+    \ENDIF
+\ELSIF{$n_d \geq N_{\text{recal}}$} \COMMENT{Rule 4: consecutive drifts $\rightarrow$ recalibrate}
+    \STATE $\textit{action} \leftarrow \texttt{RECALIBRATE}$; \; $\lambda_{\max} \leftarrow 0.5$
+\ELSIF{$\textit{drift}_t = \texttt{True}$} \COMMENT{Rule 3: drift detected}
+    \STATE $\textit{action} \leftarrow \texttt{AGGRESSIVE}$; \; $\lambda_{\max} \leftarrow 0.5$
+\ELSIF{$G_t > \bar{G} + k \cdot \hat{\sigma}_G$} \COMMENT{Rule 2: gap anomaly (no drift)}
+    \STATE $\textit{action} \leftarrow \texttt{MILD}$; \; $\lambda_{\max} \leftarrow 0.2$
+\ELSE \COMMENT{Rule 1: normal}
+    \STATE $\textit{action} \leftarrow \texttt{NO\_OP}$; \; $\lambda_{\max} \leftarrow 0$
+\ENDIF
+\RETURN $\textit{action}$, $\lambda_{\max}$
+\end{algorithmic}
+\end{algorithm}
+
+
+% ============================================================
+% Algorithm 5: Submodular KB Curation
+% ============================================================
+\begin{algorithm}[t]
+\caption{Submodular KB Curation (Incremental Replacement)}
+\label{alg:curation}
+\begin{algorithmic}[1]
+\REQUIRE Current KB $\mathcal{K}$, document pool $\mathcal{D}_{\mathrm{pool}}$, \\
+\quad interest clusters $\{(\mathbf{c}_i, \alpha_i)\}_{i=1}^{K}$, replacement cap $\lambda_{\max}$, \\
+\quad diversity weight $\eta$
+\ENSURE Updated KB $\mathcal{K}'$
+
+\STATE \textit{// Submodular objective:}
+\STATE $f(\mathcal{S}) = \underbrace{\sum_{i=1}^{K} \alpha_i \cdot \max_{\mathbf{d} \in \mathcal{S}} \cos(\mathbf{c}_i, \mathbf{d})}_{f_{\text{interest}}(\mathcal{S})} + \eta \cdot \underbrace{\frac{1}{|\mathcal{D}_{\mathrm{pool}}|} \sum_{\mathbf{d}' \in \mathcal{D}_{\mathrm{pool}}} \max_{\mathbf{d} \in \mathcal{S}} \cos(\mathbf{d}', \mathbf{d})}_{f_{\text{diversity}}(\mathcal{S})}$
+
+\STATE \textit{// Step 1: Greedy selection of ideal KB}
+\STATE $\mathcal{S}^* \leftarrow \emptyset$
+\FOR{$j = 1, \ldots, B$}
+    \STATE $d^* \leftarrow \arg\max_{d \in \mathcal{D}_{\mathrm{pool}} \setminus \mathcal{S}^*} \left[ f(\mathcal{S}^* \cup \{d\}) - f(\mathcal{S}^*) \right]$
+    \STATE $\mathcal{S}^* \leftarrow \mathcal{S}^* \cup \{d^*\}$
+\ENDFOR
+
+\STATE \textit{// Step 2: Incremental replacement (capped)}
+\STATE $\mathcal{A} \leftarrow \mathcal{S}^* \setminus \mathcal{K}$ \COMMENT{Documents to add}
+\STATE $\mathcal{R} \leftarrow \mathcal{K} \setminus \mathcal{S}^*$ \COMMENT{Documents to remove}
+\STATE $n_{\text{replace}} \leftarrow \min(|\mathcal{A}|, |\mathcal{R}|, \lfloor \lambda_{\max} \cdot |\mathcal{K}| \rfloor)$
+\STATE $\mathcal{K}' \leftarrow (\mathcal{K} \setminus \mathcal{R}_{1:n}) \cup \mathcal{A}_{1:n}$ \COMMENT{Replace lowest-gain $\rightarrow$ highest-gain}
+\RETURN $\mathcal{K}'$
+\end{algorithmic}
+\end{algorithm}
+
+% \end{document}

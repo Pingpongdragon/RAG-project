@@ -176,56 +176,80 @@ class CentroidClusterStore:
             return {"action": "new_cluster", "cluster_id": new_cid}
 
     def search(self, query_embedding: np.ndarray, top_k: int = 5) -> List[SearchResult]:
-        """暴力搜索 top-k 最相似的 QA 记录（适用于记忆库较小的场景）。"""
+        """暴力搜索 top-k 最相似的 QA 记录（numpy 批量计算）。"""
         query_emb = self._normalize(query_embedding)
-        all_results = []
-
+        all_records = []
+        all_cids = []
+        all_embs = []
         for cid, records in self.clusters.items():
             for rec in records:
-                sim = self._cosine_sim(query_emb, rec.embedding)
-                all_results.append(SearchResult(
-                    record=rec, similarity=sim, cluster_id=cid,
-                ))
-
-        all_results.sort(key=lambda x: x.similarity, reverse=True)
-        return all_results[:top_k]
+                all_records.append(rec)
+                all_cids.append(cid)
+                all_embs.append(rec.embedding)
+        if not all_records:
+            return []
+        emb_mat = np.array(all_embs, dtype=np.float32)
+        sims = emb_mat @ query_emb
+        if top_k >= len(all_records):
+            top_indices = np.argsort(-sims)
+        else:
+            top_indices = np.argpartition(-sims, top_k)[:top_k]
+            top_indices = top_indices[np.argsort(-sims[top_indices])]
+        return [
+            SearchResult(record=all_records[i], similarity=float(sims[i]), cluster_id=all_cids[i])
+            for i in top_indices[:top_k]
+        ]
 
     def search_centroid_first(
         self, query_embedding: np.ndarray, top_k: int = 5, n_probe_clusters: int = 3
     ) -> List[SearchResult]:
         """
         两阶段检索 — 对应论文 Algorithm 1 的加速检索策略:
-        第一阶段: 用质心做粗筛，找到最相关的 n_probe_clusters 个簇
-        第二阶段: 在候选簇内做记录级精细搜索
-
-        当记忆库很大时，这比暴力搜索快得多 (避免遍历所有记录)。
+        第一阶段: 用质心做粗筛 (numpy 批量)
+        第二阶段: 在候选簇内做记录级精细搜索 (numpy 批量)
         """
         query_emb = self._normalize(query_embedding)
 
-        # 第一阶段: 质心级检索
-        centroid_sims = []
-        for cid, centroid in self.centroids.items():
-            sim = self._cosine_sim(query_emb, centroid)
-            centroid_sims.append((cid, sim))
-        centroid_sims.sort(key=lambda x: x[1], reverse=True)
+        if not self.centroids:
+            return []
 
-        candidate_cids = [cid for cid, _ in centroid_sims[:max(n_probe_clusters, top_k)]]
+        # 第一阶段: numpy 批量质心检索
+        cids = list(self.centroids.keys())
+        cent_mat = np.array([self.centroids[c] for c in cids], dtype=np.float32)
+        cent_sims = cent_mat @ query_emb
+        n_probe = max(n_probe_clusters, top_k)
+        if n_probe >= len(cids):
+            probe_indices = np.argsort(-cent_sims)
+        else:
+            probe_indices = np.argpartition(-cent_sims, n_probe)[:n_probe]
+        candidate_cids = [cids[i] for i in probe_indices]
 
-        # 第二阶段: 候选簇内检索
-        all_results = []
+        # 第二阶段: numpy 批量候选簇内检索
+        all_records = []
+        all_cid_labels = []
+        all_embs = []
         for cid in candidate_cids:
             for rec in self.clusters.get(cid, []):
-                sim = self._cosine_sim(query_emb, rec.embedding)
-                all_results.append(SearchResult(
-                    record=rec, similarity=sim, cluster_id=cid,
-                ))
-
-        all_results.sort(key=lambda x: x.similarity, reverse=True)
-        return all_results[:top_k]
+                all_records.append(rec)
+                all_cid_labels.append(cid)
+                all_embs.append(rec.embedding)
+        if not all_records:
+            return []
+        emb_mat = np.array(all_embs, dtype=np.float32)
+        sims = emb_mat @ query_emb
+        if top_k >= len(all_records):
+            top_indices = np.argsort(-sims)
+        else:
+            top_indices = np.argpartition(-sims, top_k)[:top_k]
+            top_indices = top_indices[np.argsort(-sims[top_indices])]
+        return [
+            SearchResult(record=all_records[i], similarity=float(sims[i]), cluster_id=all_cid_labels[i])
+            for i in top_indices[:top_k]
+        ]
 
     def get_max_similarity(self, query_embedding: np.ndarray) -> Tuple[Optional[SearchResult], float]:
         """获取与 query 最相似的单条记录及其相似度 — 用于路由决策。"""
-        results = self.search(query_embedding, top_k=1)
+        results = self.search_centroid_first(query_embedding, top_k=1, n_probe_clusters=5)
         if results:
             return results[0], results[0].similarity
         return None, 0.0
@@ -257,31 +281,33 @@ class CentroidClusterStore:
     # ---- 内部方法 ----
 
     def _find_nearest_record(self, emb: np.ndarray) -> Tuple[Optional[QARecord], float, int]:
-        """在所有已有记录中找最相似的（用于替换检查）。"""
-        best_record = None
-        best_sim = -1.0
-        best_cid = -1
+        """在所有已有记录中找最相似的（numpy 批量余弦）。"""
         emb = self._normalize(emb)
+        all_records = []
+        all_cids = []
+        all_embs = []
         for cid, records in self.clusters.items():
             for rec in records:
-                sim = self._cosine_sim(emb, rec.embedding)
-                if sim > best_sim:
-                    best_sim = sim
-                    best_record = rec
-                    best_cid = cid
-        return best_record, best_sim, best_cid
+                all_records.append(rec)
+                all_cids.append(cid)
+                all_embs.append(rec.embedding)
+        if not all_records:
+            return None, -1.0, -1
+        emb_mat = np.array(all_embs, dtype=np.float32)
+        sims = emb_mat @ emb
+        best_idx = int(np.argmax(sims))
+        return all_records[best_idx], float(sims[best_idx]), all_cids[best_idx]
 
     def _find_nearest_centroid(self, emb: np.ndarray) -> Tuple[int, float]:
-        """找最近的簇质心。"""
-        best_cid = -1
-        best_sim = -1.0
+        """找最近的簇质心（numpy 批量余弦）。"""
+        if not self.centroids:
+            return -1, -1.0
         emb = self._normalize(emb)
-        for cid, centroid in self.centroids.items():
-            sim = self._cosine_sim(emb, centroid)
-            if sim > best_sim:
-                best_sim = sim
-                best_cid = cid
-        return best_cid, best_sim
+        cids = list(self.centroids.keys())
+        cent_mat = np.array([self.centroids[c] for c in cids], dtype=np.float32)
+        sims = cent_mat @ emb
+        best_idx = int(np.argmax(sims))
+        return cids[best_idx], float(sims[best_idx])
 
     def _create_cluster(self, record: QARecord) -> int:
         """创建新簇: c_new = Emb(q)"""

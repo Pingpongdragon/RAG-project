@@ -37,7 +37,7 @@ class WoWConfig:
 @dataclass
 class PoolConfig:
     """文档池配置"""
-    max_total: int = 5000             # 文档池上限
+    max_total: int = 20000             # 文档池上限
     keep_all_gold: bool = True        # 始终保留所有 gold 文档
 
 
