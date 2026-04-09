@@ -1,0 +1,267 @@
+@inproceedings{lewis2020rag,
+  title = {Retrieval-Augmented Generation for Knowledge-Intensive {{NLP}} Tasks},
+  booktitle = {Advances in Neural Information Processing Systems},
+  author = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and Küttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rocktäschel, Tim and Riedel, Sebastian and Kiela, Douwe},
+  editor = {Larochelle, H. and Ranzato, M. and Hadsell, R. and Balcan, M.F. and Lin, H.},
+  date = {2020},
+  volume = {33},
+  pages = {9459--9474},
+  publisher = {Curran Associates, Inc.},
+  url = {https://proceedings.neurips.cc/paper_files/paper/2020/file/6b493230205f780e1bc26945df7481e5-Paper.pdf},
+  keywords = {/unread}
+}
+
+@inproceedings{karpukhin2020dpr,
+    title = "Dense Passage Retrieval for Open-Domain Question Answering",
+    author = "Karpukhin, Vladimir  and
+      Oguz, Barlas  and
+      Min, Sewon  and
+      Lewis, Patrick  and
+      Wu, Ledell  and
+      Edunov, Sergey  and
+      Chen, Danqi  and
+      Yih, Wen-tau",
+    editor = "Webber, Bonnie  and
+      Cohn, Trevor  and
+      He, Yulan  and
+      Liu, Yang",
+    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)",
+    month = nov,
+    year = "2020",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2020.emnlp-main.550/",
+    doi = "10.18653/v1/2020.emnlp-main.550",
+    pages = "6769--6781",
+    abstract = "Open-domain question answering relies on efficient passage retrieval to select candidate contexts, where traditional sparse vector space models, such as TF-IDF or BM25, are the de facto method. In this work, we show that retrieval can be practically implemented using dense representations alone, where embeddings are learned from a small number of questions and passages by a simple dual-encoder framework. When evaluated on a wide range of open-domain QA datasets, our dense retriever outperforms a strong Lucene-BM25 system greatly by 9{\%}-19{\%} absolute in terms of top-20 passage retrieval accuracy, and helps our end-to-end QA system establish new state-of-the-art on multiple open-domain QA benchmarks."
+}
+
+@misc{gao2023retrieval,
+      title={Retrieval-Augmented Generation for Large Language Models: A Survey}, 
+      author={Yunfan Gao and Yun Xiong and Xinyu Gao and Kangxiang Jia and Jinliu Pan and Yuxi Bi and Yi Dai and Jiawei Sun and Meng Wang and Haofen Wang},
+      year={2024},
+      eprint={2312.10997},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2312.10997}, 
+}
+
+
+
+@misc{adlakha2022topiocqa,
+      title={TopiOCQA: Open-domain Conversational Question Answering with Topic Switching}, 
+      author={Vaibhav Adlakha and Shehzaad Dhuliawala and Kaheer Suleman and Harm de Vries and Siva Reddy},
+      year={2022},
+      eprint={2110.00768},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2110.00768}, 
+}
+
+@misc{liska2022streamingqa,
+      title={StreamingQA: A Benchmark for Adaptation to New Knowledge over Time in Question Answering Models}, 
+      author={Adam Liška and Tomáš Kočiský and Elena Gribovskaya and Tayfun Terzi and Eren Sezener and Devang Agrawal and Cyprien de Masson d'Autume and Tim Scholtes and Manzil Zaheer and Susannah Young and Ellen Gilsenan-McMahon and Sophia Austin and Phil Blunsom and Angeliki Lazaridou},
+      year={2022},
+      eprint={2205.11388},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2205.11388}, 
+}
+
+@misc{vu2023freshllms,
+  title={FreshLLMs: Refreshing Large Language Models with Search Engine Augmentation}, 
+      author={Tu Vu and Mohit Iyyer and Xuezhi Wang and Noah Constant and Jerry Wei and Jason Wei and Chris Tar and Yun-Hsuan Sung and Denny Zhou and Quoc Le and Thang Luong},
+      year={2023},
+      eprint={2310.03214},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2310.03214}, 
+}
+
+@misc{kasai2024realtime,
+      title={RealTime QA: What's the Answer Right Now?}, 
+      author={Jungo Kasai and Keisuke Sakaguchi and Yoichi Takahashi and Ronan Le Bras and Akari Asai and Xinyan Yu and Dragomir Radev and Noah A. Smith and Yejin Choi and Kentaro Inui},
+      year={2024},
+      eprint={2207.13332},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2207.13332}, 
+}
+
+@article{liu2023lost,
+  title = "Lost in the Middle: How Language Models Use Long Contexts",
+    author = "Liu, Nelson F.  and
+      Lin, Kevin  and
+      Hewitt, John  and
+      Paranjape, Ashwin  and
+      Bevilacqua, Michele  and
+      Petroni, Fabio  and
+      Liang, Percy",
+    journal = "Transactions of the Association for Computational Linguistics",
+    volume = "12",
+    year = "2024",
+    address = "Cambridge, MA",
+    publisher = "MIT Press",
+    url = "https://aclanthology.org/2024.tacl-1.9/",
+    doi = "10.1162/tacl_a_00638",
+    pages = "157--173",
+    abstract = "While recent language models have the ability to take long contexts as input, relatively little is known about how well they use longer context. We analyze the performance of language models on two tasks that require identifying relevant information in their input contexts: multi-document question answering and key-value retrieval. We find that performance can degrade significantly when changing the position of relevant information, indicating that current language models do not robustly make use of information in long input contexts. In particular, we observe that performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle of long contexts, even for explicitly long-context models. Our analysis provides a better understanding of how language models use their input context and provides new evaluation protocols for future long-context language models."
+}
+
+@inproceedings{shi2023context,
+  title = {Large Language Models Can Be Easily Distracted by Irrelevant Context},
+  author = {Shi, Freda and Chen, Xinyun and Misra, Kanishka and Scales, Nathan and Dohan, David and Chi, Ed H. and Sch{\"a}rli, Nathanael and Zhou, Denny},
+  booktitle = {Proceedings of the 40th International Conference on Machine Learning},
+  year = {2023}
+}
+
+@misc{izacard2023atlas,
+  title={Atlas: Few-shot Learning with Retrieval Augmented Language Models}, 
+  author={Gautier Izacard and Patrick Lewis and Maria Lomeli and Lucas Hosseini and Fabio Petroni and Timo Schick and Jane Dwivedi-Yu and Armand Joulin and Sebastian Riedel and Edouard Grave},
+  year={2022},
+  eprint={2208.03299},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2208.03299}, 
+}
+
+@article{comrag2025,
+  title={ComRAG: Retrieval-Augmented Generation with Dynamic Vector Stores for Real-time Community Question Answering in Industry},
+  author={Anonymous and others},
+  journal={arXiv preprint arXiv:2506.21098},
+  year={2025}
+}
+
+@inproceedings{malkov2018efficient,
+  title={Efficient and robust approximate nearest neighbor search using hierarchical navigable small world graphs},
+  author={Malkov, Yu A and Yashunin, Dmitry A},
+  booktitle={IEEE transactions on pattern analysis and machine intelligence},
+  volume={42},
+  number={4},
+  pages={824--836},
+  year={2018},
+  publisher={IEEE}
+}
+
+@inproceedings{jayaram2019diskann,
+  title={DiskANN: Fast accurate billion-point nearest neighbor search on a single node},
+  author={Jayaram Subramanya, Suhas and Devvrit, Fnu and Simhadri, Harsha Vardhan and Krishnawamy, Ravishankar and Kadekodi, Rohan},
+  booktitle={Advances in Neural Information Processing Systems},
+  volume={32},
+  year={2019}
+}
+
+@inproceedings{guti2024hipporag,
+  title={HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models},
+  author={Guti{\'e}rrez, Bernal Jim{\'e}nez and others},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2024}
+}
+
+@article{guo2024lightrag,
+  title={LightRAG: Simple and Fast Retrieval-Augmented Generation},
+  author={Guo, Zirui and others},
+  journal={arXiv preprint arXiv:2410.05779},
+  year={2024}
+}
+
+
+@article{zero-rag2025,
+  title={Zero-RAG: Redundancy-Aware Knowledge Filtration for RAG},
+  author={Anonymous and others},
+  journal={arXiv preprint},
+  year={2025}
+}
+
+@article{ivanyan2025comrag,
+  title={ComRAG: Compressing Retrieval Corpora for Efficient Retrieval-Augmented Generation},
+  author={Ivanyan, Aram and others},
+  journal={arXiv preprint},
+  year={2025}
+}
+
+@article{wu2025streamingrag,
+  title={StreamingRAG: Continuous Knowledge Synchronization for RAG Systems},
+  author={Wu, Yixuan and others},
+  journal={arXiv preprint},
+  year={2025}
+}
+
+
+@inproceedings{chen2024recipe,
+  title={Lifelong Knowledge Editing for LLMs with Retrieval-Augmented Continuous Prompt Learning},
+  author={Chen, Qizhou and Zhang, Taolin and He, Xiaofeng and Li, Dongyang and Wang, Chengyu and Huang, Longtao and Xue, Hui},
+  booktitle={Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing},
+  year={2024},
+  url={https://2024.emnlp.org/program/accepted_main_conference/}
+}
+
+@misc{guti2025hipporag2,
+  title={From RAG to Memory: Non-Parametric Continual Learning for Large Language Models},
+  author={Guti{\'e}rrez, Bernal Jim{\'e}nez and Shu, Yiheng and Qi, Weijian and Zhou, Sizhe and Su, Yu},
+  year={2025},
+  eprint={2502.14802},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2502.14802}
+}
+
+@misc{jin2024ragcache,
+  title={RAGCache: Efficient Knowledge Caching for Retrieval-Augmented Generation},
+  author={Jin, Chao and Zhang, Zili and Jiang, Xuanlin and Liu, Fangyue and Liu, Xin and Liu, Xuanzhe and Jin, Xin},
+  year={2024},
+  eprint={2404.12457},
+  archivePrefix={arXiv},
+  primaryClass={cs.DC},
+  url={https://arxiv.org/abs/2404.12457}
+}
+
+@misc{yan2024crag,
+  title={Corrective Retrieval Augmented Generation},
+  author={Yan, Shi-Qi and Gu, Jia-Chen and Zhu, Yun and Ling, Zhen-Hua},
+  year={2024},
+  eprint={2401.15884},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2401.15884}
+}
+
+@misc{asai2023selfrag,
+  title={Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection},
+  author={Asai, Akari and Wu, Zeqiu and Wang, Yizhong and Sil, Avirup and Hajishirzi, Hannaneh},
+  year={2023},
+  eprint={2310.11511},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2310.11511}
+}
+
+@inproceedings{li2024rolelong,
+  title={On the Role of Long-tail Knowledge in Retrieval Augmented Large Language Models},
+  author={Li, Dongyang and Yan, Junbing and Zhang, Taolin and Wang, Chengyu and He, Xiaofeng and Huang, Longtao and Xue, Hui and Huang, Jun},
+  booktitle={Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)},
+  pages={120--126},
+  year={2024},
+  doi={10.18653/v1/2024.acl-short.12},
+  url={https://aclanthology.org/2024.acl-short.12/}
+}
+
+@inproceedings{peng2025uaeval4rag,
+  title={Unanswerability Evaluation for Retrieval Augmented Generation},
+  author={Peng, Xiangyu and Choubey, Prafulla Kumar and Xiong, Caiming and Wu, Chien-Sheng},
+  booktitle={Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages={8452--8472},
+  year={2025},
+  doi={10.18653/v1/2025.acl-long.415},
+  url={https://aclanthology.org/2025.acl-long.415/}
+}
+
+@misc{zhou2025livesearchbench,
+  title={LiveSearchBench: An Automatically Constructed Benchmark for Retrieval and Reasoning over Dynamic Knowledge},
+  author={Zhou, Heng and Yu, Ao and Fan, Yuchen and Shi, Jianing and Kang, Li and Geng, Hejia and Zhang, Yongting and Fan, Yutao and Wu, Yuhao and He, Tiancheng and Qin, Yiran and Bai, Lei and Yin, Zhenfei},
+  year={2025},
+  eprint={2511.01409},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2511.01409}
+}
