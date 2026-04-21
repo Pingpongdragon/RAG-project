@@ -37,3 +37,16 @@ results/
 *~
 core/_deprecated/
 motivation/motivation_1/data/wildchat_sampled.json
+
+# Motivation experiment artifacts (cache + generated outputs)
+motivation/motivation_4/cache/
+motivation/motivation_4/__pycache__/
+motivation/**/__pycache__/
+motivation/**/cache/
+motivation/**/*.bak
+
+# Motivation experiment artifacts (cache + generated outputs)
+motivation/motivation_4/cache/
+motivation/**/__pycache__/
+motivation/**/cache/
+motivation/**/*.bak
