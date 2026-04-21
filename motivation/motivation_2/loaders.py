@@ -139,6 +139,55 @@ def load_musique():
 #  Expanded loaders (official full releases)
 # ═══════════════════════════════════════════════════
 
+def load_hotpotqa_expanded(n_source=None):
+    """Load HotpotQA full train+dev distractor splits (Yang et al., EMNLP 2018).
+
+    90,447 train + 7,405 dev = ~97,852 items. Each item has 10 paragraphs,
+    2 supporting facts. Corpus is built from all unique titles across SAMPLED items
+    to keep embedding tractable.
+
+    Args:
+        n_source: sample this many ITEMS first (so pool stays bounded);
+                  resulting query count after filtering will be slightly less.
+    """
+    base = PROJECT_DIR / 'datasets' / 'hotpotqa'
+    log.info('Loading hotpotqa_expanded (train + dev distractor)')
+    all_items = []
+    for split in ['train_distractor', 'validation_distractor']:
+        with open(base / f'{split}.json') as f:
+            all_items.extend(json.load(f))
+    log.info(f'  loaded {len(all_items)} items')
+    if n_source and n_source < len(all_items):
+        rng = np.random.default_rng(SEED)
+        idx = rng.choice(len(all_items), n_source, replace=False)
+        all_items = [all_items[i] for i in idx]
+        log.info(f'  subsampled to {len(all_items)} items')
+    title_to_text = {}
+    for item in all_items:
+        for title, sents in zip(item['context']['title'],
+                                item['context']['sentences']):
+            if title not in title_to_text:
+                title_to_text[title] = ' '.join(sents).strip()[:512]
+    doc_pool, title_to_idx = [], {}
+    for i, (t, txt) in enumerate(sorted(title_to_text.items())):
+        doc_pool.append({'doc_id': f'he{i:06d}', 'title': t, 'text': txt})
+        title_to_idx[t] = i
+    queries = []
+    for item in all_items:
+        sfs = list({t for t in item['supporting_facts']['title']
+                     if t in title_to_idx})
+        if len(sfs) < 2:
+            continue
+        ctx = [t for t in item['context']['title'] if t in title_to_idx]
+        queries.append({'question': item['question'],
+                       'answer': item.get('answer', ''),
+                       'sf_titles': sfs, 'ctx_titles': ctx})
+    log.info(f'[hotpotqa_expanded] pool={len(doc_pool)}, queries={len(queries)}')
+    return doc_pool, queries, title_to_idx
+
+
+
+
 def load_musique_expanded(n_source=None):
     """Load MuSiQue-Ans full train+dev (Trivedi et al., TACL 2022).
 
@@ -244,6 +293,7 @@ LOADERS = {
     'hotpotqa':          load_hotpotqa,
     '2wikimultihopqa':   load_2wikimultihopqa,
     'musique':           load_musique,
+    'hotpotqa_expanded': load_hotpotqa_expanded,
     'musique_expanded':  load_musique_expanded,
     '2wiki_expanded':    load_2wiki_expanded,
 }

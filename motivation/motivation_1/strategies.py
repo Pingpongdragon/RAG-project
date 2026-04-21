@@ -4,7 +4,7 @@ KB update strategies for the query-drift motivation experiment.
 All strategies share the same interface:
   - __init__(name, doc_pool, doc_embs, title_to_idx)
   - set_kb(ids: set[str])   -- initialise the KB document ID set
-  - step(wq, wqe, wi)       -- observe one window's queries and update KB
+  - step(window_queries, window_query_embs, window_idx)  -- observe one window and update KB
   - .kb: set[str]           -- current KB document IDs
   - .cost: int              -- cumulative number of KB replacements
 
@@ -58,8 +58,14 @@ class BaseStrategy:
         self.d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
         self.p2d = {i: d['doc_id'] for i, d in enumerate(doc_pool)}
         self.kb = set()
-        self.update_cost = 0     # KB writes (insertions/replacements)
-        self.retrieval_cost = 0  # external pool retrievals (no KB write)
+        self.update_cost = 0           # KB writes (insertions/replacements)
+        self.maint_retrieval_cost = 0  # background pool scans (offline batch)
+        self.serve_retrieval_cost = 0  # per-query pool fetches (online latency)
+
+    @property
+    def retrieval_cost(self):
+        """Total pool retrievals (maintenance + serve-time)."""
+        return self.maint_retrieval_cost + self.serve_retrieval_cost
 
     @property
     def cost(self):
@@ -69,13 +75,13 @@ class BaseStrategy:
     def set_kb(self, ids):
         self.kb = set(ids)
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         raise NotImplementedError
 
 
 class Static(BaseStrategy):
     """No-update baseline.  KB is frozen after initialisation."""
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         pass
 
 
@@ -89,13 +95,13 @@ class DocArrival(BaseStrategy):
       - Otherwise: skip (not novel enough and not redundant enough).
     At most DOC_ADD_CAP replacements per window.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.rng = np.random.default_rng(SEED + 100)
-        self.all_ids = [d['doc_id'] for d in dp]
+        self.all_ids = [d['doc_id'] for d in doc_pool]
         self.ts = {}
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
         kb_list = sorted(self.kb)
@@ -104,12 +110,13 @@ class DocArrival(BaseStrategy):
         arrivals = self.rng.choice(self.all_ids,
                                    min(DOC_ARRIVE, len(self.all_ids)),
                                    replace=False)
+        self.maint_retrieval_cost += len(arrivals)
         n = 0
         for did in arrivals:
             if n >= DOC_ADD_CAP:
                 break
             if did in self.kb:
-                self.ts[did] = wi
+                self.ts[did] = window_idx
                 continue
             ni = self.d2p[did]
             ne = self.doc_embs[ni]
@@ -120,7 +127,7 @@ class DocArrival(BaseStrategy):
                 old = kb_list[pos]
                 self.kb.discard(old)
                 self.kb.add(did)
-                self.ts[did] = wi
+                self.ts[did] = window_idx
                 kb_list[pos] = did
                 kb_idx[pos] = ni
                 kb_emb[pos] = ne
@@ -129,7 +136,7 @@ class DocArrival(BaseStrategy):
                 stale = min(self.kb, key=lambda d: self.ts.get(d, -1))
                 self.kb.discard(stale)
                 self.kb.add(did)
-                self.ts[did] = wi
+                self.ts[did] = window_idx
                 n += 1
         self.update_cost += n
 
@@ -142,16 +149,17 @@ class KnowledgeEdit(BaseStrategy):
     swap it in.  This models the RECIPE paradigm where a knowledge graph is
     continuously revised via local edits rather than wholesale replacement.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.rng = np.random.default_rng(SEED + 200)
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         kb_list = sorted(self.kb)
         if not kb_list:
             return
         n_ed = min(EDIT_BATCH, len(kb_list))
         targets = self.rng.choice(kb_list, n_ed, replace=False)
+        self.maint_retrieval_cost += n_ed  # n_ed full-pool NN scans
         n = 0
         for tid in targets:
             tpi = self.d2p[tid]
@@ -187,19 +195,19 @@ class QueryDriven(BaseStrategy):
       7. Evict KB docs with lowest mean usefulness across current queries.
       8. Swap in candidates that outscore evicted docs.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.baseline_mean = None
         self.use_max = False
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
         kb_list = sorted(self.kb)
         kb_idx = np.array([self.d2p[d] for d in kb_list])
         kb_emb = self.doc_embs[kb_idx]
-        norms = np.linalg.norm(wqe, axis=1, keepdims=True)
-        nqe = wqe / np.clip(norms, 1e-10, None)
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
         q_kb = nqe @ kb_emb.T
         max_s = np.max(q_kb, axis=1)
         cur_mean = float(max_s.mean())
@@ -221,8 +229,9 @@ class QueryDriven(BaseStrategy):
         fqe = nqe[fail]
         pool_sims = fqe @ self.doc_embs.T
         cand_set = set()
+        tk = min(QD_TOP_K, len(self.doc_embs))
+        self.maint_retrieval_cost += len(fqe) * tk  # n_failing × top-K
         for qi in range(len(fqe)):
-            tk = min(QD_TOP_K, len(self.doc_embs))
             top = np.argpartition(pool_sims[qi], -tk)[-tk:]
             cand_set.update(top.tolist())
         cand_set -= {self.d2p[d] for d in self.kb}
@@ -252,75 +261,63 @@ class QueryDriven(BaseStrategy):
 
 
 class Oracle(BaseStrategy):
-    """Oracle upper bound: perfect future-knowledge KB rebuild at H2 start.
+    """Oracle (per-window upper bound).
 
-    Behaviour:
-      - H1 (windows 0..half-1): no updates (same as Static).
-      - At window == half: one-time rebuild using ALL gold supporting-fact
-        documents for H2 queries.  Remaining budget filled with docs most
-        similar to H2 query distribution.
+    At every window, the KB is reconstructed from the gold supporting-fact
+    documents of THAT window's queries; remaining capacity is filled with
+    documents most similar to that window's queries. This is the tightest
+    achievable upper bound on Recall@K (any retriever cannot exceed it
+    given the KB capacity), shown as a *constant* upper envelope before
+    AND after drift.
 
-    This represents the absolute ceiling: what recall would be if the KB
-    always contained the right documents.  The gap between Oracle and
-    QueryDriven quantifies the room for improvement.
+    Note: this is strictly a non-causal reference; it consumes ground-truth
+    SF labels not available at deployment.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
-        self.t2i = ti
-        self._half = 10
-        self._stream = None
-        self._query_embs = None
-        self._rebuilt = False
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.t2i = title_to_idx
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
-        if wi < self._half or self._rebuilt:
-            return
-        if self._stream is None:
-            return
-        self._rebuilt = True
-        ws = len(wq)
-        h2_queries = self._stream[self._half * ws:]
-        sf_pool_indices = set()
-        for q in h2_queries:
+        budget = len(self.kb)
+        # gold SF pool indices from current window
+        sf_pool = set()
+        for q in window_queries:
             for t in q.get('sf_titles', []):
                 if t in self.t2i:
-                    sf_pool_indices.add(self.t2i[t])
-        h2_qe = np.array([self._query_embs[q['qidx']] for q in h2_queries])
-        h2_norms = np.linalg.norm(h2_qe, axis=1, keepdims=True)
-        h2_nqe = h2_qe / np.clip(h2_norms, 1e-10, None)
-        doc_scores = np.mean(h2_nqe @ self.doc_embs.T, axis=0)
-        budget = len(self.kb)
+                    sf_pool.add(self.t2i[t])
+        # fill remainder by similarity to this window's queries
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        norm_qe = window_query_embs / np.clip(norms, 1e-10, None)
+        doc_scores = np.mean(norm_qe @ self.doc_embs.T, axis=0)
         new_kb = set()
-        sf_list = sorted(sf_pool_indices, key=lambda pi: -doc_scores[pi])
-        for pi in sf_list[:budget]:
+        for pi in sorted(sf_pool, key=lambda i: -doc_scores[i])[:budget]:
             new_kb.add(self.p2d[pi])
         if len(new_kb) < budget:
-            non_sf = [(doc_scores[i], i) for i in range(len(self.doc_pool))
-                      if i not in sf_pool_indices]
-            non_sf.sort(reverse=True)
-            for score, pi in non_sf:
+            sorted_docs = np.argsort(-doc_scores)
+            for pi in sorted_docs:
                 if len(new_kb) >= budget:
                     break
-                new_kb.add(self.p2d[pi])
-        self.update_cost = len(new_kb - self.kb)
+                if pi in sf_pool:
+                    continue
+                new_kb.add(self.p2d[int(pi)])
+        added = len(new_kb - self.kb)
+        self.update_cost += added
         self.kb = new_kb
-        log.info(f"[Oracle] Rebuilt KB: {len(sf_pool_indices)} SFs available, "
-                 f"{min(len(sf_pool_indices), budget)} SFs in KB, "
-                 f"cost={self.cost}")
+
 
 
 # ── Factory registry ──────────────────────────────
 STRATEGY_FACTORIES = {
-    'Static':           lambda dp, de, ti: Static('Static', dp, de, ti),
-    'RandomFIFO':       lambda dp, de, ti: RandomFIFO('RandomFIFO', dp, de, ti),
-    'DocArrival':       lambda dp, de, ti: DocArrival('DocArrival', dp, de, ti),
-    'KnowledgeEdit':    lambda dp, de, ti: KnowledgeEdit('KnowledgeEdit', dp, de, ti),
-    'OnDemandFetch':    lambda dp, de, ti: OnDemandFetch('OnDemandFetch', dp, de, ti),
-    'LogDrivenArrival': lambda dp, de, ti: LogDrivenArrival('LogDrivenArrival', dp, de, ti),
-    'QueryDriven':      lambda dp, de, ti: QueryDriven('QueryDriven', dp, de, ti),
-    'Oracle':           lambda dp, de, ti: Oracle('Oracle', dp, de, ti),
+    'Static':           lambda doc_pool, doc_embs, title_to_idx: Static('Static', doc_pool, doc_embs, title_to_idx),
+    'RandomFIFO':       lambda doc_pool, doc_embs, title_to_idx: RandomFIFO('RandomFIFO', doc_pool, doc_embs, title_to_idx),
+    'DocArrival':       lambda doc_pool, doc_embs, title_to_idx: DocArrival('DocArrival', doc_pool, doc_embs, title_to_idx),
+    'KnowledgeEdit':    lambda doc_pool, doc_embs, title_to_idx: KnowledgeEdit('KnowledgeEdit', doc_pool, doc_embs, title_to_idx),
+    'OnDemandFetch':    lambda doc_pool, doc_embs, title_to_idx: OnDemandFetch('OnDemandFetch', doc_pool, doc_embs, title_to_idx),
+    'LogDrivenArrival': lambda doc_pool, doc_embs, title_to_idx: LogDrivenArrival('LogDrivenArrival', doc_pool, doc_embs, title_to_idx),
+    'QueryDriven':      lambda doc_pool, doc_embs, title_to_idx: QueryDriven('QueryDriven', doc_pool, doc_embs, title_to_idx),
+    'Oracle':           lambda doc_pool, doc_embs, title_to_idx: Oracle('Oracle', doc_pool, doc_embs, title_to_idx),
 }
 
 
@@ -333,19 +330,20 @@ class RandomFIFO(BaseStrategy):
     Demonstrates that blind supply-side updates inject noise faster than
     useful content, especially under drift.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.rng = np.random.default_rng(SEED + 300)
-        self.all_ids = [d['doc_id'] for d in dp]
+        self.all_ids = [d['doc_id'] for d in doc_pool]
         self.insert_order = []  # track insertion order for FIFO eviction
 
     def set_kb(self, ids):
         super().set_kb(ids)
         self.insert_order = list(ids)
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         batch = min(FIFO_BATCH, len(self.all_ids))
         arrivals = self.rng.choice(self.all_ids, batch, replace=False)
+        self.maint_retrieval_cost += batch
         n = 0
         for did in arrivals:
             if did in self.kb:
@@ -375,16 +373,16 @@ class OnDemandFetch(BaseStrategy):
     For evaluation, we temporarily add fetched docs to a "virtual KB" for
     that window only, then remove them.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.fetch_k = FETCH_TOP_K
         self._fetched_this_window = set()
 
-    def get_effective_kb(self, wq, wqe):
+    def get_effective_kb(self, window_queries, window_query_embs):
         """Return KB + fetched docs for this window (for recall eval)."""
         return self.kb | self._fetched_this_window
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         self._fetched_this_window = set()
         if not self.kb:
             return
@@ -392,10 +390,10 @@ class OnDemandFetch(BaseStrategy):
         kb_idx = np.array([self.d2p[d] for d in kb_list])
         kb_emb = self.doc_embs[kb_idx]
 
-        norms = np.linalg.norm(wqe, axis=1, keepdims=True)
-        nqe = wqe / np.clip(norms, 1e-10, None)
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
 
-        for qi in range(len(wq)):
+        for qi in range(len(window_queries)):
             q_kb_sim = nqe[qi] @ kb_emb.T
             if float(np.max(q_kb_sim)) >= SF_HIT_THRESH:
                 continue
@@ -404,7 +402,7 @@ class OnDemandFetch(BaseStrategy):
             top_idx = np.argpartition(pool_sim, -self.fetch_k)[-self.fetch_k:]
             for pi in top_idx:
                 self._fetched_this_window.add(self.p2d[pi])
-            self.retrieval_cost += len(top_idx)  # external retrieval, no KB write
+            self.serve_retrieval_cost += len(top_idx)  # per-query, paid online
 
 
 class LogDrivenArrival(BaseStrategy):
@@ -417,21 +415,21 @@ class LogDrivenArrival(BaseStrategy):
     Always one window behind — demonstrates the "lagging effect" under drift:
     by the time the fix arrives, the query distribution may have shifted again.
     """
-    def __init__(self, name, dp, de, ti):
-        super().__init__(name, dp, de, ti)
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self._pending_adds = []  # docs to add at next review cycle
         self._fail_buffer_qe = []  # accumulated fail query embeddings
 
-    def step(self, wq, wqe, wi):
+    def step(self, window_queries, window_query_embs, window_idx):
         # Apply pending adds at review-cycle boundaries
-        if self._pending_adds and wi % LOG_LAG_WINDOWS == 0:
+        if self._pending_adds and window_idx % LOG_LAG_WINDOWS == 0:
             kb_list = sorted(self.kb)
             # Evict least-useful current docs to make room
             if len(kb_list) > 0:
                 kb_idx = np.array([self.d2p[d] for d in kb_list])
                 kb_emb = self.doc_embs[kb_idx]
-                norms = np.linalg.norm(wqe, axis=1, keepdims=True)
-                nqe = wqe / np.clip(norms, 1e-10, None)
+                norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+                nqe = window_query_embs / np.clip(norms, 1e-10, None)
                 usefulness = np.mean(nqe @ kb_emb.T, axis=0)
                 evict_order = np.argsort(usefulness)
                 n = 0
@@ -456,8 +454,8 @@ class LogDrivenArrival(BaseStrategy):
         kb_list = sorted(self.kb)
         kb_idx = np.array([self.d2p[d] for d in kb_list])
         kb_emb = self.doc_embs[kb_idx]
-        norms = np.linalg.norm(wqe, axis=1, keepdims=True)
-        nqe = wqe / np.clip(norms, 1e-10, None)
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
         q_kb = nqe @ kb_emb.T
         max_s = np.max(q_kb, axis=1)
         fail = max_s < SF_HIT_THRESH
@@ -465,12 +463,13 @@ class LogDrivenArrival(BaseStrategy):
             self._fail_buffer_qe.append(nqe[fail])
 
         # At end of each lag cycle, analyse accumulated failures for next cycle
-        if (wi + 1) % LOG_LAG_WINDOWS == 0 and self._fail_buffer_qe:
+        if (window_idx + 1) % LOG_LAG_WINDOWS == 0 and self._fail_buffer_qe:
             fqe = np.concatenate(self._fail_buffer_qe, axis=0)
             pool_sims = fqe @ self.doc_embs.T
             cand_set = set()
+            tk = min(LOG_FIX_TOP_K, len(self.doc_embs))
+            self.maint_retrieval_cost += len(fqe) * tk
             for qi in range(len(fqe)):
-                tk = min(LOG_FIX_TOP_K, len(self.doc_embs))
                 top = np.argpartition(pool_sims[qi], -tk)[-tk:]
                 cand_set.update(top.tolist())
             cand_set -= {self.d2p[d] for d in self.kb}

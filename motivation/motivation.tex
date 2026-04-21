@@ -211,10 +211,84 @@ Prior work on persistent KB maintenance has investigated three directions. Index
 A natural solution is to treat each observed support failure as a selective acquisition trigger. The failure identifies a concrete knowledge gap; the system then decides whether that gap is correctable from an external document pool and whether it recurs often enough to justify consuming budget. We formalize this framing as \emph{budgeted query-driven KB evolution} and ask: given a stream of queries where support failures are observable, which missing knowledge is worth admitting under a fixed KB budget, and which failures indicate a genuinely unanswerable request that no update should chase?
 
 % =========================================================
+% Motivation 1 -- Single-hop sanity: QD signal is effective
+% =========================================================
+
+\subsection{Motivation 1: Query-Demand Signal Is Effective on Single-Hop Queries}
+\label{sec:motivation-single-hop}
+
+Before examining complex multi-hop benchmarks, we first verify that the
+query-driven update signal is \emph{per se} informative---ruling out the
+hypothesis that it is simply too noisy to be useful.
+
+\paragraph{Setup.}
+We extract the \textbf{comparison} subset from HotpotQA and 2WikiMultihopQA~\cite{ho2020constructing}.
+Comparison questions (e.g.,~``Which film was released earlier, \emph{A} or \emph{B}?'')
+name both target entities explicitly, so both supporting-fact documents can be retrieved
+from the question alone in a single retrieval step---making this functionally
+a \emph{single-hop} task.
+We run the same 8-strategy suite (§\ref{sec:motivation-experiment}) under
+sudden drift (50 windows, pool $\approx$ 20k--51k docs, KB $\approx$ 10\% of pool).
+
+\paragraph{Metric: KB Coverage.}
+We measure \emph{KB Coverage per window}---the fraction of a window's
+ground-truth supporting-fact documents that are currently held in the KB:
+\[
+  \mathrm{Cov}(w) = \frac{|\mathrm{KB}_w \cap \mathrm{SF\text{-}docs}(w)|}{|\mathrm{SF\text{-}docs}(w)|}
+\]
+This metric is retriever-agnostic (it asks whether the right evidence is
+\emph{held}, not whether the retriever \emph{finds} it), making it a clean
+measure of KB content selection quality.
+It is equivalent to the \emph{context recall} metric of RAGAS~\cite{es2023ragas}
+and the retrieval-accuracy notion of DPR~\cite{karpukhin2020dpr}.
+
+\paragraph{Results.}
+Table~\ref{tab:motivation1-results} shows H1 and H2 KB Coverage.
+Under sudden drift, QueryDriven achieves \textbf{22.4\%} H2 coverage on
+HotpotQA comparison (+13.2pp over Static) and \textbf{42.7\%} on 2Wiki
+comparison (+16.2pp over Static), while OnDemandFetch is comparable at
+22.3\% and 33.4\% respectively.
+Both easily outperform DocArrival ($\approx$9\%/27\%) and Static
+($\approx$9\%/27\%).
+Oracle achieves 100\% by construction.
+
+\begin{table}[h]
+\centering
+\small
+\caption{KB Coverage (\%) under sudden drift for single-hop comparison subsets.
+H1/H2 = mean over windows 1--25 / 26--50. QD = QueryDriven, ODF = OnDemandFetch.}
+\label{tab:motivation1-results}
+\begin{tabular}{l|cc|cc}
+\toprule
+ & \multicolumn{2}{c|}{\textbf{HotpotQA-Comp}} & \multicolumn{2}{c}{\textbf{2Wiki-Comp}} \\
+Strategy & H1 & H2 & H1 & H2 \\
+\midrule
+Static         & 97.1 &  9.2 & 97.4 & 26.5 \\
+DocArrival     & 96.9 &  9.2 & 97.3 & 26.6 \\
+KnowledgeEdit  & 84.8 & 11.5 & 86.0 & 34.6 \\
+OnDemandFetch  & 97.1 & 22.3 & 97.4 & 33.4 \\
+QueryDriven    & 95.2 & \textbf{22.4} & 95.6 & \textbf{42.7} \\
+\midrule
+\textit{Oracle} & 100.0 & \textbf{100.0} & 100.0 & \textbf{100.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Conclusion.}
+On single-hop comparison questions, query-demand signals \emph{do} work:
+QueryDriven achieves 2.4$\times$ the H2 coverage of Static on HotpotQA and
+1.6$\times$ on 2Wiki.
+The performance ceiling (gap to Oracle) on multi-hop datasets is therefore
+\emph{not} because the update signal is intrinsically noisy---it is because
+retrieving the right \emph{multi-hop chain} of documents requires structural
+graph reasoning beyond dense embedding search.
+This motivates the architecture explored in Motivation~2 below.
+
+% =========================================================
 % Motivation Experiment
 % =========================================================
 
-\subsection{Motivating Experiment: All Existing Paradigms Fail Under Query Distribution Drift}
+\subsection{Motivation 2: All Existing Paradigms Fail Under Multi-Hop Query Distribution Drift}
 \label{sec:motivation-experiment}
 
 % ── 实验设计 ──
@@ -315,8 +389,8 @@ This experiment establishes four facts that motivate our work:
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{motivation_4/figures/motivation_recall_multi.pdf}
-    \caption{Recall@5 per window across three datasets (sudden drift). The vertical dashed line marks the H1$\to$H2 distribution shift. All realistic strategies collapse at the transition; QueryDriven shows progressive but limited recovery. The Oracle upper bound (dashed red) demonstrates the ceiling achievable with perfect content selection.}
+    \includegraphics[width=\linewidth]{motivation_2/figures/recall_drift_50w_sudden.pdf}
+    \caption{Per-window Recall@5 across three multi-hop datasets under sudden query distribution drift (Motivation 2). The vertical dashed line marks the H1$\to$H2 shift. All realistic strategies collapse; QueryDriven shows progressive but limited recovery. Oracle (dashed) demonstrates the ceiling achievable with perfect content selection.}
     \label{fig:motivation-recall}
 \end{figure}
 

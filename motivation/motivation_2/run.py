@@ -51,7 +51,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     # ── Load data ──
     lname = loader_name or ds_name
     loader = LOADERS[lname]
-    if n_source and lname in ('musique_expanded', '2wiki_expanded'):
+    if n_source and lname in ('musique_expanded', '2wiki_expanded', 'hotpotqa_expanded'):
         doc_pool, queries, title_to_idx = loader(n_source=n_source)
     else:
         doc_pool, queries, title_to_idx = loader()
@@ -64,12 +64,22 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     stream, centroids, head_set = cluster_and_build_stream(
         queries, query_embs, cfg, drift_mode=drift_mode)
 
-    if cfg.get('use_focus_pool'):
-        doc_pool, title_to_idx, doc_embs = focus_pool(
-            doc_pool, title_to_idx, doc_embs, stream)
-
     # ── KB init ──
-    kb_budget = max(300, round(len(doc_pool) * cfg['kb_budget_pct'] / 50) * 50)
+    # KB budget = head_context_docs * kb_head_mult.
+    # This standardises across datasets with very different pool sizes:
+    # we ensure the KB can hold ~all head-context docs (so H1 isn't
+    # capacity-bottlenecked) while leaving little slack for tail docs
+    # (so H2 forces real strategy work). With mult=1.2 the init KB is
+    # ~83% head SF coverage and ~10-20% tail coverage.
+    t2l = {d['title']: i for i, d in enumerate(doc_pool)}
+    head_ctx = set()
+    for q in stream:
+        if not q.get('is_tail', True):
+            for t in q.get('ctx_titles', []):
+                if t in t2l:
+                    head_ctx.add(t2l[t])
+    kb_head_mult = cfg.get('kb_head_mult', 1.2)
+    kb_budget = max(300, int(round(len(head_ctx) * kb_head_mult / 50)) * 50)
     init_kb = head_biased_init_kb(
         doc_pool, doc_embs, centroids, head_set, kb_budget, stream)
     d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
@@ -88,6 +98,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
 
     # ── Evaluate ──
     results = {n: {f'recall@{k}': [] for k in K_LIST} for n in strategies_to_run}
+    kb_coverage = {n: [] for n in strategies_to_run}  # L1: fraction of window's gold SFs that sit in KB
+    kb_coverage_cum = {n: [] for n in strategies_to_run}  # cumulative gold so far
+    seen_gold = {n: set() for n in strategies_to_run}
     for w in range(nw):
         wq = stream[w * ws:(w + 1) * ws]
         if len(wq) == 0:
@@ -96,13 +109,29 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         wqe = np.array([query_embs[q['qidx']] for q in wq])
         if wqe.ndim == 1:
             wqe = wqe.reshape(1, -1)
+        # gold SF doc_ids for this window
+        window_gold_did = set()
+        for q in wq:
+            for t in q.get('sf_titles', []):
+                if t in title_to_idx:
+                    window_gold_did.add(doc_pool[title_to_idx[t]]['doc_id'])
         for name in strategies_to_run:
             s = strategies[name]
+            # Oracle is non-causal: rebuild KB BEFORE evaluation so it represents
+            # the per-window upper bound for the queries we are about to score.
+            if name == 'Oracle':
+                s.step(wq, wqe, w)
             effective_kb = s.get_effective_kb(wq, wqe) if hasattr(s, 'get_effective_kb') else s.kb
             r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
             for k in K_LIST:
                 results[name][f'recall@{k}'].append(r[k])
-            s.step(wq, wqe, w)
+            cov = len(effective_kb & window_gold_did) / max(1, len(window_gold_did))
+            kb_coverage[name].append(cov)
+            seen_gold[name] |= window_gold_did
+            cum = len(effective_kb & seen_gold[name]) / max(1, len(seen_gold[name]))
+            kb_coverage_cum[name].append(cum)
+            if name != 'Oracle':
+                s.step(wq, wqe, w)
         if w % 5 == 0 or w == nw - 1:
             r5 = {n: f"{results[n]['recall@5'][-1]*100:.1f}%"
                   for n in strategies_to_run}
@@ -128,9 +157,19 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 s[f'{key}_h2_last5'] = round(
                     float(np.mean(vals[-5:])) * 100, 1)
             s[f'{key}_per_window'] = [round(x * 100, 2) for x in vals]
+        cov_vals = kb_coverage[name]
+        s['kb_coverage_h1'] = round(float(np.mean(cov_vals[:half])) * 100, 1)
+        s['kb_coverage_h2'] = round(float(np.mean(cov_vals[half:])) * 100, 1)
+        s['kb_coverage_per_window'] = [round(x * 100, 2) for x in cov_vals]
+        cum_vals = kb_coverage_cum[name]
+        s['kb_coverage_cumulative_h1'] = round(float(np.mean(cum_vals[:half])) * 100, 1)
+        s['kb_coverage_cumulative_h2'] = round(float(np.mean(cum_vals[half:])) * 100, 1)
+        s['kb_coverage_cumulative_per_window'] = [round(x * 100, 2) for x in cum_vals]
         s['update_cost'] = strategies[name].update_cost
+        s['maint_retrieval_cost'] = strategies[name].maint_retrieval_cost
+        s['serve_retrieval_cost'] = strategies[name].serve_retrieval_cost
         s['retrieval_cost'] = strategies[name].retrieval_cost
-        s['cost'] = strategies[name].cost  # backward-compat: total
+        s['cost'] = strategies[name].cost
         summary[name] = s
     return {
         'dataset': ds_name,
@@ -159,36 +198,45 @@ def print_summary(all_results, strategies_to_run):
               f"stream={cfg['n_windows']}x{cfg['window_size']}  "
               f"elapsed={res['elapsed']:.0f}s")
         print(f"{'_'*115}")
-        hdr = f"{'Strategy':>20s} |"
-        for k in K_LIST:
-            hdr += f" {'R@'+str(k)+' H1':>8s} {'R@'+str(k)+' H2':>8s} {'D':>6s} |"
-        hdr += f" {'KB-Writes':>9s} {'Retrievals':>10s}"
+        hdr = (f"{'Strategy':>18s} |"
+               f" {'R@5 H1':>6s} {'R@5 H2':>6s} {'D':>5s} |"
+               f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
+               f" {'Writes':>6s} {'MaintR':>7s} {'ServeR':>7s}")
         print(hdr)
         print("-" * len(hdr))
         for name in strategies_to_run:
             if name not in res['summary']:
                 continue
             s = res['summary'][name]
-            line = f"{name:>20s} |"
-            for k in K_LIST:
-                h1 = s[f'recall@{k}_h1']
-                h2 = s[f'recall@{k}_h2']
-                d = h2 - h1
-                line += f" {h1:>7.1f}% {h2:>7.1f}% {d:>+5.1f} |"
-            line += f" {s['update_cost']:>9d} {s['retrieval_cost']:>10d}"
+            h1 = s['recall@5_h1']; h2 = s['recall@5_h2']
+            c1 = s['kb_coverage_h1']; c2 = s['kb_coverage_h2']
+            line = (f"{name:>18s} |"
+                    f" {h1:>5.1f}% {h2:>5.1f}% {h2-h1:>+5.1f} |"
+                    f" {c1:>5.1f}% {c2:>5.1f}% {c2-c1:>+5.1f} |"
+                    f" {s['update_cost']:>6d}"
+                    f" {s['maint_retrieval_cost']:>7d}"
+                    f" {s['serve_retrieval_cost']:>7d}")
             print(line)
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
-    """Two-row figure per dataset:
-      Row 1: full y-range with Oracle ceiling shaded (shows total gap to oracle).
-      Row 2: zoomed view excluding Oracle (reveals differences among practical
-             strategies, especially QueryDriven vs supply-side baselines).
-    Oracle is plotted across BOTH H1 and H2 so the ceiling is always visible.
-    """
+    """Publication-quality single-row figure: Recall@5 vs window, one col per dataset."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    plt.rcParams.update({
+        'font.family': 'DejaVu Sans',
+        'font.size': 11,
+        'axes.labelsize': 12,
+        'axes.titlesize': 12,
+        'legend.fontsize': 10,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'pdf.fonttype': 42,
+        'ps.fonttype': 42,
+    })
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     datasets = list(all_results.keys())
     n_ds = len(datasets)
@@ -196,11 +244,21 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
                  '2wikimultihopqa': '2WikiMultihopQA',
                  'musique': 'MuSiQue'}
 
-    fig, axes = plt.subplots(2, n_ds, figsize=(5.5 * n_ds, 7.5), sharex='col')
-    if n_ds == 1:
-        axes = axes.reshape(2, 1)
+    palette = {
+        'Static':           ('#7F7F7F', '-',  'o'),
+        'RandomFIFO':       ('#9467BD', '-.', '^'),
+        'DocArrival':       ('#8C564B', ':',  's'),
+        'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
+        'OnDemandFetch':    ('#17BECF', '--', 'v'),
+        'LogDrivenArrival': ('#BCBD22', ':',  'P'),
+        'QueryDriven':      ('#1F77B4', '-',  '*'),
+        'Oracle':           ('#D62728', '-',  None),
+    }
 
-    practical = [n for n in strategies_to_run if n != 'Oracle']
+    fig, axes = plt.subplots(1, n_ds, figsize=(5.2 * n_ds, 3.8),
+                             sharex='col')
+    if n_ds == 1:
+        axes = [axes]
 
     for col, ds in enumerate(datasets):
         res = all_results[ds]
@@ -208,64 +266,46 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         nw = cfg['n_windows']
         half = nw // 2
         x = np.arange(1, nw + 1)
+        ax = axes[col]
 
-        ax_full = axes[0, col]
-        ax_zoom = axes[1, col]
-
-        # Oracle ceiling: shade between Static (floor at H2) and Oracle on full view
-        oracle_y = (res['summary'].get('Oracle') or {}).get('recall@5_per_window')
         for name in strategies_to_run:
             if name not in res['summary']:
                 continue
-            st = STRATEGY_STYLES.get(name, {'color': 'gray', 'marker': '.', 'ls': '-'})
-            y = res['summary'][name]['recall@5_per_window']
-            lw = 2.6 if name == 'QueryDriven' else (2.0 if name == 'Oracle' else 1.6)
-            alpha = 1.0 if name in ('QueryDriven', 'Oracle') else 0.85
-            ax_full.plot(x, y, label=STRATEGY_LABELS.get(name, name),
-                         color=st['color'], marker=st['marker'],
-                         linestyle=st['ls'], linewidth=lw, alpha=alpha,
-                         markersize=5, markevery=max(1, nw // 20))
-            if name != 'Oracle':
-                ax_zoom.plot(x, y, label=STRATEGY_LABELS.get(name, name),
-                             color=st['color'], marker=st['marker'],
-                             linestyle=st['ls'], linewidth=lw, alpha=alpha,
-                             markersize=5, markevery=max(1, nw // 20))
+            color, ls, marker = palette.get(name, ('gray', '-', None))
+            recall_y = res['summary'][name]['recall@5_per_window']
+            lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
+            alpha = 1.0 if name in ('Oracle', 'QueryDriven') else 0.85
+            zorder = 5 if name in ('Oracle', 'QueryDriven') else 3
+            mark_every = max(1, nw // 12)
+            ax.plot(x, recall_y, color=color, linestyle=ls, marker=marker,
+                    linewidth=lw, alpha=alpha, markersize=5,
+                    markevery=mark_every, zorder=zorder,
+                    label=STRATEGY_LABELS.get(name, name))
 
-        # Oracle ceiling band on full view
-        if oracle_y is not None:
-            ax_full.fill_between(x, 0, oracle_y, color='#DC2626',
-                                 alpha=0.06, zorder=0)
-
-        for ax in (ax_full, ax_zoom):
-            ax.axvline(x=half + 0.5, color='gray', ls=':', lw=1, alpha=0.6)
-            ax.grid(True, alpha=0.3)
-
-        ax_full.set_title(
-            f'{ds_labels.get(ds, ds)}\n'
-            f'(pool={cfg["pool_size"]}, KB={cfg["kb_budget"]}, '
-            f'stream={nw}x{cfg["window_size"]})', fontsize=11)
+        ax.axvline(half + 0.5, color='#444444', ls='--', lw=0.9, alpha=0.6)
         if col == 0:
-            ax_full.set_ylabel('Recall@5 (%) — full range', fontsize=10)
-            ax_zoom.set_ylabel('Recall@5 (%) — practical (no Oracle)', fontsize=10)
-        ax_zoom.set_xlabel('Window', fontsize=10)
+            ax.text(half + 0.5, 95, '  drift onset', va='top', ha='left',
+                    fontsize=9, color='#444444')
+        ax.grid(True, axis='y', alpha=0.25, linestyle=':')
+        ax.set_xlim(1, nw)
+        ax.set_ylim(0, 100)
+        ax.set_title(
+            f'{ds_labels.get(ds, ds)}\n'
+            f'pool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}  '
+            f'{nw}×{cfg["window_size"]}',
+            fontsize=11)
+        ax.set_xlabel('Window index')
+        if col == 0:
+            ax.set_ylabel('Recall@5  (%)')
 
-        # Zoom y-limit: tight around practical strategies' max
-        practical_vals = []
-        for n in practical:
-            if n in res['summary']:
-                practical_vals.extend(res['summary'][n]['recall@5_per_window'])
-        if practical_vals:
-            ymax = max(practical_vals) * 1.15 + 1
-            ax_zoom.set_ylim(0, ymax)
-
-    # Single legend below
-    handles, labels = axes[0, 0].get_legend_handles_labels()
+    handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center',
-               ncol=min(len(labels), 4), fontsize=8,
-               bbox_to_anchor=(0.5, -0.02))
-    fig.tight_layout(rect=[0, 0.04, 1, 1])
-    fig.savefig(FIG_DIR / f'recall_drift{suffix}.pdf', dpi=300, bbox_inches='tight')
-    fig.savefig(FIG_DIR / f'recall_drift{suffix}.png', dpi=150, bbox_inches='tight')
+               ncol=min(len(labels), 4), frameon=False,
+               bbox_to_anchor=(0.5, -0.04))
+    fig.tight_layout(rect=[0, 0.10, 1, 1])
+    fig.savefig(FIG_DIR / f'recall_drift{suffix}.pdf', bbox_inches='tight')
+    fig.savefig(FIG_DIR / f'recall_drift{suffix}.png', dpi=200,
+                bbox_inches='tight')
     log.info(f"Saved {FIG_DIR / f'recall_drift{suffix}.pdf'}")
     plt.close(fig)
 
@@ -299,16 +339,13 @@ def main():
         loader_name = None
         n_source = None
         if args.expanded:
-            if ds == '2wikimultihopqa':
-                loader_name = '2wiki_expanded'
-                n_source = args.n_source
-                base_cfg['use_focus_pool'] = False
-            elif ds == 'musique':
-                loader_name = 'musique_expanded'
-                n_source = args.n_source
-                base_cfg['use_focus_pool'] = False
-            if args.n_windows:
-                base_cfg['n_source'] = args.n_source
+            loader_name = {
+                'hotpotqa':        'hotpotqa_expanded',
+                '2wikimultihopqa': '2wiki_expanded',
+                'musique':         'musique_expanded',
+            }[ds]
+            n_source = args.n_source
+            base_cfg['n_source'] = args.n_source
 
         log.info(f"\n{'='*60}\n  Running: {ds} ({args.drift})\n{'='*60}")
         all_results[ds] = run_dataset(
