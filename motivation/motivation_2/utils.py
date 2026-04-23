@@ -27,7 +27,7 @@ def compute_embeddings(doc_pool, queries, tag):
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     key = hashlib.md5(
-        f"{len(doc_pool)}_{len(queries)}_{tag}_v10".encode()
+        f"{len(doc_pool)}_{len(queries)}_{tag}_v11".encode()
     ).hexdigest()[:12]
     dc = CACHE_DIR / f'de_{key}.npy'
     qc = CACHE_DIR / f'qe_{key}.npy'
@@ -53,13 +53,14 @@ def compute_embeddings(doc_pool, queries, tag):
 #  Query stream construction
 # ═══════════════════════════════════════════════════
 
+
 def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
     """Build a query stream with controlled topic drift.
 
     Step 1 -- Topic clustering:
-      KMeans on query embeddings (n_clusters from cfg).  Top-N largest
-      clusters are "head" topics; remaining are "tail" topics.
-      Reference: follows HippoRAG's topic-split evaluation protocol.
+      KMeans on raw query embeddings (sentence-transformers all-MiniLM-L6-v2).
+      Top-N largest clusters are "head" topics; remaining are "tail" topics.
+      Follows the query-semantic shift methodology of Lupart et al. (MS-Shift, ECIR 2023).
 
     Step 2 -- Stream construction (two halves):
       - H1 (first half):  97% head, 3% tail  (head-dominant)
@@ -92,7 +93,7 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
     tails = [q for q in queries if q['is_tail']]
     rng.shuffle(heads)
     rng.shuffle(tails)
-    log.info(f"Clusters: {[sizes[c] for c in ranked]}, "
+    log.info(f"Clusters (query_emb): {[sizes[c] for c in ranked]}, "
              f"head={len(heads)} tail={len(tails)}")
     half = n_q // 2
     ws = cfg['window_size']
@@ -138,6 +139,7 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
     nt = sum(1 for q in stream if q['is_tail'])
     log.info(f"Stream: {len(stream)} (head={nh} tail={nt})")
     return stream, km.cluster_centers_, head_set
+
 
 
 # ═══════════════════════════════════════════════════

@@ -22,7 +22,25 @@ Filtering: queries with < 2 supporting-fact titles in the pool are dropped,
 """
 import json
 import numpy as np
+
 from config import PROJECT_DIR, DATASET_CONFIGS, SEED, log
+
+
+def _random_subsample(items, sf_titles_fn, n_source, seed_offset=0):
+    """Random subsample requiring >=2 distinct supporting-fact titles per item."""
+    rng = np.random.default_rng(SEED + seed_offset)
+    order = np.arange(len(items))
+    rng.shuffle(order)
+    out = []
+    for idx in order:
+        it = items[int(idx)]
+        if len(set(sf_titles_fn(it))) < 2:
+            continue
+        out.append(it)
+        if n_source and len(out) >= n_source:
+            break
+    log.info(f'[random] selected {len(out)} / {len(items)} items')
+    return out
 
 
 # ═══════════════════════════════════════════════════
@@ -158,10 +176,13 @@ def load_hotpotqa_expanded(n_source=None):
             all_items.extend(json.load(f))
     log.info(f'  loaded {len(all_items)} items')
     if n_source and n_source < len(all_items):
-        rng = np.random.default_rng(SEED)
-        idx = rng.choice(len(all_items), n_source, replace=False)
-        all_items = [all_items[i] for i in idx]
-        log.info(f'  subsampled to {len(all_items)} items')
+        all_items = _random_subsample(
+            all_items,
+            lambda item: item['supporting_facts']['title'],
+            n_source,
+            seed_offset=31,
+        )
+        log.info(f'  randomly subsampled to {len(all_items)} items')
     title_to_text = {}
     for item in all_items:
         for title, sents in zip(item['context']['title'],
@@ -207,6 +228,14 @@ def load_musique_expanded(n_source=None):
             for line in f:
                 all_items.append(json.loads(line))
     log.info(f'  loaded {len(all_items)} items from train+dev')
+    if n_source and n_source < len(all_items):
+        all_items = _random_subsample(
+            all_items,
+            lambda item: [p['title'] for p in item['paragraphs'] if p.get('is_supporting')],
+            n_source,
+            seed_offset=41,
+        )
+        log.info(f'  randomly subsampled to {len(all_items)} items')
     title_texts = {}
     for item in all_items:
         for p in item['paragraphs']:
@@ -230,10 +259,6 @@ def load_musique_expanded(n_source=None):
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
                        'sf_titles': sfs, 'ctx_titles': ctx})
-    if n_source and n_source < len(queries):
-        rng = np.random.default_rng(SEED)
-        idx = rng.choice(len(queries), n_source, replace=False)
-        queries = [queries[i] for i in idx]
     log.info(f'[musique_expanded] pool={len(doc_pool)}, queries={len(queries)}')
     return doc_pool, queries, title_to_idx
 
@@ -256,6 +281,14 @@ def load_2wiki_expanded(n_source=None):
             raw = json.load(f)
         all_items.extend(raw)
     log.info(f'  loaded {len(all_items)} items from train+dev')
+    if n_source and n_source < len(all_items):
+        all_items = _random_subsample(
+            all_items,
+            lambda item: [sf[0] for sf in item.get('supporting_facts', [])],
+            n_source,
+            seed_offset=51,
+        )
+        log.info(f'  randomly subsampled to {len(all_items)} items')
     title_texts = {}
     for item in all_items:
         for c in item.get('context', []):
@@ -280,10 +313,6 @@ def load_2wiki_expanded(n_source=None):
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
                        'sf_titles': sfs, 'ctx_titles': ctx})
-    if n_source and n_source < len(queries):
-        rng = np.random.default_rng(SEED)
-        idx = rng.choice(len(queries), n_source, replace=False)
-        queries = [queries[i] for i in idx]
     log.info(f'[2wiki_expanded] pool={len(doc_pool)}, queries={len(queries)}')
     return doc_pool, queries, title_to_idx
 

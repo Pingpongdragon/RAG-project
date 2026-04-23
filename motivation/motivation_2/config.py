@@ -81,12 +81,12 @@ DOC_ADD_CAP  = WRITE_CAP
 # KnowledgeEdit  (models RECIPE knowledge-edit pipeline)
 EDIT_BATCH   = WRITE_CAP   # KB docs selected for edit each window
 
-# QueryDriven  (our demand-side approach)
+# QueryDriven / QueryDrivenLive  (demand-side writers)
 QD_TOP_K       = PROBE_TOPK  # per-failing-query candidate retrieval width
 QD_REPLACE_CAP = WRITE_CAP
 
 # RandomFIFO  (blind supply-side baseline)
-FIFO_BATCH     = WRITE_CAP
+FIFO_BATCH       = 40  # tight cap: ~LogDriven effective rate (200/5 windows); keeps RandomFIFO fair vs QDC empirical ~95/w and vs LogDriven amortised 40/w
 
 # OnDemandFetch  (CRAG / Agent-style passive search, no KB update)
 FETCH_TOP_K    = PROBE_TOPK
@@ -100,7 +100,7 @@ LOG_LAG_WINDOWS = 5    # human review cycle: apply fix every N windows
 # ── Strategy registry (display order, labels, plot styles) ──
 STRATEGY_ORDER = [
     'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'Oracle',
+    'OnDemandFetch', 'LogDrivenArrival', 'QueryDrivenCluster', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':           'Static (no update)',
@@ -109,7 +109,7 @@ STRATEGY_LABELS = {
     'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
     'OnDemandFetch':    'On-Demand Fetch (CRAG)',
     'LogDrivenArrival': 'Log-Driven (lagging)',
-    'QueryDriven':      'Query-Driven (simple)',
+    'QueryDrivenCluster': 'Query-Driven Cluster (ours)',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -119,7 +119,7 @@ STRATEGY_STYLES = {
     'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
     'OnDemandFetch':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
     'LogDrivenArrival': {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
-    'QueryDriven':      {'color': '#2563EB', 'marker': 'o', 'ls': '-'},
+    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

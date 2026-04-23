@@ -202,195 +202,31 @@
 %    这里要强调：算法不是拍脑袋规则，而是和 observation 一一对应。
 \section{Introduction}
 
-Retrieval-augmented generation (RAG) has substantially improved large language models (LLMs) on knowledge-intensive tasks~\cite{lewis2020rag}. In real deployments, however, the central difficulty is not whether retrieval helps in general, but how a system should respond when its current evidence is insufficient. Recent work has established that these failures are common. UAEval4RAG~\cite{peng2025uaeval4rag} shows that unsupported queries must be evaluated explicitly rather than absorbed into aggregate accuracy. FreshLLMs~\cite{vu2023freshllms} and LiveSearchBench~\cite{zhou2025livesearchbench} show that temporally novel knowledge remains difficult even with retrieval.
+Retrieval-augmented generation (RAG) has substantially improved large language models (LLMs) on knowledge-intensive tasks~\cite{lewis2020rag}. In deployment, however, the central question is not whether retrieval helps in general, but how a system should respond when its current KB no longer contains the needed evidence. Recent work has shown that such failures are common: UAEval4RAG~\cite{peng2025uaeval4rag} highlights unsupported queries as a first-class evaluation target, while FreshLLMs~\cite{vu2023freshllms} and LiveSearchBench~\cite{zhou2025livesearchbench} show that temporally novel knowledge remains hard even with retrieval.
 
-A well-studied line of work responds to these failures by keeping the KB \emph{static} while improving what happens at query time: retrieval-time correction, gating, and on-demand external search~\cite{yan2024crag,asai2023selfrag,vu2023freshllms,kasai2024realtime}. These methods are effective for the current query, but they leave the persistent KB unchanged. In many production deployments this is not sufficient. Systems with bounded storage, constrained or disallowed external lookup, latency budgets, or governance requirements must maintain a persistent, budget-limited KB and improve it over time. We study this well-motivated but under-solved operational regime.
+A common response is to keep the KB \emph{static} and improve only query-time behavior via correction, gating, or on-demand search~\cite{yan2024crag,asai2023selfrag,vu2023freshllms,kasai2024realtime}. That is useful for the current query, but it does not improve the persistent KB itself. In enterprise deployments, this is often insufficient: systems operate under strict governance constraints, latency bounds, and storage budgets, forcing them to maintain a persistent, budget-limited KB that must be improved over time rather than searching the live web per query~\cite{jin2024ragcache,comrag2025,siriwardhana2023improving}.
 
-Prior work on persistent KB maintenance has investigated three directions. Index-level incremental methods such as LightRAG~\cite{guo2024lightrag} and HippoRAG~2~\cite{guti2025hipporag2} optimize how newly arriving content is integrated into graph memory or index structures. Data-centric editing and pruning methods such as RECIPE~\cite{chen2024recipe} and Zero-RAG~\cite{zero-rag2025} improve the accuracy or compactness of existing knowledge. Temporal memory and caching methods such as ComRAG~\cite{comrag2025}, RAGCache~\cite{jin2024ragcache}, and StreamingRAG~\cite{wu2025streamingrag} optimize retention and reuse efficiency of admitted content. These are genuine contributions, but they share a structural commitment that limits their scope: all three directions are \emph{supply-triggered}. Index methods fire when a document arrives; editing methods operate on what is already in the corpus; caching methods promote or demote content based on recency or frequency of access. None uses the query stream itself---and specifically, queries whose supporting evidence is absent from the current KB---as the primary signal for deciding what new knowledge to acquire from an external pool under a fixed budget. This gap has measurable consequences. CRAG~\cite{yan2024crag} documents that real-world RAG queries span a long tail of low-popularity entities and temporally shifting topics that supply-driven indexing cannot track. UAEval4RAG~\cite{peng2025uaeval4rag} shows that queries lacking KB support produce systematic false answers unless the system explicitly acquires supporting evidence or abstains. Together they identify a decision that existing persistent KB methods do not make: \emph{when a support failure is observed in the query stream, should the system update the KB to fix it, and if so, with what?}
+Prior literature on dynamic RAG mostly interprets ``updating'' as correcting outdated facts while the user queries remain structurally stable. Recent benchmarks such as HoH~\cite{hoh2025} and DynaQuest~\cite{dynaquest2025} overwhelmingly evaluate scenarios where the underlying world state shifts (i.e., temporal knowledge change). However, a distinct and equally critical, yet largely unexplored, operational challenge is \emph{query distribution drift}~\cite{gama2014survey}---where the source facts in the world remain static, but the streaming user demand shifts suddenly or gradually from popular ``head'' topics to previously unindexed ``long-tail'' topics.
 
-A natural solution is to treat each observed support failure as a selective acquisition trigger. The failure identifies a concrete knowledge gap; the system then decides whether that gap is correctable from an external document pool and whether it recurs often enough to justify consuming budget. We formalize this framing as \emph{budgeted query-driven KB evolution} and ask: given a stream of queries where support failures are observable, which missing knowledge is worth admitting under a fixed KB budget, and which failures indicate a genuinely unanswerable request that no update should chase?
+How do existing persistent KB maintenance systems handle query distribution drift? Current strategies are fundamentally \emph{supply-triggered} or rely on delayed human feedback. Index-level incremental methods (e.g., LightRAG~\cite{guo2024lightrag}, HippoRAG~2~\cite{guti2025hipporag2}) integrate new documents as they arrive; editing methods (e.g., RECIPE~\cite{chen2024recipe}, Zero-RAG~\cite{zero-rag2025}) prune or correct existing facts; temporal caching methods (e.g., StreamingRAG~\cite{wu2025streamingrag}) optimize retention based on recency; and delayed log-driven methods (\emph{LogDrivenArrival}) append knowledge based on batched historical user feedback. Following shift construction methodologies established by MS-Shift~\cite{lupart2023ms} and TCR~\cite{li2024tcr}, we construct a controlled query distribution drift over streaming windows. We find that these paradigms suffer a catastrophic KB coverage collapse under fixed read-write budgets (Figure~\ref{fig:motivation-recall}). Providing supply-side methods with higher write budgets only injects noise, and log-driven methods are structurally too slow to adapt. Because they lack an immediate, precise demand signal from the query failures themselves, they replace documents arbitrarily and barely outperform a completely frozen Static baseline.
 
-% =========================================================
-% Motivation 1 -- Single-hop sanity: QD signal is effective
-% =========================================================
+To test whether query failures carry a useful immediate \emph{demand signal} once the query stream contains reusable supporting-fact structure, we evaluate \emph{QueryDrivenCluster}, a fair post-evaluation persistent writer that updates the KB only after each window has been scored. The mechanism is intentionally minimal: a single decayed per-document demand statistic accumulated from failing-query top-K bundles, a single decayed per-document serve statistic from successful retrievals, a Bayesian serve prior on the initial KB, and one admission gate that swaps a candidate $c$ for an evictable $e$ iff $\mathrm{demand}[c] > \mathrm{serve}[e] + \mathrm{demand}[e]$. There is no drift detection, no regime branching, and no separate write cap. We now report the 100$\times$50 single-hop runs in Motivation~1 using HotpotQA's comparison subset as the main simple direct-evidence case. Here the needed evidence is directly named, and QueryDrivenCluster is the strongest persistent writer under both drift modes (H2 Coverage / Recall@5 = 30.5 / 28.3 sudden, 34.8 / 31.0 gradual). This is the live Motivation~1 figure pair. We keep a scale-matched SQuAD~v1.1~\cite{rajpurkar2016squad} probe with target $n_{source}=30000$, realized pool 20{,}958, and KB budget 5{,}000 only as a supplementary stress check in the Motivation~1 README: it remains clearly positive under sudden drift, but its long gradual run mixes the demand-signal question with a separate capacity-allocation / eviction effect. Motivation~1 therefore supports the following main-text claim: immediate query-demand signal is genuinely useful in simple direct-evidence regimes under both sudden and gradual drift, while the residual long-stream single-hop failure mode appears when capacity allocation starts to dominate.
 
-\subsection{Motivation 1: Query-Demand Signal Is Effective on Single-Hop Queries}
-\label{sec:motivation-single-hop}
+Multi-hop drift is qualitatively different even when the construction is identical to the single-hop case. Relative to the simple positive cases above, the remaining gap in Motivation~2 is mainly a complex bridge / bundle acquisition gap: a failed multi-hop query rarely tells the persistent writer which reusable bridge evidence should be written for future queries. Under the current 100$\times$50 runs, MuSiQue is the only clean QueryDrivenCluster win (H2 Recall@5 = 22.7 sudden / 28.2 gradual), whereas HotpotQA and 2WikiMultihopQA still favor KnowledgeEdit or LogDrivenArrival. OnDemandFetch remains far higher, which means the evidence is usually retrievable; the missing capability is bridge-aware, fetch-assisted persistent admission under low cross-query reuse.
 
-Before examining complex multi-hop benchmarks, we first verify that the
-query-driven update signal is \emph{per se} informative---ruling out the
-hypothesis that it is simply too noisy to be useful.
-
-\paragraph{Setup.}
-We extract the \textbf{comparison} subset from HotpotQA and 2WikiMultihopQA~\cite{ho2020constructing}.
-Comparison questions (e.g.,~``Which film was released earlier, \emph{A} or \emph{B}?'')
-name both target entities explicitly, so both supporting-fact documents can be retrieved
-from the question alone in a single retrieval step---making this functionally
-a \emph{single-hop} task.
-We run the same 8-strategy suite (§\ref{sec:motivation-experiment}) under
-sudden drift (50 windows, pool $\approx$ 20k--51k docs, KB $\approx$ 10\% of pool).
-
-\paragraph{Metric: KB Coverage.}
-We measure \emph{KB Coverage per window}---the fraction of a window's
-ground-truth supporting-fact documents that are currently held in the KB:
-\[
-  \mathrm{Cov}(w) = \frac{|\mathrm{KB}_w \cap \mathrm{SF\text{-}docs}(w)|}{|\mathrm{SF\text{-}docs}(w)|}
-\]
-This metric is retriever-agnostic (it asks whether the right evidence is
-\emph{held}, not whether the retriever \emph{finds} it), making it a clean
-measure of KB content selection quality.
-It is equivalent to the \emph{context recall} metric of RAGAS~\cite{es2023ragas}
-and the retrieval-accuracy notion of DPR~\cite{karpukhin2020dpr}.
-
-\paragraph{Results.}
-Table~\ref{tab:motivation1-results} shows H1 and H2 KB Coverage.
-Under sudden drift, QueryDriven achieves \textbf{22.4\%} H2 coverage on
-HotpotQA comparison (+13.2pp over Static) and \textbf{42.7\%} on 2Wiki
-comparison (+16.2pp over Static), while OnDemandFetch is comparable at
-22.3\% and 33.4\% respectively.
-Both easily outperform DocArrival ($\approx$9\%/27\%) and Static
-($\approx$9\%/27\%).
-Oracle achieves 100\% by construction.
-
-\begin{table}[h]
-\centering
-\small
-\caption{KB Coverage (\%) under sudden drift for single-hop comparison subsets.
-H1/H2 = mean over windows 1--25 / 26--50. QD = QueryDriven, ODF = OnDemandFetch.}
-\label{tab:motivation1-results}
-\begin{tabular}{l|cc|cc}
-\toprule
- & \multicolumn{2}{c|}{\textbf{HotpotQA-Comp}} & \multicolumn{2}{c}{\textbf{2Wiki-Comp}} \\
-Strategy & H1 & H2 & H1 & H2 \\
-\midrule
-Static         & 97.1 &  9.2 & 97.4 & 26.5 \\
-DocArrival     & 96.9 &  9.2 & 97.3 & 26.6 \\
-KnowledgeEdit  & 84.8 & 11.5 & 86.0 & 34.6 \\
-OnDemandFetch  & 97.1 & 22.3 & 97.4 & 33.4 \\
-QueryDriven    & 95.2 & \textbf{22.4} & 95.6 & \textbf{42.7} \\
-\midrule
-\textit{Oracle} & 100.0 & \textbf{100.0} & 100.0 & \textbf{100.0} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Conclusion.}
-On single-hop comparison questions, query-demand signals \emph{do} work:
-QueryDriven achieves 2.4$\times$ the H2 coverage of Static on HotpotQA and
-1.6$\times$ on 2Wiki.
-The performance ceiling (gap to Oracle) on multi-hop datasets is therefore
-\emph{not} because the update signal is intrinsically noisy---it is because
-retrieving the right \emph{multi-hop chain} of documents requires structural
-graph reasoning beyond dense embedding search.
-This motivates the architecture explored in Motivation~2 below.
-
-% =========================================================
-% Motivation Experiment
-% =========================================================
-
-\subsection{Motivation 2: All Existing Paradigms Fail Under Multi-Hop Query Distribution Drift}
-\label{sec:motivation-experiment}
-
-% ── 实验设计 ──
-
-To verify that this gap is real and measurable, we design a controlled experiment across three standard multi-hop QA benchmarks—\textbf{HotpotQA}~\cite{yang2018hotpotqa}, \textbf{2WikiMultihopQA}~\cite{ho2020constructing}, and \textbf{MuSiQue}~\cite{trivedi2022musique}—each requiring retrieval of multiple supporting-fact documents per query. These three datasets are also the primary benchmarks used by HippoRAG~2~\cite{guti2025hipporag2}, making them directly relevant to the state-of-the-art continual RAG evaluation.
-
-\paragraph{Setup.}
-For each dataset, we maintain a budget-constrained KB holding approximately 10\% of the document pool (Table~\ref{tab:motivation-setup}). We embed all documents and queries with \texttt{all-MiniLM-L6-v2} and cluster queries into 8 groups via $K$-Means. The top 3 clusters form the ``head'' distribution; the remaining 5 form the ``tail.'' We construct a query stream of 20 windows: the first 10 (H1) draw 97\% head / 3\% tail queries, and the last 10 (H2) reverse to 3\% head / 97\% tail. The initial KB is biased toward head topics via centroid proximity. This setup simulates a common real-world scenario: a RAG system tuned for popular queries suddenly faces a shift toward long-tail topics.
-
-\begin{table}[h]
-\centering
-\small
-\caption{Dataset configuration. KB budget $\approx$ 10\% of pool.}
-\label{tab:motivation-setup}
-\begin{tabular}{lccccc}
-\toprule
-Dataset & Pool & KB & Windows & Win Size & Focus Pool \\
-\midrule
-HotpotQA          & 9{,}783  & 1{,}000 & 20$\times$50 & 50 & \checkmark \\
-2WikiMultihopQA   & 6{,}119  &   600   & 20$\times$25 & 25 & -- \\
-MuSiQue           & 9{,}838  & 1{,}000 & 20$\times$25 & 25 & -- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Strategies.}
-We compare five KB update paradigms plus an oracle upper bound:
-\begin{enumerate}[nosep]
-    \item \textbf{Static}: no KB update (lower bound).
-    \item \textbf{DocArrival}: document-arrival-driven update (HippoRAG/LightRAG paradigm). New documents arrive randomly from the pool; if a new document is highly similar to a KB entry ($>$0.7), it replaces it; if very dissimilar ($<$0.3), it evicts the stalest entry.
-    \item \textbf{DocArrival-Heavy}: same paradigm with 2.5$\times$ operation budget, cost-matched to QueryDriven.
-    \item \textbf{KnowledgeEdit}: knowledge-edit-driven update (RECIPE paradigm). External edit requests target random KB entries, replacing them with semantically similar alternatives.
-    \item \textbf{QueryDriven}: demand-driven update. Identifies queries poorly served by the current KB (max query--KB similarity below threshold), retrieves candidate documents from the pool, and evicts least-useful KB entries. Uses adaptive scoring (auto-switching between MEAN and MAX based on embedding signal quality).
-    \item \textbf{Oracle}: upper bound. At the H1$\to$H2 transition, rebuilds the KB with perfect knowledge of all H2 supporting facts. This is not a realistic strategy but establishes the ceiling achievable with ideal content selection under the same KB budget.
-\end{enumerate}
-
-% ── 结果 ──
-
-\paragraph{Results.}
-Table~\ref{tab:motivation-results} reports Recall@$K$ for H1 (pre-drift) and H2 (post-drift).
-
-\begin{table}[h]
-\centering
-\small
-\caption{Recall@$K$ (\%) under sudden query distribution drift (97/3$\to$3/97). $\Delta$ = H2 $-$ H1. The Oracle row shows the ceiling achievable with perfect content selection under the same KB budget. The gap between QueryDriven and Oracle reveals that the bottleneck is \emph{content selection precision}, not budget or paradigm.}
-\label{tab:motivation-results}
-\begin{tabular}{l|ccc|ccc|ccc}
-\toprule
- & \multicolumn{3}{c|}{\textbf{HotpotQA}} & \multicolumn{3}{c|}{\textbf{2WikiMultihopQA}} & \multicolumn{3}{c}{\textbf{MuSiQue}} \\
-Strategy & H1 & H2 & $\Delta$ & H1 & H2 & $\Delta$ & H1 & H2 & $\Delta$ \\
-\midrule
-\multicolumn{10}{l}{\textit{Recall@5}} \\
-Static           & 23.6 &  0.5 & -23.1 & 26.1 &  0.5 & -25.6 & 21.3 &  2.3 & -19.0 \\
-DocArrival       & 22.5 &  2.4 & -20.1 & 25.6 &  1.9 & -23.7 & 20.1 &  3.0 & -17.1 \\
-DocArrival-Heavy & 21.5 &  3.9 & -17.6 & 24.0 &  2.8 & -21.2 & 18.5 &  5.1 & -13.4 \\
-KnowledgeEdit    & 22.6 &  2.2 & -20.4 & 21.7 &  3.0 & -18.7 & 18.6 &  1.4 & -17.2 \\
-\cdashline{1-10}
-QueryDriven      & 22.2 &  7.5 & -14.7 & 24.6 &  2.7 & -21.9 & 21.2 &  8.8 & -12.4 \\
-\cdashline{1-10}
-\textit{Oracle}  & 23.6 & \textbf{74.5} & +50.9 & 26.1 & \textbf{60.9} & +34.8 & 21.3 & \textbf{55.1} & +33.8 \\
-\midrule
-\multicolumn{10}{l}{\textit{Recall@20}} \\
-Static           & 25.7 &  0.5 & -25.2 & 28.8 &  0.5 & -28.3 & 27.3 &  2.7 & -24.6 \\
-QueryDriven      & 24.2 &  8.2 & -16.0 & 27.3 &  3.2 & -24.1 & 26.8 & 10.3 & -16.5 \\
-\textit{Oracle}  & 25.7 & \textbf{81.6} & +55.9 & 28.8 & \textbf{66.2} & +37.4 & 27.3 & \textbf{64.6} & +37.3 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-% ── 分析 ──
-
-\paragraph{Finding 1: Catastrophic recall collapse is universal.}
-Across all three datasets and all strategies except Oracle, Recall@5 drops by 12--26 percentage points from H1 to H2. Even the Static baseline drops from 21--26\% to near zero, confirming that the initial KB provides essentially no coverage for the shifted distribution. This is not a model quality problem---the same embedding model achieves 20+\% Recall@5 in H1---but a \emph{knowledge inventory mismatch}: the KB simply does not contain the evidence needed for the new query distribution.
-
-\paragraph{Finding 2: Supply-side paradigms lack demand signals by design.}
-DocArrival and KnowledgeEdit improve H2 Recall@5 by at most 3.9 and 3.0 percentage points over Static, respectively. Even DocArrival-Heavy with 2.5$\times$ budget reaches only 3.9\% (HotpotQA), 2.8\% (2Wiki), and 5.1\% (MuSiQue) in H2. The comparison with QueryDriven is intentionally asymmetric: QueryDriven leverages query failure signals that DocArrival and KnowledgeEdit \emph{cannot access by design}. This is precisely the point---existing RAG KB maintenance systems (HippoRAG, RECIPE) trigger updates from the supply side (document arrival, edit requests) and have no architectural pathway to discover \emph{what knowledge the current queries need}. The performance gap demonstrates that this missing demand signal is the primary bottleneck, not algorithm sophistication.
-
-\paragraph{Finding 3: Demand-driven signals help but face structural limits.}
-QueryDriven achieves the highest H2 Recall@5 among realistic methods on two of three datasets (7.5\% on HotpotQA, 8.8\% on MuSiQue), demonstrating that query failure signals are a strictly better update trigger than supply-side signals. However, even the best realistic method recovers only 30--42\% of pre-drift performance. Three structural factors explain this ceiling:
-\begin{enumerate}[nosep]
-    \item \textbf{Adaptation latency}: QueryDriven must \emph{observe} failing queries before it can react; the first 2--3 windows of H2 are effectively wasted.
-    \item \textbf{Replacement budget}: At 60 swaps per window, fully rebuilding a 1{,}000-doc KB takes $\sim$17 windows---longer than the 10-window H2 period.
-    \item \textbf{Content selection precision}: With a lightweight encoder, the system cannot reliably identify which pool documents will actually serve as supporting facts for failing queries.
-\end{enumerate}
-
-\paragraph{Finding 4: The Oracle gap reveals the true bottleneck.}
-The Oracle upper bound---which rebuilds the KB with perfect knowledge of H2 supporting facts---achieves 74.5\% (HotpotQA), 60.9\% (2Wiki), and 55.1\% (MuSiQue) Recall@5 in H2, \emph{far exceeding} pre-drift performance. The gap between QueryDriven and Oracle is striking: 67.0pp on HotpotQA, 58.2pp on 2Wiki, and 46.3pp on MuSiQue. This demonstrates that the KB budget is \emph{not} the bottleneck---the same 1{,}000-document budget supports 74.5\% recall when filled with the right content. The bottleneck is \emph{content selection precision}: QueryDriven uses 731 swaps (HotpotQA) compared to Oracle's 995, yet achieves only 7.5\% vs.\ 74.5\%. The problem is not how many documents are replaced, but \emph{which} documents are selected. This motivates a system that goes beyond simple embedding-space heuristics to incorporate deeper semantic understanding of what knowledge the query stream needs.
-
-\paragraph{Finding 5: Progressive recovery reveals the learning dynamic.}
-Analyzing per-window Recall@5 trajectories reveals a key distinction (Figure~\ref{fig:motivation-recall}). Supply-side strategies show flat H2 curves: DocArrival-Heavy's per-window R@5 fluctuates around 3--6\% throughout H2 with no upward trend. In contrast, QueryDriven shows a clear learning ramp: from 1--3\% in early H2 windows to 8--12\% in late H2 windows. This confirms that demand-driven signals enable progressive adaptation, but the adaptation is too slow and imprecise to close the gap to Oracle.
-
-\paragraph{Conclusion.}
-This experiment establishes four facts that motivate our work:
-(1)~query distribution drift causes catastrophic and universal recall collapse in budget-constrained RAG systems;
-(2)~existing supply-side paradigms (document arrival, knowledge editing) cannot compensate because they lack a mechanism to \emph{discover} what knowledge the shifted queries need;
-(3)~demand-driven approaches significantly outperform supply-side methods, confirming that query failure signals are the correct update trigger;
-(4)~the Oracle gap (55--75\% vs.\ 3--9\%) proves that the KB budget is sufficient---the bottleneck is content selection precision. Simple embedding-space heuristics cannot identify the right documents to acquire. These findings motivate a system that combines demand-driven KB evolution with deeper semantic understanding of knowledge gaps.
+The two motivation experiments therefore support a narrower claim than a universal QueryDrivenCluster win: query-demand signal is effective in simple direct-evidence regimes, while the remaining single-hop gap is capacity allocation under long gradual streams and the main full multi-hop gap is bridge / bundle acquisition under low reuse together with the lack of a fetch-to-persist handoff. We keep the empirical diagnosis in the main text and move the concrete algorithm design directions to \texttt{DESIGN\_DIRECTIONS.md}.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{motivation_2/figures/recall_drift_50w_sudden.pdf}
-    \caption{Per-window Recall@5 across three multi-hop datasets under sudden query distribution drift (Motivation 2). The vertical dashed line marks the H1$\to$H2 shift. All realistic strategies collapse; QueryDriven shows progressive but limited recovery. Oracle (dashed) demonstrates the ceiling achievable with perfect content selection.}
+    \includegraphics[width=0.9\linewidth]{motivation_1/figures/coverage_100w_sudden.pdf}
+    \caption{Single-hop sudden drift on HotpotQA-comparison under the current 100$\times$50 Motivation~1 setup. This is the clean simple direct-evidence case: QueryDrivenCluster is the strongest persistent writer here, and the paired gradual Motivation~1 figure shows the same ordering. Scale-matched SQuAD is kept only as a supplementary stress check in the Motivation~1 README.}
+    \label{fig:motivation-coverage}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{motivation_2/figures/coverage_drift_100w_sudden.pdf}
+    \caption{Multi-hop sudden drift on HotpotQA, MuSiQue, and 2WikiMultihopQA under the current 100$\times$50 Motivation~2 setup. The key remaining gap is bridge / bundle acquisition under low cross-query reuse: MuSiQue is the only clean QueryDrivenCluster win, while HotpotQA and 2WikiMultihopQA still favor stronger lagged or edit-based baselines. OnDemandFetch is much higher only as an online per-query fetch upper bound, indicating that the missing capability is bridge-aware persistent admission rather than raw retrievability.}
     \label{fig:motivation-recall}
 \end{figure}
 

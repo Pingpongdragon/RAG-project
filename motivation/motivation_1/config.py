@@ -2,10 +2,11 @@
 Motivation 1 — Single-hop sanity experiment.
 
 Same framework as Motivation 2 (multi-hop, motivation_4), but with single-hop
-queries to validate that QueryDriven (dense topic alignment) DOES help when the
-retrieval task is single-hop. This produces the BASELINE evidence that
-QD signal is a real, useful signal — so the multi-hop failure (Motivation 2)
-cannot be dismissed as "QD itself is broken".
+queries to validate that QueryDrivenLive (dense alignment + same-window
+write-through) really does help when the retrieval task is single-hop. This
+produces the baseline evidence that demand-side query signal is real, and that
+the remaining multi-hop gap comes from bridge retrieval rather than from the
+idea of query-driven maintenance itself.
 
 Single-hop here = HotpotQA "comparison" subset: each query independently
 references ~2 documents that are dense-similar to the query (no bridging hop).
@@ -27,7 +28,7 @@ SF_HIT_THRESH = 0.55
 K_LIST = [1, 5, 10, 20]
 
 _DEFAULT_CFG = {
-    'n_source':       8000,
+    'n_source':       4000,
     'n_windows':      50,
     'window_size':    50,
     'n_clusters':     8,
@@ -35,8 +36,10 @@ _DEFAULT_CFG = {
     'kb_head_mult':   1.2,
 }
 DATASET_CONFIGS = {
-    'hotpotqa_comparison': dict(_DEFAULT_CFG),
-    '2wiki_comparison':     dict(_DEFAULT_CFG),
+    'squad': dict(_DEFAULT_CFG),
+    'hotpotqa_comparison': dict(_DEFAULT_CFG, n_source=4000),
+    # 2wiki_comparison evaluated at KB=8000 and excluded: 1.01 q/title,
+    # QDC loses to RandomFIFO/Static. See ../DESIGN_DIRECTIONS.md.
 }
 
 WRITE_CAP        = 200
@@ -47,7 +50,7 @@ DOC_ADD_CAP      = WRITE_CAP
 EDIT_BATCH       = WRITE_CAP
 QD_TOP_K         = PROBE_TOPK
 QD_REPLACE_CAP   = WRITE_CAP
-FIFO_BATCH       = WRITE_CAP
+FIFO_BATCH       = 40  # tight cap: ~LogDriven effective rate (200/5 windows); keeps RandomFIFO fair vs QDC empirical ~95/w and vs LogDriven amortised 40/w
 FETCH_TOP_K      = PROBE_TOPK
 LOG_FIX_TOP_K    = PROBE_TOPK
 LOG_FIX_CAP      = WRITE_CAP
@@ -55,7 +58,7 @@ LOG_LAG_WINDOWS  = 5
 
 STRATEGY_ORDER = [
     'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'Oracle',
+    'OnDemandFetch', 'LogDrivenArrival', 'QueryDrivenCluster', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':           'Static (no update)',
@@ -64,7 +67,7 @@ STRATEGY_LABELS = {
     'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
     'OnDemandFetch':    'On-Demand Fetch (CRAG)',
     'LogDrivenArrival': 'Log-Driven (lagging)',
-    'QueryDriven':      'Query-Driven (simple)',
+    'QueryDrivenCluster': 'Query-Driven Cluster (ours)',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -74,7 +77,7 @@ STRATEGY_STYLES = {
     'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
     'OnDemandFetch':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
     'LogDrivenArrival': {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
-    'QueryDriven':      {'color': '#2563EB', 'marker': 'o', 'ls': '-'},
+    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

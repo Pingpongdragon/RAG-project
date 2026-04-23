@@ -29,7 +29,7 @@ from utils import (compute_embeddings, cluster_and_build_stream,
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
-                loader_name=None, n_source=None):
+                loader_name=None, n_source=None, kb_budget_override=None):
     t0 = time.time()
     nw = cfg['n_windows']; ws = cfg['window_size']
     lname = loader_name or ds_name
@@ -50,6 +50,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                     head_ctx.add(t2l[t])
     kb_head_mult = cfg.get('kb_head_mult', 1.2)
     kb_budget = max(300, int(round(len(head_ctx) * kb_head_mult / 50)) * 50)
+    if kb_budget_override is not None:
+        log.info(f"[{ds_name}] KB budget override: {kb_budget} -> {kb_budget_override} (head_ctx={len(head_ctx)})")
+        kb_budget = kb_budget_override
     init_kb = head_biased_init_kb(
         doc_pool, doc_embs, centroids, head_set, kb_budget, stream)
     d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
@@ -83,6 +86,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                     window_gold_did.add(doc_pool[title_to_idx[t]]['doc_id'])
         for name in strategies_to_run:
             s = strategies[name]
+            s.prepare_window(wq, wqe, w)
             if name == 'Oracle':
                 s.step(wq, wqe, w)
             effective_kb = (s.get_effective_kb(wq, wqe)
@@ -164,7 +168,7 @@ def print_summary(all_results, strategies_to_run):
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
-    """Two-row coverage figure: per-window + cumulative."""
+    """Per-dataset KB Coverage + Recall@5 figure over windows."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -183,47 +187,68 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDriven':      ('#1F77B4', '-',  '*'),
+        'QueryDrivenCluster': ('#10B981', '-',  'D'),
         'Oracle':           ('#D62728', '-',  None),
     }
     datasets = list(all_results.keys())
     n_ds = max(len(datasets), 1)
-    fig, axes = plt.subplots(1, n_ds, figsize=(5.2 * n_ds, 3.8), squeeze=False)
+    fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
+                             sharex=True, squeeze=False)
+    emphasis = {'Oracle', 'QueryDrivenCluster'}
 
-    for col, ds in enumerate(datasets):
+    for row, ds in enumerate(datasets):
         res = all_results[ds]; cfg = res['config']
         nw = cfg['n_windows']; half = nw // 2
         x = np.arange(1, nw + 1)
-        ax = axes[0, col]
-        for name in strategies_to_run:
-            if name not in res['summary']:
-                continue
-            color, ls, marker = palette.get(name, ('gray', '-', None))
-            cov = res['summary'][name]['cov_per_window']
-            lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
-            alpha = 1.0 if name in ('Oracle', 'QueryDriven') else 0.85
-            zorder = 5 if name in ('Oracle', 'QueryDriven') else 3
-            mark_every = max(1, nw // 12)
-            ax.plot(x, cov, color=color, linestyle=ls, marker=marker,
-                    linewidth=lw, alpha=alpha, markersize=5,
-                    markevery=mark_every, zorder=zorder,
-                    label=STRATEGY_LABELS.get(name, name))
-        ax.axvline(half + 0.5, color='#444444', ls='--', lw=0.9, alpha=0.6)
-        ax.grid(True, axis='y', alpha=0.25, linestyle=':')
-        ax.set_xlim(1, nw); ax.set_ylim(0, 100)
-        ax.set_title(
-            f'{ds}  pool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}  '
-            f'{nw}×{cfg["window_size"]}', fontsize=11)
-        if col == 0:
-            ax.set_ylabel('Per-window SF coverage (%)')
-            ax.text(half + 0.5, 95, '  drift onset', va='top',
-                    ha='left', fontsize=9, color='#444444')
-        ax.set_xlabel('Window index')
+        for col, (series_key, ylabel) in enumerate((
+            ('cov_per_window', 'KB Coverage (%)'),
+            ('recall@5_per_window', 'Recall@5 (%)'),
+        )):
+            ax = axes[row, col]
+            for name in strategies_to_run:
+                if name not in res['summary']:
+                    continue
+                color, ls, marker = palette.get(name, ('gray', '-', None))
+                values = res['summary'][name][series_key]
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDrivenCluster' else 1.4)
+                alpha = 1.0 if name in emphasis else 0.85
+                zorder = 5 if name in emphasis else 3
+                mark_every = max(1, nw // 12)
+                ax.plot(x, values, color=color, linestyle=ls, marker=marker,
+                        linewidth=lw, alpha=alpha, markersize=5,
+                        markevery=mark_every, zorder=zorder,
+                        label=STRATEGY_LABELS.get(name, name))
+            ax.axvline(half + 0.5, color='#444444', ls='--', lw=0.9, alpha=0.6)
+            ax.grid(True, axis='y', alpha=0.25, linestyle=':')
+            ax.set_xlim(1, nw)
+            ax.set_ylim(0, 100)
+            ax.set_ylabel(ylabel)
+            if col == 0:
+                ax.set_title(
+                    f'{ds}  pool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}  '
+                    f'{nw}×{cfg["window_size"]}',
+                    fontsize=11,
+                )
+                ax.text(half + 0.5, 95, '  drift onset', va='top',
+                        ha='left', fontsize=9, color='#444444')
+            else:
+                ax.set_title('Recall@5', fontsize=11)
+            if row == n_ds - 1:
+                ax.set_xlabel('Window index')
+    drift_label = None
+    if 'sudden' in suffix:
+        drift_label = 'Sudden Drift'
+    elif 'gradual' in suffix:
+        drift_label = 'Gradual Drift'
+    if drift_label:
+        fig.suptitle('Motivation 1 - ' + drift_label, fontsize=14, y=1.01)
+
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center',
                ncol=min(len(labels), 4), frameon=False,
                bbox_to_anchor=(0.5, -0.02))
-    fig.tight_layout(rect=[0, 0.06, 1, 1])
+    top = 0.96 if drift_label else 0.99
+    fig.tight_layout(rect=[0, 0.06, 1, top])
     fig.savefig(FIG_DIR / f'coverage{suffix}.pdf', bbox_inches='tight')
     fig.savefig(FIG_DIR / f'coverage{suffix}.png', dpi=200, bbox_inches='tight')
     log.info(f"Saved {FIG_DIR / f'coverage{suffix}.pdf'}")
@@ -236,9 +261,10 @@ def main():
     parser.add_argument('--window-size', type=int, default=50)
     parser.add_argument('--drift', choices=['sudden', 'gradual'], default='sudden')
     parser.add_argument('--n-source', type=int, default=None)
-    parser.add_argument('--datasets', nargs='+', default=['hotpotqa_comparison'])
+    parser.add_argument('--datasets', nargs='+', default=['squad'])
     parser.add_argument('--strategies', nargs='+', default=None)
     parser.add_argument('--output', type=str, default=None)
+    parser.add_argument('--kb-budget', type=int, default=None, help='Override KB budget (bypass kb_head_mult formula).')
     args = parser.parse_args()
 
     strategies_to_run = args.strategies or STRATEGY_ORDER
@@ -251,7 +277,8 @@ def main():
         all_results[ds] = run_dataset(
             ds, base_cfg, strategies_to_run,
             drift_mode=args.drift,
-            loader_name=ds, n_source=args.n_source)
+            loader_name=ds, n_source=args.n_source,
+            kb_budget_override=args.kb_budget)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     out_name = args.output or f'results_{args.n_windows}w_{args.drift}.json'

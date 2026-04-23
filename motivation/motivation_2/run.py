@@ -7,7 +7,7 @@ Usage:
   python run.py --n-windows 50 --window-size 50 --expanded
   python run.py --drift gradual
   python run.py --datasets hotpotqa musique
-  python run.py --strategies Static QueryDriven Oracle
+  python run.py --strategies Static QueryDrivenCluster Oracle
 
 Supports:
   - Configurable window count and size
@@ -15,7 +15,7 @@ Supports:
   - Sudden or gradual drift modes
   - Selective dataset and strategy execution
 """
-import sys, json, time, argparse
+import os, sys, json, time, argparse
 import numpy as np
 from pathlib import Path
 
@@ -30,7 +30,7 @@ from utils import (compute_embeddings, cluster_and_build_stream,
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
-                loader_name=None, n_source=None):
+                loader_name=None, n_source=None, kb_budget_override=None):
     """Run one dataset experiment.
 
     Args:
@@ -80,6 +80,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                     head_ctx.add(t2l[t])
     kb_head_mult = cfg.get('kb_head_mult', 1.2)
     kb_budget = max(300, int(round(len(head_ctx) * kb_head_mult / 50)) * 50)
+    if kb_budget_override is not None:
+        log.info(f"[{ds_name}] KB budget override: {kb_budget} -> {kb_budget_override} (head_ctx={len(head_ctx)})")
+        kb_budget = kb_budget_override
     init_kb = head_biased_init_kb(
         doc_pool, doc_embs, centroids, head_set, kb_budget, stream)
     d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
@@ -117,6 +120,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                     window_gold_did.add(doc_pool[title_to_idx[t]]['doc_id'])
         for name in strategies_to_run:
             s = strategies[name]
+            s.prepare_window(wq, wqe, w)
             # Oracle is non-causal: rebuild KB BEFORE evaluation so it represents
             # the per-window upper bound for the queries we are about to score.
             if name == 'Oracle':
@@ -205,7 +209,7 @@ def print_summary(all_results, strategies_to_run):
         print(hdr)
         print("-" * len(hdr))
         for name in strategies_to_run:
-            if name not in res['summary']:
+            if name not in res['summary'] or name == 'Oracle':
                 continue
             s = res['summary'][name]
             h1 = s['recall@5_h1']; h2 = s['recall@5_h2']
@@ -220,7 +224,7 @@ def print_summary(all_results, strategies_to_run):
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
-    """Publication-quality single-row figure: Recall@5 vs window, one col per dataset."""
+    """Per-dataset KB Coverage + Recall@5 figure over windows."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -251,65 +255,78 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDriven':      ('#1F77B4', '-',  '*'),
+        'QueryDrivenCluster': ('#10B981', '-',  'D'),
         'Oracle':           ('#D62728', '-',  None),
     }
 
-    fig, axes = plt.subplots(1, n_ds, figsize=(5.2 * n_ds, 3.8),
-                             sharex='col')
-    if n_ds == 1:
-        axes = [axes]
+    fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
+                             sharex=True, squeeze=False)
+    emphasis = {'Oracle', 'QueryDrivenCluster'}
 
-    for col, ds in enumerate(datasets):
+    for row, ds in enumerate(datasets):
         res = all_results[ds]
         cfg = res['config']
         nw = cfg['n_windows']
         half = nw // 2
         x = np.arange(1, nw + 1)
-        ax = axes[col]
 
-        for name in strategies_to_run:
-            if name not in res['summary']:
-                continue
-            color, ls, marker = palette.get(name, ('gray', '-', None))
-            recall_y = res['summary'][name]['recall@5_per_window']
-            lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
-            alpha = 1.0 if name in ('Oracle', 'QueryDriven') else 0.85
-            zorder = 5 if name in ('Oracle', 'QueryDriven') else 3
-            mark_every = max(1, nw // 12)
-            ax.plot(x, recall_y, color=color, linestyle=ls, marker=marker,
-                    linewidth=lw, alpha=alpha, markersize=5,
-                    markevery=mark_every, zorder=zorder,
-                    label=STRATEGY_LABELS.get(name, name))
+        for col, (series_key, ylabel) in enumerate((
+            ('kb_coverage_per_window', 'KB Coverage (%)'),
+            ('recall@5_per_window', 'Recall@5 (%)'),
+        )):
+            ax = axes[row, col]
+            for name in strategies_to_run:
+                if name not in res['summary']:
+                    continue
+                color, ls, marker = palette.get(name, ('gray', '-', None))
+                values = res['summary'][name][series_key]
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDrivenCluster' else 1.4)
+                alpha = 1.0 if name in emphasis else 0.85
+                zorder = 5 if name in emphasis else 3
+                mark_every = max(1, nw // 12)
+                ax.plot(x, values, color=color, linestyle=ls, marker=marker,
+                        linewidth=lw, alpha=alpha, markersize=5,
+                        markevery=mark_every, zorder=zorder,
+                        label=STRATEGY_LABELS.get(name, name))
 
-        ax.axvline(half + 0.5, color='#444444', ls='--', lw=0.9, alpha=0.6)
-        if col == 0:
-            ax.text(half + 0.5, 95, '  drift onset', va='top', ha='left',
-                    fontsize=9, color='#444444')
-        ax.grid(True, axis='y', alpha=0.25, linestyle=':')
-        ax.set_xlim(1, nw)
-        ax.set_ylim(0, 100)
-        ax.set_title(
-            f'{ds_labels.get(ds, ds)}\n'
-            f'pool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}  '
-            f'{nw}×{cfg["window_size"]}',
-            fontsize=11)
-        ax.set_xlabel('Window index')
-        if col == 0:
-            ax.set_ylabel('Recall@5  (%)')
+            ax.axvline(half + 0.5, color='#444444', ls='--', lw=0.9, alpha=0.6)
+            if col == 0:
+                ax.text(half + 0.5, 95, '  drift onset', va='top', ha='left',
+                        fontsize=9, color='#444444')
+            ax.grid(True, axis='y', alpha=0.25, linestyle=':')
+            ax.set_xlim(1, nw)
+            ax.set_ylim(0, 100)
+            ax.set_ylabel(ylabel)
+            if col == 0:
+                ax.set_title(
+                    f'{ds_labels.get(ds, ds)}\n'
+                    f'pool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}  '
+                    f'{nw}×{cfg["window_size"]}',
+                    fontsize=11)
+            else:
+                ax.set_title('Recall@5', fontsize=11)
+            if row == n_ds - 1:
+                ax.set_xlabel('Window index')
 
-    handles, labels = axes[0].get_legend_handles_labels()
+    drift_label = None
+    if 'sudden' in suffix:
+        drift_label = 'Sudden Drift'
+    elif 'gradual' in suffix:
+        drift_label = 'Gradual Drift'
+    if drift_label:
+        fig.suptitle('Motivation 2 - ' + drift_label, fontsize=14, y=1.01)
+
+    handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center',
                ncol=min(len(labels), 4), frameon=False,
                bbox_to_anchor=(0.5, -0.04))
-    fig.tight_layout(rect=[0, 0.10, 1, 1])
-    fig.savefig(FIG_DIR / f'recall_drift{suffix}.pdf', bbox_inches='tight')
-    fig.savefig(FIG_DIR / f'recall_drift{suffix}.png', dpi=200,
+    top = 0.97 if drift_label else 1.00
+    fig.tight_layout(rect=[0, 0.10, 1, top])
+    fig.savefig(FIG_DIR / f'coverage_drift{suffix}.pdf', bbox_inches='tight')
+    fig.savefig(FIG_DIR / f'coverage_drift{suffix}.png', dpi=200,
                 bbox_inches='tight')
-    log.info(f"Saved {FIG_DIR / f'recall_drift{suffix}.pdf'}")
+    log.info(f"Saved {FIG_DIR / f'coverage_drift{suffix}.pdf'}")
     plt.close(fig)
-
-
 def main():
     parser = argparse.ArgumentParser(description='Motivation experiment runner')
     parser.add_argument('--n-windows', type=int, default=None)
@@ -324,6 +341,8 @@ def main():
                         help='Strategies to run (default: all from STRATEGY_ORDER)')
     parser.add_argument('--output', type=str, default=None,
                         help='Output JSON filename (auto-generated if omitted)')
+    parser.add_argument('--kb-budget', type=int, default=None,
+                        help='Force absolute KB budget (overrides kb_head_mult formula)')
     args = parser.parse_args()
 
     strategies_to_run = args.strategies or STRATEGY_ORDER
@@ -352,7 +371,8 @@ def main():
             ds, base_cfg, strategies_to_run,
             drift_mode=args.drift,
             loader_name=loader_name,
-            n_source=n_source)
+            n_source=n_source,
+            kb_budget_override=args.kb_budget)
 
     # ── Save ──
     DATA_DIR.mkdir(parents=True, exist_ok=True)

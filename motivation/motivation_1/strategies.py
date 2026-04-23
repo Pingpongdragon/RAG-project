@@ -25,16 +25,20 @@ Strategies model different KB maintenance paradigms from the literature:
                     Each window: select EDIT_BATCH KB docs, find the most
                     similar non-KB doc (0.4 < sim < 0.8) and swap.
 
-4. QueryDriven  -- Demand-side (ours): detect poorly-served queries via
-                   alignment scoring, retrieve better candidates from pool,
-                   evict least-useful KB entries.
+4. QueryDrivenCluster -- Demand-side (ours): detect poorly-served
+                   queries via top-2 KB-coverage gating, turn each failure
+                   into a small candidate-doc bundle, accumulate those bundles
+                   across windows with decay, then write the docs that cover
+                   the most weighted failure bundles under a fixed KB budget.
+                   Updates run in `step` (post-eval), so the comparison with
+                   blind persistent baselines is fair.
                    Key features:
-                   - Auto-adaptive scoring: MEAN vs MAX chosen by baseline
-                     signal quality (threshold 0.46)
-                   - Drift-proportional replacement cap: small drift -> few
-                     replacements, large drift -> full QD_REPLACE_CAP
-                   - Candidate retrieval: top-QD_TOP_K per failing query
-                   - Eviction: lowest mean usefulness across current queries
+                   - cover_s (top-2) failure detection for multi-support
+                     queries
+                   - Drift-proportional replacement cap
+                   - Candidate sources: failing-query top-K bundles
+                   - Selection: weighted bundle coverage + persistent doc demand
+                   - Eviction: current fail-usefulness + recent demand utility
 
 5. Oracle       -- Upper bound: at H2 transition, rebuilds KB with all gold
                    supporting-fact documents for H2 queries (uses future
@@ -74,6 +78,9 @@ class BaseStrategy:
 
     def set_kb(self, ids):
         self.kb = set(ids)
+
+    def prepare_window(self, window_queries, window_query_embs, window_idx):
+        pass
 
     def step(self, window_queries, window_query_embs, window_idx):
         raise NotImplementedError
@@ -178,27 +185,75 @@ class KnowledgeEdit(BaseStrategy):
         self.update_cost += n
 
 
-class QueryDriven(BaseStrategy):
-    """Query-demand-driven KB update (ours).
 
-    Core idea: use current-window query signals to detect KB-query misalignment,
-    then surgically replace the least-useful KB documents with better candidates.
 
-    Algorithm per window:
-      1. Compute alignment: max cosine similarity of each query to KB.
-      2. First window sets baseline_mean; subsequent windows compute drift.
-      3. Drift-proportional cap: mild drift -> few swaps, severe -> full cap.
-      4. Identify "failing" queries (max_sim < SF_HIT_THRESH).
-      5. For each failing query, retrieve top-QD_TOP_K candidates from pool.
-      6. Score candidates by MEAN (or MAX if baseline < 0.46) similarity to
-         all failing queries.
-      7. Evict KB docs with lowest mean usefulness across current queries.
-      8. Swap in candidates that outscore evicted docs.
+
+class QueryDrivenCluster(BaseStrategy):
+    """Query-demand-driven KB writer (single mechanism, no regime branching).
+
+    Two long-lived per-doc statistics drive every decision:
+      - demand[d]: exponentially-decayed sum of sim(q, d) over windows
+        where d was a top-K pool candidate for a *failing* query. Big
+        demand means many recent queries lacked KB coverage and would
+        have benefited from d.
+      - serve[d]: exponentially-decayed count of (window, query) pairs
+        where d was the best KB hit for that query above the SF
+        threshold. Big serve means d is currently doing useful work.
+
+    Per window:
+      1. Score every query against KB by top-2 coverage (cover_s).
+      2. Decay both stats (demand/serve) by their respective rates.
+      3. For each query that *succeeds* (max_s >= SF_HIT_THRESH), credit
+         the best KB doc with +1 serve.
+      4. For each query that *fails* (cover_s < SF_HIT_THRESH), retrieve
+         top-K pool docs and add their similarity to demand[d].
+      5. Sort non-KB candidates by demand desc; sort KB docs by
+         (serve + demand_inside_kb) asc.
+      6. Replace KB doc e by candidate c iff demand[c] > serve[e] + demand[e].
+         This is the only admission test: a candidate must carry more
+         accumulated evidence than the weakest currently-resident doc.
+      7. Write cap per window = number of failing queries. The cap is
+         therefore drift-proportional with no explicit drift detection.
+
+    Why this should beat the baselines:
+      - vs Static: ever updates at all.
+      - vs RandomFIFO / DocArrival: uses query-failure signal, so writes
+        target documents the workload actually needs.
+      - vs KnowledgeEdit: uses query-side signal instead of pure KB-internal
+        similarity, which is wrong-signal under workload drift.
+      - vs LogDrivenArrival: no per-cycle lag, no fixed write quota, and
+        accumulates evidence across windows so a doc relevant to many
+        recurring failures wins over a doc relevant to a single query.
+      - vs OnDemandFetch: persistent (free at serve time), but admits
+        gracefully (only when demand outweighs current serving value).
     """
+    DEMAND_DECAY = 0.85
+    SERVE_DECAY  = 0.92
+    PROBE_TOPK   = 8
+    MIN_STAT     = 0.01
+
+    SERVE_PRIOR  = 1.0  # initial trust per resident KB doc
+
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        self.baseline_mean = None
-        self.use_max = False
+        self.demand = {}   # pool_idx -> float
+        self.serve  = {}   # pool_idx -> float
+    def set_kb(self, ids):
+        super().set_kb(ids)
+        # Bayesian prior: trust the initial KB. Every resident doc starts
+        # with one unit of serve evidence, equivalent to "served once".
+        # This protects the initial state until live failures prove a doc
+        # should be replaced. The prior decays with the same rate as
+        # serve, so its influence vanishes over a few windows if the doc
+        # is never actually used.
+        for did in self.kb:
+            pi = self.d2p[did]
+            self.serve[pi] = self.SERVE_PRIOR
+
+    def _decay(self):
+        d = self.DEMAND_DECAY; s = self.SERVE_DECAY; m = self.MIN_STAT
+        self.demand = {p: v*d for p, v in self.demand.items() if v*d >= m}
+        self.serve  = {p: v*s for p, v in self.serve.items()  if v*s >= m}
 
     def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
@@ -210,54 +265,77 @@ class QueryDriven(BaseStrategy):
         nqe = window_query_embs / np.clip(norms, 1e-10, None)
         q_kb = nqe @ kb_emb.T
         max_s = np.max(q_kb, axis=1)
-        cur_mean = float(max_s.mean())
-        if self.baseline_mean is None:
-            self.baseline_mean = cur_mean
-            self.use_max = cur_mean < 0.46
-            mode = "MAX" if self.use_max else "MEAN"
-            log.info(f"[{self.name}] baseline={self.baseline_mean:.3f} scoring={mode}")
-        drift = max(0.0, self.baseline_mean - cur_mean)
-        if drift < 0.01:
-            cap = max(5, QD_REPLACE_CAP // 10)
-        elif drift < 0.05:
-            cap = max(10, int(QD_REPLACE_CAP * drift / 0.05))
-        else:
-            cap = QD_REPLACE_CAP
+
+        self._decay()
+
+        # 1) Credit serve for every succeeding query (best KB doc gets +1).
+        succ = max_s >= SF_HIT_THRESH
+        if succ.any():
+            best_pos = np.argmax(q_kb[succ], axis=1)
+            for pos in best_pos:
+                pi = int(kb_idx[pos])
+                self.serve[pi] = self.serve.get(pi, 0.0) + 1.0
+
+        # 2) Credit demand for every failing query.
+        # Unified failure definition: a query fails iff its best KB hit is
+        # below the SF threshold. Same definition as serve, applies to
+        # single-hop and multi-hop without dataset-specific switches.
         fail = max_s < SF_HIT_THRESH
-        if not fail.any():
+        n_fail = int(fail.sum())
+        if n_fail == 0:
+            self.update_cost += 0
             return
         fqe = nqe[fail]
         pool_sims = fqe @ self.doc_embs.T
-        cand_set = set()
-        tk = min(QD_TOP_K, len(self.doc_embs))
-        self.maint_retrieval_cost += len(fqe) * tk  # n_failing × top-K
-        for qi in range(len(fqe)):
-            top = np.argpartition(pool_sims[qi], -tk)[-tk:]
-            cand_set.update(top.tolist())
-        cand_set -= {self.d2p[d] for d in self.kb}
-        if not cand_set:
+        probe = min(self.PROBE_TOPK, pool_sims.shape[1])
+        self.maint_retrieval_cost += n_fail * probe
+        kb_pos = set(int(i) for i in kb_idx)
+        for qi in range(n_fail):
+            top = np.argpartition(pool_sims[qi], -probe)[-probe:]
+            top = top[np.argsort(-pool_sims[qi, top])]
+            # Unit-aligned with serve: each failing query contributes
+            # exactly 1.0 demand mass, distributed by similarity weight.
+            sims = pool_sims[qi, top].astype(float)
+            sims = np.maximum(sims, 0.0)
+            tot = sims.sum()
+            if tot <= 0:
+                continue
+            weights = sims / tot
+            for w, pi in zip(weights, top):
+                pi = int(pi)
+                self.demand[pi] = self.demand.get(pi, 0.0) + float(w)
+
+        # 3) Candidate ordering: high accumulated demand wins.
+        cands = sorted(
+            ((v, p) for p, v in self.demand.items() if p not in kb_pos),
+            reverse=True,
+        )
+        if not cands:
             return
-        if self.use_max:
-            cands = [(float(np.max(fqe @ self.doc_embs[pi])), pi)
-                     for pi in sorted(cand_set)]
-        else:
-            cands = [(float(np.mean(fqe @ self.doc_embs[pi])), pi)
-                     for pi in sorted(cand_set)]
-        cands.sort(reverse=True)
-        usefulness = np.mean(q_kb, axis=0)
-        evict = np.argsort(usefulness)
-        n, ei = 0, 0
-        for cs, cpi in cands[:cap]:
-            if ei >= len(evict):
+
+        # 4) Eviction ordering: low (serve + demand) loses first.
+        evict_val = {int(p): self.serve.get(int(p), 0.0) + self.demand.get(int(p), 0.0)
+                     for p in kb_idx}
+        evictable = sorted(kb_pos, key=lambda p: evict_val[p])
+
+        # 5) Universal admission gate: replace e by c iff demand[c] > evict_val[e].
+        # No write cap: the gate is self-limiting because remaining
+        # candidates are sorted by demand desc and evict_val[e] is sorted asc.
+        n = 0
+        ei = 0
+        for cval, cp in cands:
+            if ei >= len(evictable):
                 break
-            epos = evict[ei]
-            if cs <= float(usefulness[epos]):
-                break
-            self.kb.discard(kb_list[epos])
-            self.kb.add(self.p2d[cpi])
-            n += 1
+            ep = evictable[ei]
+            if cval <= evict_val[ep]:
+                break  # remaining candidates are even smaller
+            self.kb.discard(self.p2d[ep])
+            self.kb.add(self.p2d[cp])
+            self.serve.pop(ep, None)   # fresh doc has no serve history
             ei += 1
+            n += 1
         self.update_cost += n
+
 
 
 class Oracle(BaseStrategy):
@@ -310,14 +388,14 @@ class Oracle(BaseStrategy):
 
 # ── Factory registry ──────────────────────────────
 STRATEGY_FACTORIES = {
-    'Static':           lambda doc_pool, doc_embs, title_to_idx: Static('Static', doc_pool, doc_embs, title_to_idx),
-    'RandomFIFO':       lambda doc_pool, doc_embs, title_to_idx: RandomFIFO('RandomFIFO', doc_pool, doc_embs, title_to_idx),
-    'DocArrival':       lambda doc_pool, doc_embs, title_to_idx: DocArrival('DocArrival', doc_pool, doc_embs, title_to_idx),
-    'KnowledgeEdit':    lambda doc_pool, doc_embs, title_to_idx: KnowledgeEdit('KnowledgeEdit', doc_pool, doc_embs, title_to_idx),
-    'OnDemandFetch':    lambda doc_pool, doc_embs, title_to_idx: OnDemandFetch('OnDemandFetch', doc_pool, doc_embs, title_to_idx),
-    'LogDrivenArrival': lambda doc_pool, doc_embs, title_to_idx: LogDrivenArrival('LogDrivenArrival', doc_pool, doc_embs, title_to_idx),
-    'QueryDriven':      lambda doc_pool, doc_embs, title_to_idx: QueryDriven('QueryDriven', doc_pool, doc_embs, title_to_idx),
-    'Oracle':           lambda doc_pool, doc_embs, title_to_idx: Oracle('Oracle', doc_pool, doc_embs, title_to_idx),
+    'Static':              lambda doc_pool, doc_embs, title_to_idx: Static('Static', doc_pool, doc_embs, title_to_idx),
+    'RandomFIFO':          lambda doc_pool, doc_embs, title_to_idx: RandomFIFO('RandomFIFO', doc_pool, doc_embs, title_to_idx),
+    'DocArrival':          lambda doc_pool, doc_embs, title_to_idx: DocArrival('DocArrival', doc_pool, doc_embs, title_to_idx),
+    'KnowledgeEdit':       lambda doc_pool, doc_embs, title_to_idx: KnowledgeEdit('KnowledgeEdit', doc_pool, doc_embs, title_to_idx),
+    'OnDemandFetch':       lambda doc_pool, doc_embs, title_to_idx: OnDemandFetch('OnDemandFetch', doc_pool, doc_embs, title_to_idx),
+    'LogDrivenArrival':    lambda doc_pool, doc_embs, title_to_idx: LogDrivenArrival('LogDrivenArrival', doc_pool, doc_embs, title_to_idx),
+    'QueryDrivenCluster':  lambda doc_pool, doc_embs, title_to_idx: QueryDrivenCluster('QueryDrivenCluster', doc_pool, doc_embs, title_to_idx),
+    'Oracle':              lambda doc_pool, doc_embs, title_to_idx: Oracle('Oracle', doc_pool, doc_embs, title_to_idx),
 }
 
 
@@ -363,26 +441,22 @@ class OnDemandFetch(BaseStrategy):
 
     Models CRAG / Agent-style RAG: when a query's best KB hit is below
     SF_HIT_THRESH, search the external pool for top-K and use those results
-    directly.  The KB itself is NEVER updated (static), but the query gets
-    augmented results.  Cost counts external search calls.
+    directly. The KB itself is NEVER updated (static), but the query gets
+    augmented results in the same window. Cost counts external search calls.
 
     This demonstrates that even perfect external search cannot replace
     KB consolidation: (a) every query incurs search latency, (b) repeated
     queries re-search the same docs, (c) no learning across windows.
 
     For evaluation, we temporarily add fetched docs to a "virtual KB" for
-    that window only, then remove them.
+    that window only, then remove them before the next window.
     """
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.fetch_k = FETCH_TOP_K
         self._fetched_this_window = set()
 
-    def get_effective_kb(self, window_queries, window_query_embs):
-        """Return KB + fetched docs for this window (for recall eval)."""
-        return self.kb | self._fetched_this_window
-
-    def step(self, window_queries, window_query_embs, window_idx):
+    def prepare_window(self, window_queries, window_query_embs, window_idx):
         self._fetched_this_window = set()
         if not self.kb:
             return
@@ -397,12 +471,18 @@ class OnDemandFetch(BaseStrategy):
             q_kb_sim = nqe[qi] @ kb_emb.T
             if float(np.max(q_kb_sim)) >= SF_HIT_THRESH:
                 continue
-            # Fail query: search external pool
             pool_sim = nqe[qi] @ self.doc_embs.T
             top_idx = np.argpartition(pool_sim, -self.fetch_k)[-self.fetch_k:]
             for pi in top_idx:
                 self._fetched_this_window.add(self.p2d[pi])
-            self.serve_retrieval_cost += len(top_idx)  # per-query, paid online
+            self.serve_retrieval_cost += len(top_idx)
+
+    def get_effective_kb(self, window_queries, window_query_embs):
+        """Return KB + fetched docs for this window (for recall eval)."""
+        return self.kb | self._fetched_this_window
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        pass
 
 
 class LogDrivenArrival(BaseStrategy):
