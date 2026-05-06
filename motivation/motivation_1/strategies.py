@@ -8,42 +8,40 @@ All strategies share the same interface:
   - .kb: set[str]           -- current KB document IDs
   - .cost: int              -- cumulative number of KB replacements
 
-Strategies model different KB maintenance paradigms from the literature:
+中文速览：这个文件实现了 Motivation 1 里所有 KB 维护策略。
+它们的区别不在检索器，而在“什么时候写 KB、根据什么信号写、一次写多少”。
 
-1. Static       -- No updates (baseline). Shows pure drift degradation.
+当前实际包含 8 个策略：
 
-2. DocArrival   -- Supply-side: new documents arrive randomly and replace
-                   KB entries based on similarity.
-                   Models HippoRAG2 (Gutiérrez et al., 2025) and
-                   LightRAG (Guo et al., 2024) document-arrival pipelines.
-                   Each window: sample DOC_ARRIVE docs from pool, replace up
-                   to DOC_ADD_CAP KB entries via similarity thresholds.
+1. Static
+   冻结 KB，不做任何更新。它回答的是：如果系统完全不适应 drift，性能会掉到哪里。
 
-3. KnowledgeEdit -- Supply-side: existing KB entries are edited/replaced with
-                    semantically similar alternatives.
-                    Models RECIPE (Luo et al., 2024) knowledge-edit pipeline.
-                    Each window: select EDIT_BATCH KB docs, find the most
-                    similar non-KB doc (0.4 < sim < 0.8) and swap.
+2. RandomFIFO
+   盲目供给侧更新：每个 window 随机抽一批新文档，用 FIFO 淘汰最早进入 KB 的旧文档。
+   它没有任务信号，等价于“定期刷新索引，但不知道用户现在需要什么”。
 
-4. QueryDrivenCluster -- Demand-side (ours): detect poorly-served
-                   queries via top-2 KB-coverage gating, turn each failure
-                   into a small candidate-doc bundle, accumulate those bundles
-                   across windows with decay, then write the docs that cover
-                   the most weighted failure bundles under a fixed KB budget.
-                   Updates run in `step` (post-eval), so the comparison with
-                   blind persistent baselines is fair.
-                   Key features:
-                   - cover_s (top-2) failure detection for multi-support
-                     queries
-                   - Drift-proportional replacement cap
-                   - Candidate sources: failing-query top-K bundles
-                   - Selection: weighted bundle coverage + persistent doc demand
-                   - Eviction: current fail-usefulness + recent demand utility
+3. DocArrival
+   供给侧文档到达：随机模拟一批“新到文档”，再根据与当前 KB 的相似度判断是替换、插入还是跳过。
+   它代表 LightRAG / HippoRAG2 一类“文档来了就处理”的流水线。
 
-5. Oracle       -- Upper bound: at H2 transition, rebuilds KB with all gold
-                   supporting-fact documents for H2 queries (uses future
-                   knowledge). Remaining budget filled by highest-scoring
-                   non-SF docs. Represents the theoretical ceiling.
+4. KnowledgeEdit
+   供给侧知识编辑：从当前 KB 中选一批文档，对每篇文档找一个语义相近但不在 KB 里的替代项并交换。
+   它代表 RECIPE 一类“在现有知识上做局部编辑”的范式。
+
+5. OnDemandFetch
+   按需抓取：平时不改 KB；只有当查询在 KB 里命中不够时，才临时去全池子里搜 top-K 文档补上。
+   它可以看作 agent / CRAG 风格的在线补检索上界，但这些文档不会沉淀进持久 KB。
+
+6. LogDrivenArrival
+   滞后式日志更新：先积累一段时间失败查询，再在下一个 review 周期把最相关的候选文档写回 KB。
+   它代表依赖历史日志、人工回看或批处理反馈的慢更新系统。
+
+7. QueryDrivenCluster
+   需求侧更新（本文方法）：直接用失败查询暴露出的“缺哪些文档”信号积累 demand，
+   再和当前 KB 文档的 serve 价值比较，只有当候选需求显著高于现驻留文档价值时才替换。
+
+8. Oracle
+   非因果上界：直接使用当前 window 的 gold supporting facts 重建 KB，只用于给出理论天花板。
 """
 import numpy as np
 from config import (SEED, SF_HIT_THRESH, DOC_ARRIVE, DOC_ADD_CAP,
@@ -54,6 +52,11 @@ from config import (SEED, SF_HIT_THRESH, DOC_ARRIVE, DOC_ADD_CAP,
 
 
 class BaseStrategy:
+    # 所有策略共享同一套状态：
+    # - kb: 当前持久 KB 中的 doc_id 集合
+    # - update_cost: 写入/替换 KB 的累计次数
+    # - maint_retrieval_cost: 后台维护阶段的全池扫描成本
+    # - serve_retrieval_cost: 在线服务阶段额外检索成本
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         self.name = name
         self.doc_pool = doc_pool
@@ -87,12 +90,19 @@ class BaseStrategy:
 
 
 class Static(BaseStrategy):
+    # 中文解释：完全冻结 KB。
+    # 它不尝试适应新的 query 分布，因此能直接测出“纯 drift”本身造成的性能下降。
     """No-update baseline.  KB is frozen after initialisation."""
     def step(self, window_queries, window_query_embs, window_idx):
         pass
 
 
 class DocArrival(BaseStrategy):
+    # 中文解释：模拟“新文档不断到来”的供给侧系统。
+    # 每个 window 随机抽一批文档当作新到文档：
+    # - 如果它和某个 KB 文档非常像，就视作同主题新版本，直接替换；
+    # - 如果它和整个 KB 都很不像，就视作全新内容，挤掉最旧/最不活跃的内容；
+    # - 中间地带则跳过，避免既不新也不必要的噪声写入。
     """Document-arrival-driven KB update (HippoRAG2 / LightRAG style).
 
     Each window, DOC_ARRIVE documents are randomly sampled from the full pool
@@ -149,6 +159,9 @@ class DocArrival(BaseStrategy):
 
 
 class KnowledgeEdit(BaseStrategy):
+    # 中文解释：模拟“对现有知识做局部编辑”的系统。
+    # 它不是从查询失败出发，而是先挑一些当前 KB 文档，再为每个文档找一个
+    # 语义相近的非 KB 替代项做 swap。这样做能保持主题相似，但未必对当前 workload 有用。
     """Knowledge-edit-driven KB update (RECIPE style).
 
     Each window, EDIT_BATCH KB documents are randomly selected for "editing".
@@ -189,6 +202,17 @@ class KnowledgeEdit(BaseStrategy):
 
 
 class QueryDrivenCluster(BaseStrategy):
+    # 中文解释：这是本文的 demand-side persistent writer。
+    # 核心思想不是“看到新文档就写”，而是“看到查询失败，就推断 KB 里缺什么”。
+    #
+    # 对每个 window：
+    # 1. 先看哪些查询已经被 KB 服务好了，把命中的 KB 文档记 serve；
+    # 2. 再看哪些查询失败了，对失败查询去全池里 probe top-K 候选；
+    # 3. 这些候选按相似度分到 demand 上，形成“最近很多失败查询都在找它”的证据；
+    # 4. 最后只在 candidate demand 明显大于某个驻留文档的 serve+demand 时才替换。
+    #
+    # 因此它学到的是“当前 workload 真正在要什么文档”，而不是“池子里最近来了什么”
+    # 或“KB 内部哪些文档彼此相似”。
     """Query-demand-driven KB writer (single mechanism, no regime branching).
 
     Two long-lived per-doc statistics drive every decision:
@@ -339,6 +363,10 @@ class QueryDrivenCluster(BaseStrategy):
 
 
 class Oracle(BaseStrategy):
+    # 中文解释：Oracle 不是可部署策略，只是理论上界。
+    # 它直接偷看当前 window 的 gold supporting facts，把这些真值文档优先塞进 KB，
+    # 剩余容量再按与当前查询的相似度补满，所以它表示“如果我提前知道答案证据在哪，
+    # 在相同 KB 容量下最多能做到什么水平”。
     """Oracle (per-window upper bound).
 
     At every window, the KB is reconstructed from the gold supporting-fact
@@ -400,6 +428,9 @@ STRATEGY_FACTORIES = {
 
 
 class RandomFIFO(BaseStrategy):
+    # 中文解释：最朴素的盲更新基线。
+    # 不管当前查询需要什么，只要到一个 window 就随机抽新文档，并按 FIFO 把最早进入 KB 的文档踢掉。
+    # 它的作用是说明：如果系统只有机械刷新而没有任务相关信号，写得越勤未必越好。
     """Blind supply-side: random new docs replace oldest KB entries (FIFO).
 
     Models a naive scheduled ingest pipeline that periodically refreshes
@@ -419,7 +450,9 @@ class RandomFIFO(BaseStrategy):
         self.insert_order = list(ids)
 
     def step(self, window_queries, window_query_embs, window_idx):
-        batch = min(FIFO_BATCH, len(self.all_ids))
+        # Use KB-proportional batch (0.4% of KB per window) so turnover rate
+        # is fair across datasets with different KB sizes.
+        batch = min(max(1, int(len(self.kb) * 0.004)), len(self.all_ids))
         arrivals = self.rng.choice(self.all_ids, batch, replace=False)
         self.maint_retrieval_cost += batch
         n = 0
@@ -437,6 +470,10 @@ class RandomFIFO(BaseStrategy):
 
 
 class OnDemandFetch(BaseStrategy):
+    # 中文解释：把“缺文档”问题完全推迟到查询时处理。
+    # 如果某个查询在 KB 里找不到足够好的命中，就临时去全池子搜 top-K，
+    # 把这些结果只在当前 window 当作虚拟 KB 使用；window 结束后不保留。
+    # 所以它能说明：在线补检索可以救当前 query，但不会沉淀成长期记忆。
     """Passive on-demand search: fetch from pool per-query, don't store.
 
     Models CRAG / Agent-style RAG: when a query's best KB hit is below
@@ -486,6 +523,10 @@ class OnDemandFetch(BaseStrategy):
 
 
 class LogDrivenArrival(BaseStrategy):
+    # 中文解释：滞后一拍的失败修复策略。
+    # 它不会在当前 window 立刻改 KB，而是先积累失败查询，等到 review 周期结束后再统一分析，
+    # 选出一批最像这些失败查询需要的文档，在下一个周期开始时写入 KB。
+    # 这类方法的问题是：当 drift 很快时，修复总比真实需求慢半拍甚至一整拍。
     """Lagging log-driven update: analyse previous window's failures, fix next.
 
     Models a human-in-the-loop or scheduled-batch pipeline:

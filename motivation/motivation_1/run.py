@@ -97,7 +97,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             cov = len(effective_kb & window_gold_did) / max(1, len(window_gold_did))
             cov_per_window[name].append(cov)
             if name != 'Oracle':
-                s.step(wq, wqe, w)
+                # freeze_until: skip updates before drift onset for ablation
+                if w >= cfg.get('freeze_until', 0):
+                    s.step(wq, wqe, w)
         if w % 5 == 0 or w == nw - 1:
             cv = {n: f"{cov_per_window[n][-1]*100:.1f}%" for n in strategies_to_run}
             log.info(f"[{ds_name}] W{w+1}/{nw} Cov: {cv}")
@@ -259,7 +261,10 @@ def main():
     parser = argparse.ArgumentParser(description='Motivation 1 (single-hop) runner')
     parser.add_argument('--n-windows', type=int, default=50)
     parser.add_argument('--window-size', type=int, default=50)
-    parser.add_argument('--drift', choices=['sudden', 'gradual'], default='sudden')
+    parser.add_argument('--drift', choices=['sudden', 'gradual', 'hybrid'], default='sudden')
+    parser.add_argument('--freeze-until', type=int, default=0,
+                        help='Freeze non-Oracle updates for windows [0, freeze_until). '
+                             'Use 50 with --n-windows 100 for freeze-before-drift ablation.')
     parser.add_argument('--n-source', type=int, default=None)
     parser.add_argument('--datasets', nargs='+', default=['squad'])
     parser.add_argument('--strategies', nargs='+', default=None)
@@ -273,6 +278,7 @@ def main():
         base_cfg = DATASET_CONFIGS[ds].copy()
         base_cfg['n_windows'] = args.n_windows
         base_cfg['window_size'] = args.window_size
+        base_cfg['freeze_until'] = args.freeze_until
         log.info(f"\n{'='*60}\n  Running: {ds} ({args.drift})\n{'='*60}")
         all_results[ds] = run_dataset(
             ds, base_cfg, strategies_to_run,
@@ -281,13 +287,15 @@ def main():
             kb_budget_override=args.kb_budget)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    out_name = args.output or f'results_{args.n_windows}w_{args.drift}.json'
+    freeze_tag = f'_freeze{args.freeze_until}' if args.freeze_until > 0 else ''
+    out_name = args.output or f'results_{args.n_windows}w{freeze_tag}_{args.drift}.json'
     out_path = DATA_DIR / out_name
     with open(out_path, 'w') as f:
         json.dump(all_results, f, indent=2)
     log.info(f"Saved to {out_path}")
     print_summary(all_results, strategies_to_run)
-    suffix = f'_{args.n_windows}w_{args.drift}'
+    freeze_tag = f'_freeze{args.freeze_until}' if args.freeze_until > 0 else ''
+    suffix = f'_{args.n_windows}w{freeze_tag}_{args.drift}'
     generate_figures(all_results, strategies_to_run, suffix=suffix)
 
 

@@ -1,0 +1,49 @@
+QueryDrivenCluster (QDC) — Conditions for Effectiveness
+=========================================================
+
+QDC shows a clear advantage over offline maintenance baselines when all
+three conditions below hold.
+
+Condition A — Demand signal exists
+----------------------------------
+q/SF >= 1.3. Multiple queries must reuse the same supporting-fact (SF)
+documents, otherwise QDC cannot accumulate enough demand[d] to justify a
+replacement.
+
+Condition B — Query text aligns with SF documents
+-------------------------------------------------
+Query-to-SF semantic alignment >= 0.6. QDC probes the pool by embedding
+queries, so query text must directly name or strongly imply the SF entity.
+If a query names a movie but the SF is a director page, QDC probes the
+wrong documents.
+
+Condition C — Pool contains many distractor documents
+-----------------------------------------------------
+The pool must contain substantial non-gold distractor documents. QDC's
+value is selecting relevant documents amid noise. If nearly every pool
+document is useful for some query, then blind baselines such as RandomFIFO
+also pick useful documents by chance, shrinking QDC's gap over BestOther.
+
+Dataset summary
+---------------
+Dataset                  q/SF   Align  Cond-A  Cond-B  Cond-C  Result
+HotpotQA-comparison      1.35   0.92     yes     yes     yes    SUCCESS: sudden +25.6pp / gradual +13.8pp
+FEVER                    8.15   0.99     yes     yes     yes    SUCCESS: sudden +16.6pp / gradual +2.7pp
+TriviaQA-Wikipedia       1.36   0.88     yes     yes     no     LIMITED: no distractors; QDC vs BestOther only +3.3pp
+2wiki-bridge-comparison  1.66   0.31     yes     no      yes    FAIL: query names movie, SF is director page
+2wiki-comparison         1.02   0.85     no      yes     yes    FAIL: q/SF too low, demand too weak
+2wiki-simple (mixed)     1.19   0.60     no      marginal yes   FAIL: Cond-A weak and Cond-B marginal
+
+Mechanism recap
+---------------
+Each window, QDC:
+1. Embeds window queries and probes pool docs, accumulating demand[d].
+2. Tracks serve[d] for KB docs that successfully answer queries.
+3. Replaces KB doc e with candidate c iff demand[c] > serve[e] + demand[e].
+
+RandomFIFO fairness fix
+-----------------------
+RandomFIFO now replaces a KB-proportional batch: 0.4% of |KB| per window.
+For HotpotQA (KB=10000), this is still 40 docs/window. For FEVER
+(KB=3100), this becomes 12 docs/window, preventing H1 self-harm while
+preserving the same turnover rate.

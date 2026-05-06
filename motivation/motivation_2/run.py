@@ -27,10 +27,13 @@ from loaders import LOADERS
 from strategies import STRATEGY_FACTORIES
 from utils import (compute_embeddings, cluster_and_build_stream,
                    focus_pool, head_biased_init_kb, recall_at_k)
+from graph_retrieval import (extract_pool_entities, extract_query_entities,
+                             LightGraphRAG, recall_at_k_graph)
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
-                loader_name=None, n_source=None, kb_budget_override=None):
+                loader_name=None, n_source=None, kb_budget_override=None,
+                retrieval='dense'):
     """Run one dataset experiment.
 
     Args:
@@ -87,17 +90,31 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         doc_pool, doc_embs, centroids, head_set, kb_budget, stream)
     d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
 
+    # ── Optional graph-retrieval setup (no-LLM HippoRAG/LightRAG analogue) ──
+    pool_ents = query_ents = None
+    strategy_graphs = {}
+    if retrieval == 'graph':
+        pool_ents = extract_pool_entities(doc_pool, tag=tag)
+        query_ents = extract_query_entities(queries, tag=tag)
+
     # ── Strategies ──
     strategies = {}
     for name in strategies_to_run:
-        s = STRATEGY_FACTORIES[name](doc_pool, doc_embs, title_to_idx)
-        s.set_kb(set(init_kb))
-        if hasattr(s, '_half'):
-            s._half = nw // 2
-        if hasattr(s, '_stream'):
-            s._stream = stream
-            s._query_embs = query_embs
-        strategies[name] = s
+        st = STRATEGY_FACTORIES[name](doc_pool, doc_embs, title_to_idx)
+        st.set_kb(set(init_kb))
+        if hasattr(st, '_half'):
+            st._half = nw // 2
+        if hasattr(st, '_stream'):
+            st._stream = stream
+            st._query_embs = query_embs
+        strategies[name] = st
+        if retrieval == 'graph':
+            g = LightGraphRAG(pool_ents, query_ents,
+                              doc_embs, query_embs,
+                              {d['doc_id']: i for i, d in enumerate(doc_pool)},
+                              {i: d['doc_id'] for i, d in enumerate(doc_pool)})
+            g.index(set(init_kb))
+            strategy_graphs[name] = g
 
     # ── Evaluate ──
     results = {n: {f'recall@{k}': [] for k in K_LIST} for n in strategies_to_run}
@@ -119,14 +136,18 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 if t in title_to_idx:
                     window_gold_did.add(doc_pool[title_to_idx[t]]['doc_id'])
         for name in strategies_to_run:
-            s = strategies[name]
-            s.prepare_window(wq, wqe, w)
+            st_i = strategies[name]
+            st_i.prepare_window(wq, wqe, w)
             # Oracle is non-causal: rebuild KB BEFORE evaluation so it represents
             # the per-window upper bound for the queries we are about to score.
             if name == 'Oracle':
-                s.step(wq, wqe, w)
-            effective_kb = s.get_effective_kb(wq, wqe) if hasattr(s, 'get_effective_kb') else s.kb
-            r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
+                st_i.step(wq, wqe, w)
+            effective_kb = st_i.get_effective_kb(wq, wqe) if hasattr(st_i, 'get_effective_kb') else st_i.kb
+            if retrieval == 'graph':
+                strategy_graphs[name].sync_to(effective_kb)
+                r = recall_at_k_graph(strategy_graphs[name], wq, doc_pool, K_LIST)
+            else:
+                r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
             for k in K_LIST:
                 results[name][f'recall@{k}'].append(r[k])
             cov = len(effective_kb & window_gold_did) / max(1, len(window_gold_did))
@@ -135,7 +156,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             cum = len(effective_kb & seen_gold[name]) / max(1, len(seen_gold[name]))
             kb_coverage_cum[name].append(cum)
             if name != 'Oracle':
-                s.step(wq, wqe, w)
+                st_i.step(wq, wqe, w)
         if w % 5 == 0 or w == nw - 1:
             r5 = {n: f"{results[n]['recall@5'][-1]*100:.1f}%"
                   for n in strategies_to_run}
@@ -343,6 +364,8 @@ def main():
                         help='Output JSON filename (auto-generated if omitted)')
     parser.add_argument('--kb-budget', type=int, default=None,
                         help='Force absolute KB budget (overrides kb_head_mult formula)')
+    parser.add_argument('--retrieval', choices=['dense', 'graph'], default='dense',
+                        help='Recall@K backend: dense cosine (default) or PPR over passage-entity graph')
     args = parser.parse_args()
 
     strategies_to_run = args.strategies or STRATEGY_ORDER
@@ -372,7 +395,8 @@ def main():
             drift_mode=args.drift,
             loader_name=loader_name,
             n_source=n_source,
-            kb_budget_override=args.kb_budget)
+            kb_budget_override=args.kb_budget,
+            retrieval=args.retrieval)
 
     # ── Save ──
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -380,7 +404,8 @@ def main():
         out_name = args.output
     else:
         nw = args.n_windows or 20
-        out_name = f'results_{nw}w_{args.drift}.json'
+        ret_suf = '' if args.retrieval == 'dense' else f'_{args.retrieval}'
+        out_name = f'results_{nw}w_{args.drift}{ret_suf}.json'
     out_path = DATA_DIR / out_name
     with open(out_path, 'w') as f:
         json.dump(all_results, f, indent=2)
@@ -388,7 +413,7 @@ def main():
 
     print_summary(all_results, strategies_to_run)
 
-    suffix = f'_{args.n_windows or 20}w_{args.drift}'
+    suffix = f'_{args.n_windows or 20}w_{args.drift}{"" if args.retrieval == "dense" else "_" + args.retrieval}'
     generate_figures(all_results, strategies_to_run, suffix=suffix)
 
 

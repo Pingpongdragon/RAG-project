@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{Dataset analysis: three conditions for QueryDriven KB curation effectiveness. \textbf{Cond-A}: $q/\mathrm{SF} \geq 1.3$ (enough cross-query demand signal). \textbf{Cond-B}: query text directly names SF entities (embedding alignment $\geq 0.6$). \textbf{Cond-C}: pool contains many distractor documents. $\Delta$ = QDC minus Static KB coverage H2 (pp). $^*$TriviaQA pool has no distractors, so Random-FIFO also picks useful docs by chance. Requires \texttt{\textbackslash usepackage\{pifont\}}.}
+\label{tab:dataset_analysis}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrccccc}
+\toprule
+Dataset & $n$ & $q/\mathrm{SF}$ & Cond-A & Cond-B & Cond-C & $\Delta$ sudden & $\Delta$ gradual \\
+\midrule
+  HotpotQA-comparison & 4{,}000 & 1.35 & \ding{51} & \ding{51} & \ding{51} & +25.6 & +13.8 \\
+  FEVER & 8{,}000 & 8.15 & \ding{51} & \ding{51} & \ding{51} & +16.6 & +2.7 \\
+\midrule
+  TriviaQA-Wikipedia & 6{,}000 & 1.36 & \ding{51} & \ding{51} & \ding{55} & +30.1$^*$ & +3.7 \\
+  2wiki-comparison & 6{,}000 & 1.02 & \ding{55} & \ding{51} & \ding{51} & +9.3 & +7.3 \\
+  2wiki-bridge-comp & 8{,}000 & 1.66 & \ding{51} & \ding{55} & \ding{51} & $-$1.2 & $-$0.1 \\
+  2wiki-simple (mixed) & 15{,}000 & 1.19 & \ding{55} & $\sim$ & $\sim$ & +3.7 & n/a \\
+\bottomrule
+\end{tabular}
+\end{table}

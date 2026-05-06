@@ -115,17 +115,57 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
         rng.shuffle(back)
         stream = list(front) + list(back)
     elif drift_mode == 'gradual':
+        # Following Gama et al. (2014) Sec. 2.2 definition of gradual drift:
+        # "As time passes, the probability of sampling from source S_I decreases,
+        #  probability of sampling from source S_II increases."
+        # We implement this as a linear ramp: at H2 window wi,
+        #   P(head) = 0.97*(1-α) + 0.03*α  where α = wi/(n_windows-1)
+        # Full-pool with-replacement sampling avoids pool exhaustion.
         n_hf = int(half * 0.97)
         n_tf = half - n_hf
         front = pick(heads, n_hf) + pick(tails, n_tf)
         rng.shuffle(front)
         stream = list(front)
+        # Save full head/tail pools (before H1 depletion) for H2 sampling
+        all_heads = [q for q in queries if not q['is_tail']]
+        all_tails = [q for q in queries if q['is_tail']]
         n_h2_windows = half // ws
         for wi in range(n_h2_windows):
             head_pct = 0.97 - wi * 0.94 / max(n_h2_windows - 1, 1)
             n_h_w = int(ws * head_pct)
             n_t_w = ws - n_h_w
-            window = pick(heads, n_h_w) + pick(tails, n_t_w)
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
+            rng.shuffle(window)
+            stream.extend(window)
+    elif drift_mode == 'hybrid':
+        # Hybrid drift: H1 gradual ramp (97%→3% head over first half),
+        # H2 flat tail-dominant (3% head).
+        # Models realistic deployment: slow distribution shift that culminates
+        # in a sustained new regime after a critical point (window 50).
+        all_heads = [q for q in queries if not q['is_tail']]
+        all_tails = [q for q in queries if q['is_tail']]
+        n_h1_windows = half // ws
+        stream = []
+        for wi in range(n_h1_windows):
+            # Linear ramp: window 0 = 97% head, window (n-1) = 3% head
+            head_pct = 0.97 - wi * 0.94 / max(n_h1_windows - 1, 1)
+            n_h_w = int(ws * head_pct)
+            n_t_w = ws - n_h_w
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
+            rng.shuffle(window)
+            stream.extend(window)
+        # H2: flat tail-dominant (same as sudden H2)
+        n_h2_windows = half // ws
+        for _ in range(n_h2_windows):
+            n_h_w = int(ws * 0.03)
+            n_t_w = ws - n_h_w
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
             rng.shuffle(window)
             stream.extend(window)
     else:
