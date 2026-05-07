@@ -28,30 +28,49 @@ plt.rcParams.update({
 })
 
 # ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
 # ── Figure 1: 2×2 coverage curves ───────────────────────────────────────────
 # ════════════════════════════════════════════════════════════════════════════
+#
+# Method-type taxonomy (see Section 1):
+#   - Frozen baseline ........... Static
+#   - Supply-triggered .......... DocArrival   (LightRAG / HippoRAG family)
+#                                  RandomFIFO  (naive ablation; appendix only)
+#   - Edit-based ................ KnowledgeEdit (RECIPE family)
+#   - Lagged log feedback ....... LogDrivenArrival
+#   - Per-query online channel .. OnDemandFetch (not a persistent writer; appendix)
+#   - Demand-driven (ours) ...... QueryDrivenCluster
+#   - Oracle upper bound ........ Oracle
+#
+# Main figure shows ONE representative line per method category.
+# The full 8-baseline version is emitted as an appendix figure.
 
-PALETTE = {
-    'Static':             ('#7F7F7F', '-',  'o'),
-    'RandomFIFO':         ('#FF7F0E', '--', 's'),
-    'DocArrival':         ('#2CA02C', ':',  '^'),
-    'KnowledgeEdit':      ('#9467BD', '--', 'D'),
-    'OnDemandFetch':      ('#17BECF', '--', 'v'),
-    'LogDrivenArrival':   ('#BCBD22', ':',  'P'),
-    'QueryDrivenCluster': ('#1F77B4', '-',  '*'),
-    'Oracle':             ('#D62728', '-',  None),
+# (color, linestyle) — no markers; one representative per method category
+PALETTE_FULL = {
+    'Static':             ('#9E9E9E', (0, (2, 2))),
+    'RandomFIFO':         ('#BCBD22', (0, (3, 2))),
+    'DocArrival':         ('#43A047', (0, (6, 2))),
+    'KnowledgeEdit':      ('#8E24AA', (0, (5, 2, 1, 2))),
+    'OnDemandFetch':      ('#00ACC1', (0, (2, 1.5))),
+    'LogDrivenArrival':   ('#EF8C00', (0, (7, 2))),
+    'QueryDrivenCluster': ('#1565C0', '-'),
+    'Oracle':             ('#C62828', '-'),
 }
 LABELS = {
-    'Static':             'Static',
+    'Static':             'Static (frozen)',
     'RandomFIFO':         'Random-FIFO',
-    'DocArrival':         'Doc-Arrival',
-    'KnowledgeEdit':      'Knowledge-Edit',
-    'OnDemandFetch':      'On-Demand',
-    'LogDrivenArrival':   'Log-Driven',
-    'QueryDrivenCluster': 'QueryDriven (ours)',
+    'DocArrival':         'Doc-Arrival (supply-triggered)',
+    'KnowledgeEdit':      'Knowledge-Edit (edit-based)',
+    'OnDemandFetch':      'On-Demand (per-query online)',
+    'LogDrivenArrival':   'Log-Driven (lagged feedback)',
+    'QueryDrivenCluster': r'$\bf{QueryDriven\ (ours)}$',
     'Oracle':             'Oracle',
 }
-SHOW = list(PALETTE.keys())
+SHOW_MAIN = [
+    'Static', 'DocArrival', 'KnowledgeEdit',
+    'LogDrivenArrival', 'QueryDrivenCluster', 'Oracle',
+]
+SHOW_FULL = list(PALETTE_FULL.keys())
 
 CURVE_FILES = {
     ('hotpotqa', 'sudden'):  DATA / 'results_100w_sudden.json',
@@ -59,75 +78,136 @@ CURVE_FILES = {
     ('fever', 'sudden'):     DATA / 'results_fever_100w_sudden.json',
     ('fever', 'gradual'):    DATA / 'results_fever_100w_gradual.json',
 }
-DS_LABELS    = {'hotpotqa': 'HotpotQA-comparison', 'fever': 'FEVER'}
+DS_TITLES = {
+    'hotpotqa': 'HotpotQA-comparison',
+    'fever':    'FEVER',
+}
 DRIFT_LABELS = {'sudden': 'Sudden drift', 'gradual': 'Gradual drift'}
+METRIC_KEYS  = ['cov_per_window', 'recall@5_per_window']
+METRIC_YLABELS = ['KB Coverage (%)', 'Recall@5 (%)']
+
+PRE_BG  = '#EDF4FC'
+POST_BG = '#FDF5E6'
 
 curve_results = {}
 for key, path in CURVE_FILES.items():
     raw = json.load(open(path))
     curve_results[key] = raw[list(raw.keys())[0]]
 
-DRIFTS   = ['sudden', 'gradual']
 DATASETS = ['hotpotqa', 'fever']
-fig1, axes = plt.subplots(2, 2, figsize=(11, 7.2), sharex=True)
 
-for row, drift in enumerate(DRIFTS):
-    for col, ds in enumerate(DATASETS):
-        ax  = axes[row, col]
-        res = curve_results[(ds, drift)]
-        cfg = res['config']
-        nw  = cfg['n_windows']
-        x   = np.arange(1, nw + 1)
-        half = nw // 2
 
-        for name in SHOW:
-            if name not in res['summary']:
-                continue
-            color, ls, marker = PALETTE[name]
-            cov = res['summary'][name]['cov_per_window']
-            lw     = 2.4 if name == 'Oracle' else (2.2 if name == 'QueryDrivenCluster' else 1.3)
-            alpha  = 1.0 if name in ('Oracle', 'QueryDrivenCluster') else 0.80
-            zorder = 5 if name == 'QueryDrivenCluster' else (4 if name == 'Oracle' else 2)
-            ax.plot(x, cov, color=color, linestyle=ls, marker=marker,
-                    linewidth=lw, alpha=alpha, markersize=5,
-                    markevery=max(1, nw // 10), zorder=zorder,
-                    label=LABELS[name])
+def _smooth_halves(arr, half, w=6):
+    """Smooth each half independently with edge-padding (avoids zero-pad dip at boundary)."""
+    kernel = np.exp(-0.5 * (np.arange(-(w//2), w//2+1) / (w / 3.0))**2)
+    kernel /= kernel.sum()
+    pad = w // 2
+    def _conv(seg):
+        padded = np.pad(seg, pad, mode='edge')
+        return np.convolve(padded, kernel, mode='valid')
+    return np.concatenate([_conv(arr[:half]), _conv(arr[half:])])
 
-        ax.axvline(half + 0.5, color='#444', ls='--', lw=0.9, alpha=0.6)
-        if row == 0 and col == 0:
-            ax.text(half + 1, 96, 'drift\nonset', va='top', ha='left',
-                    fontsize=8.5, color='#444')
 
-        s_q = res['summary']['QueryDrivenCluster']
-        s_s = res['summary']['Static']
-        delta = s_q['cov_h2'] - s_s['cov_h2']
-        sign  = '+' if delta >= 0 else ''
-        ann_color = '#1F77B4' if delta > 5 else '#D62728'
-        ax.annotate(f'QDC {sign}{delta:.1f}pp vs Static\n(post-drift cumul.)',
-                    xy=(nw, s_q['cov_per_window'][-1]),
-                    xytext=(nw - 25, 15),
-                    fontsize=8.5, color=ann_color,
-                    arrowprops=dict(arrowstyle='->', color=ann_color, lw=1.0))
+def _draw_panel(ax, res, show, metric_key, ylabel,
+                lw_ours, lw_oracle, lw_other, smooth_w=6,
+                first_panel=False):
+    cfg  = res['config']
+    nw   = cfg['n_windows']
+    half = nw // 2
+    x    = np.arange(1, nw + 1)
 
-        ax.set_xlim(1, nw); ax.set_ylim(0, 103)
-        ax.grid(True, axis='y', alpha=0.22, linestyle=':')
-        if row == 0:
-            ax.set_title(f'{DS_LABELS[ds]}\npool={cfg["pool_size"]:,}  KB={cfg["kb_budget"]:,}',
-                         fontsize=11)
-        if col == 0:
-            ax.set_ylabel(f'{DRIFT_LABELS[drift]}\nCoverage (%)', fontsize=11)
-        if row == 1:
-            ax.set_xlabel('Window index', fontsize=11)
+    ax.axvspan(0.5, half + 0.5, facecolor=PRE_BG,  alpha=1.0, zorder=0)
+    ax.axvspan(half + 0.5, nw + 0.5, facecolor=POST_BG, alpha=1.0, zorder=0)
 
-handles, labels_ = axes[0, 0].get_legend_handles_labels()
-fig1.legend(handles, labels_, loc='lower center', ncol=len(labels_),
-            frameon=False, bbox_to_anchor=(0.5, -0.01), fontsize=9.5)
-fig1.tight_layout(rect=[0, 0.055, 1, 1])
-for ext in ('pdf', 'png'):
-    p = FIGS / f'mo1_combined.{ext}'
-    fig1.savefig(p, bbox_inches='tight', dpi=(None if ext=='pdf' else 200))
-    print(f'Saved {p}')
-plt.close(fig1)
+    for name in show:
+        if name not in res['summary']:
+            continue
+        color, ls = PALETTE_FULL[name]
+        raw_vals = np.array(res['summary'][name][metric_key], dtype=float)
+        vals     = _smooth_halves(raw_vals, half, smooth_w)
+        if   name == 'QueryDrivenCluster': lw, alpha, z = lw_ours,   1.00, 6
+        elif name == 'Oracle':             lw, alpha, z = lw_oracle, 0.95, 5
+        elif name == 'Static':             lw, alpha, z = lw_other,  0.90, 3
+        else:                              lw, alpha, z = lw_other,  0.80, 2
+        ax.plot(x, vals, color=color, linestyle=ls, linewidth=lw,
+                alpha=alpha, zorder=z, label=LABELS[name],
+                solid_capstyle='round', dash_capstyle='round')
+
+    ax.axvline(half + 0.5, color='#333', ls='-', lw=1.4, alpha=0.6, zorder=1)
+
+    if first_panel:
+        ax.text(half + 0.5, 102, 'drift onset',
+                ha='center', va='bottom', fontsize=10,
+                fontweight='bold', color='#333',
+                bbox=dict(boxstyle='round,pad=0.22', fc='white',
+                          ec='#333', lw=1.0, alpha=0.92))
+        ax.text(half * 0.5, 3.5, 'pre-drift', ha='center', va='bottom',
+                fontsize=9.5, color='#3A5F8A', fontweight='bold', alpha=0.95)
+        ax.text(half + (nw - half) * 0.5, 3.5, 'post-drift',
+                ha='center', va='bottom', fontsize=9.5,
+                color='#9C5A00', fontweight='bold', alpha=0.95)
+
+    ax.set_xlim(0.5, nw + 0.5)
+    ax.set_ylim(0, 106)
+    ax.set_ylabel(ylabel, fontsize=12, fontweight='bold')
+    ax.grid(True, axis='y', alpha=0.20, linestyle=':', zorder=1)
+    return cfg, half, nw
+
+
+def _build_drift_figure(drift, show, fig_w, fig_h, lw_ours, lw_oracle,
+                        lw_other, smooth_w=6, legend_ncol=None):
+    """Build one 2×2 figure: rows=metrics, cols=datasets."""
+    fig, axes = plt.subplots(2, 2, figsize=(fig_w, fig_h), sharex='col')
+    for row, (mk, ylbl) in enumerate(zip(METRIC_KEYS, METRIC_YLABELS)):
+        for col, ds in enumerate(DATASETS):
+            ax  = axes[row, col]
+            res = curve_results[(ds, drift)]
+            cfg, half, nw = _draw_panel(
+                ax, res, show, mk, ylbl,
+                lw_ours, lw_oracle, lw_other, smooth_w,
+                first_panel=(row == 0 and col == 0))
+            if row == 0:
+                ax.set_title(
+                    f'{DS_TITLES[ds]}'
+                    f'\npool={cfg["pool_size"]:,},  KB budget={cfg["kb_budget"]:,}',
+                    fontsize=12, fontweight='bold', pad=8)
+            if row == len(METRIC_KEYS) - 1:
+                ax.set_xlabel('Window index (time →)', fontsize=12)
+
+    handles, labels_ = axes[0, 0].get_legend_handles_labels()
+    if legend_ncol is None:
+        legend_ncol = len(labels_)
+    fig.legend(handles, labels_, loc='lower center', ncol=legend_ncol,
+               frameon=False, bbox_to_anchor=(0.5, -0.02),
+               fontsize=11, handlelength=3.5, columnspacing=1.5,
+               handletextpad=0.6)
+    fig.suptitle(f'{DRIFT_LABELS[drift]}', fontsize=14, fontweight='bold', y=1.01)
+    fig.tight_layout(rect=[0, 0.065, 1, 1])
+    return fig
+
+
+for drift in ('sudden', 'gradual'):
+    # main (6 lines)
+    fig = _build_drift_figure(drift, SHOW_MAIN, fig_w=12.0, fig_h=8.2,
+                              lw_ours=3.2, lw_oracle=2.6, lw_other=1.8,
+                              smooth_w=6)
+    for ext in ('pdf', 'png'):
+        pth = FIGS / f'mo1_{drift}.{ext}'
+        fig.savefig(pth, bbox_inches='tight',
+                    dpi=(None if ext == 'pdf' else 200))
+        print(f'Saved {pth}')
+    plt.close(fig)
+
+    # appendix (8 lines)
+    fig_app = _build_drift_figure(drift, SHOW_FULL, fig_w=12.5, fig_h=8.4,
+                                   lw_ours=3.0, lw_oracle=2.4, lw_other=1.4,
+                                   smooth_w=6, legend_ncol=4)
+    for ext in ('pdf', 'png'):
+        pth = FIGS / f'mo1_{drift}_appendix.{ext}'
+        fig_app.savefig(pth, bbox_inches='tight',
+                        dpi=(None if ext == 'pdf' else 200))
+        print(f'Saved {pth}')
+    plt.close(fig_app)
 
 # ════════════════════════════════════════════════════════════════════════════
 # ── Shared dataset-analysis data ────────────────────────────────────────────

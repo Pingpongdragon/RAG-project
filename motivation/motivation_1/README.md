@@ -9,22 +9,22 @@
 | `loaders.py` | Dataset loaders incl. FEVER |
 | `strategies.py` | All 8 strategy implementations |
 | `utils.py` | Embedding cache, retrieval helpers |
-| `plot_mo1_combined.py` | **All paper figures** → `mo1_combined`, `dataset_delta_bar`, `dataset_condition_space` + `dataset_analysis_table.tex` |
-| `gen_mo1_table.py` | **Method table** → `mo1_method_comparison_table.tex` |
+| `plot.py` | **All paper figures** → `mo1_{sudden,gradual}.{pdf,png}` + appendix variants |
 
 ## Figures (paper-ready)
 
-- `figures/mo1_combined.pdf` — 2×2 main figure (HotpotQA + FEVER × sudden/gradual, 8 methods)
-- `figures/dataset_delta_bar.pdf` — QDC Δ over Static per dataset
-- `figures/dataset_condition_space.pdf` — q/SF vs alignment scatter (success/fail)
+- `figures/mo1_sudden.pdf` — 2×2 main figure (HotpotQA + FEVER, sudden drift, 6 methods)
+- `figures/mo1_gradual.pdf` — 2×2 main figure (HotpotQA + FEVER, gradual drift, 6 methods)
+- `figures/mo1_sudden_appendix.pdf` — full 8-method version (sudden)
+- `figures/mo1_gradual_appendix.pdf` — full 8-method version (gradual)
 
 ## Key results
 
-| Dataset | Drift | QDC vs Static | QDC vs BestOther |
-|---|---|---|---|
-| HotpotQA-comp | sudden | +25.6pp | +11.8pp |
-| HotpotQA-comp | gradual | +13.8pp | +11.5pp |
-| FEVER | sudden | +16.6pp | +13.6pp |
-| FEVER | gradual | +2.7pp | +5.1pp |
+| Dataset | Drift | QDC vs Static |
+|---|---|---|
+| HotpotQA-comp | sudden | +25.6 pp |
+| HotpotQA-comp | gradual | +13.8 pp |
+| FEVER | sudden | +16.6 pp |
+| FEVER | gradual | +2.7 pp |
 
-See `QDC_CONDITIONS.txt` for the three conditions under which QDC has advantage.
+See `NOTES.md` for the three conditions under which QDC has advantage.
