@@ -157,7 +157,7 @@ def load_musique():
 #  Expanded loaders (official full releases)
 # ═══════════════════════════════════════════════════
 
-def load_hotpotqa_expanded(n_source=None):
+def load_hotpotqa_expanded(n_source=None, q_type=None):
     """Load HotpotQA full train+dev distractor splits (Yang et al., EMNLP 2018).
 
     90,447 train + 7,405 dev = ~97,852 items. Each item has 10 paragraphs,
@@ -175,6 +175,9 @@ def load_hotpotqa_expanded(n_source=None):
         with open(base / f'{split}.json') as f:
             all_items.extend(json.load(f))
     log.info(f'  loaded {len(all_items)} items')
+    if q_type:
+        all_items = [it for it in all_items if it.get('type') == q_type]
+        log.info(f'  filtered to type={q_type}: {len(all_items)} items')
     if n_source and n_source < len(all_items):
         all_items = _random_subsample(
             all_items,
@@ -263,7 +266,7 @@ def load_musique_expanded(n_source=None):
     return doc_pool, queries, title_to_idx
 
 
-def load_2wiki_expanded(n_source=None):
+def load_2wiki_expanded(n_source=None, q_type=None):
     """Load 2WikiMultihopQA full train+dev (Ho et al., COLING 2020).
 
     167,454 train + 12,576 dev = 180,030 items.
@@ -281,6 +284,9 @@ def load_2wiki_expanded(n_source=None):
             raw = json.load(f)
         all_items.extend(raw)
     log.info(f'  loaded {len(all_items)} items from train+dev')
+    if q_type:
+        all_items = [it for it in all_items if it.get("type") == q_type]
+        log.info(f"  filtered to type={q_type}: {len(all_items)} items")
     if n_source and n_source < len(all_items):
         all_items = _random_subsample(
             all_items,

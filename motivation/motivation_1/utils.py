@@ -35,7 +35,7 @@ def compute_embeddings(doc_pool, queries, tag):
         log.info("Loading cached embeddings")
         return np.load(dc).astype('f'), np.load(qc).astype('f')
     from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer(EMBED_MODEL)
+    model = SentenceTransformer(EMBED_MODEL, device='cpu')
     log.info(f"Encoding {len(doc_pool)} docs...")
     de = model.encode(
         [f"{d['title']}: {d['text'][:256]}" for d in doc_pool],

@@ -202,42 +202,85 @@
 %    这里要强调：算法不是拍脑袋规则，而是和 observation 一一对应。
 \section{Introduction}
 
-LLM-based agent systems maintain two distinct kinds of memory: a \emph{personal} episodic layer (conversation histories, task state, and user preferences) and a \emph{shared} factual knowledge base accessed through retrieval-augmented generation (RAG)~\cite{lewis2020rag}. Recent work has made the episodic layer genuinely dynamic: MemGPT~\cite{packer2023memgpt}, MemoryBank~\cite{zhong2023memorybank}, and A-MEM~\cite{weng2025amem} demonstrate agents that continuously reorganize and update their own memories in response to interaction. The shared factual knowledge base, however, remains almost universally static---pre-indexed at deployment time and never updated in response to how users actually query it. This asymmetry is benign when demand is stable, but in long-running multi-user deployments the query distribution over the shared KB evolves: early ``head'' topics give way to ``long-tail'' demands the frozen corpus cannot support~\cite{vu2023freshllms,zhou2025livesearchbench,peng2025uaeval4rag}. Making the RAG knowledge base itself \emph{dynamic}---responsive to query distribution drift rather than only to personal episodic history---is the natural extension of the agent-memory agenda.
+Long-running LLM-based agents are expected to improve through interaction, which makes memory a central architectural component rather than a mere prompt extension~\cite{zhang2024survey,hu2025memory,du2026memory}. In the memory-source taxonomy of Zhang et al.~\cite{zhang2024survey}, agents rely on \emph{inside-trial} working memory, \emph{cross-trial} episodic memory, and \emph{external knowledge} retrieved from shared stores such as RAG~\cite{lewis2020rag}. The first two channels are agent-local and are increasingly managed online by systems such as MemGPT~\cite{packer2023memgpt}, MemoryBank~\cite{zhong2023memorybank}, and A-MEM~\cite{weng2025amem}. External knowledge plays a different role: it is often a long-lived shared KB, while many adaptive agents handle freshness or missing-information problems through read-time retrieval and on-demand search~\cite{yan2024crag,asai2023selfrag,vu2023freshllms,kasai2024realtime}. These read-time adaptations can rescue the current interaction, but they do not decide what a budget-limited shared KB should persistently admit, retain, or evict when unsupported needs recur, especially when governance, latency, and storage constraints preclude unlimited online acquisition~\cite{jin2024ragcache,comrag2025,siriwardhana2023improving}.
 
-A common response is to keep the KB \emph{static} and improve only query-time behavior via correction, gating, or on-demand search~\cite{yan2024crag,asai2023selfrag,vu2023freshllms,kasai2024realtime}. That is useful for the current query, but it does not improve the persistent KB itself.
+The missing signal is that user demand itself is non-stationary. User-generated queries naturally change over time based on events in the world and the evolution of language~\cite{yang2025murr}; in multi-user LLM reasoning systems, this appears as a shift in the topic distribution of incoming queries, not merely as a change in the facts available to the system. We term this phenomenon \emph{query distribution drift}. Figure~\ref{fig:motivation0} provides direct empirical evidence in the LLM setting: monthly topic mixtures in WildChat-1M real ChatGPT conversation logs shift measurably from month to month (panel~a), and Google Trends interest for five LLM application domains reweights substantially over a multi-year horizon (panel~b). Together, these signals confirm that persistent shared-KB maintenance is a demand-alignment problem rather than only a freshness problem.
 
-In practice, per-query on-demand retrieval is often precluded by governance constraints, latency bounds, and storage budgets, making it necessary to maintain a persistent, budget-limited KB that improves over time~\cite{jin2024ragcache,comrag2025,siriwardhana2023improving}. The challenge is therefore not just \emph{how} to retrieve, but \emph{what} to persist.
+Existing dynamic RAG work does not use this demand signal as a trigger: temporal RAG
+refreshes facts when the world state changes~\cite{hoh2025,dynaquest2025}; index-level
+methods ingest new documents~\cite{guo2024lightrag,guti2025hipporag2}; editing and
+pruning methods reshape an existing corpus~\cite{chen2024recipe,zero-rag2025}; caching
+methods favor recent or frequent access~\cite{comrag2025,jin2024ragcache,wu2025streamingrag};
+and log-driven refresh waits for delayed answerability or evaluation
+feedback~\cite{peng2025uaeval4rag,es2023ragas}. Because none of these triggers on the
+immediate signal exposed by unsupported queries, Figure~\ref{fig:motivation1} shows
+that under demand shift they consistently update the wrong parts of the shared KB.
 
-Prior literature on dynamic RAG mostly interprets ``updating'' as correcting outdated facts while the user queries remain structurally stable. Recent benchmarks such as HoH~\cite{hoh2025} and DynaQuest~\cite{dynaquest2025} overwhelmingly evaluate scenarios where the underlying world state shifts (i.e., temporal knowledge change). However, a distinct and equally critical, yet largely unexplored, operational challenge is \emph{query distribution drift}. Classical concept-drift surveys distinguish several shift patterns, including sudden, gradual, incremental, and recurring drift~\cite{gama2014survey}. In our setting, the source facts in the world remain static, but the streaming user demand can evolve through these modes as it moves from popular ``head'' topics toward previously unindexed ``long-tail'' topics.
+Even a deliberately minimal query-driven algorithm, \emph{QueryDriven} (QD), which
+accumulates demand over candidate support documents and replaces KB entries only when
+repeated demand justifies the write, already substantially outperforms all baselines in
+direct-evidence settings (Figure~\ref{fig:motivation1})---where the query usually names
+or strongly implies the needed evidence---confirming that query streams carry actionable
+maintenance signals. However, in complex multi-hop settings
+(Figure~\ref{fig:motivation2}), QD brings only small gains: document replacement driven
+by query embeddings is the wrong abstraction when answering requires connecting entities
+across a reasoning path, because the query may mention only the first-hop entity while
+the reusable evidence lies in second-hop documents. Motivated by these limits, we develop
+a query-drift-aware dynamic KB maintenance framework that explicitly detects mismatch
+between the incoming query stream and the current KB, then routes toward demand-based
+replacement, agent-side acquisition, fetch-to-persist handoff, or graph-structured
+evidence expansion as needed.
 
-How do existing persistent KB maintenance systems handle query distribution drift? Current strategies are fundamentally \emph{supply-triggered} or rely on delayed human feedback. Index-level incremental methods (e.g., LightRAG~\cite{guo2024lightrag}, HippoRAG~2~\cite{guti2025hipporag2}) integrate new documents as they arrive; editing methods (e.g., RECIPE~\cite{chen2024recipe}, Zero-RAG~\cite{zero-rag2025}) prune or correct existing facts; temporal caching methods (e.g., StreamingRAG~\cite{wu2025streamingrag}) optimize retention based on recency; and delayed log-driven methods (\emph{LogDrivenArrival}) append knowledge based on batched historical user feedback. Following the classical taxonomy of drift modes~\cite{gama2014survey} together with shift-construction methodologies established by MS-Shift~\cite{lupart2023ms} and TCR~\cite{li2024tcr}, we construct controlled query shifts over streaming windows, with our experiments focusing on the sudden and gradual cases. We find that these paradigms suffer a catastrophic KB coverage collapse under fixed read-write budgets (Figure~\ref{fig:motivation1}). Providing supply-side methods with higher write budgets only injects noise, and log-driven methods are structurally too slow to adapt. Because they lack an immediate, precise demand signal from the query failures themselves, they replace documents arbitrarily and barely outperform a completely frozen Static baseline.
-
-Our first diagnostic study focuses on a \emph{simple direct-evidence regime}: unsupported queries directly name the missing evidence, and that evidence is reusable across future queries, as in a RAG-augmented agent answering factual questions over entities already present in its broader knowledge pool. This is the cleanest setting in which query failures can guide persistent KB updates. Figure~\ref{fig:motivation1} shows that, in this simple regime, immediate query-demand signals are genuinely useful under both sudden and gradual drift. It also clarifies why not every superficially similar dataset behaves the same. When the pool contains almost no distractors, as in TriviaQA-style entity-page pools, QueryDrivenCluster can still beat Static, but the gap to the best offline baseline shrinks because even blind refresh can land on useful documents by chance. The remaining weakness in longer gradual streams is therefore not the absence of a useful signal, but a budget-allocation problem: the system must preserve high-reuse evidence while still reserving capacity for newly emerging tail knowledge.
+Across both regimes, our experiments instantiate both abrupt and
+gradual demand shifts using standard concept-drift protocols~\cite{gama2014survey}
+and recent retrieval-shift analyses~\cite{lupart2023ms,li2024tcr}, by varying the
+mixture between head and shifted query distributions either at a single boundary
+or over a transition interval.
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.98\textwidth]{motivation/motivation1.pdf}
-    \caption{KB coverage over a 100-window streaming query shift in the simple direct-evidence regime, on two complementary datasets: \textbf{HotpotQA-comparison} (multi-entity QA, $q/\mathrm{SF}\!\approx\!1.4$, dense distractor pool---tests selectivity against confounders) and \textbf{FEVER} (fact-checking, $q/\mathrm{SF}\!\approx\!8.2$, high evidence reuse---tests retention of stable demand). One representative line per method category is shown; the full set of eight baselines is in Appendix~Figure~\ref{fig:motivation1_appendix}. Background tints separate the pre-drift (blue) and post-drift (orange) regimes. Across both datasets and both drift modes, only the demand-driven \emph{QueryDrivenCluster} tracks the Oracle, while supply-triggered, edit-based, and lagged log-driven baselines collapse toward the frozen \emph{Static} curve in the post-drift band; the remaining long-stream gap is mainly a capacity-allocation issue.}
+    \includegraphics[width=0.98\textwidth]{motivation/motivation_0/figures/user_query_topic_drift.pdf}
+    \caption{Real multi-user LLM query workloads exhibit topic shift over time.
+\textit{(a)} Monthly topic proportions in 32.5K WildChat-1M English conversations~\cite{zhao2024wildchat}
+from 2023.04--2024.04: the dominant topic changes substantially across months even
+without any world-state change. \textit{(b)} Google Trends weekly search interest for
+five LLM application domains (2022--2026): user interest reweights from chatbot-centric
+toward coding, education, and agent use cases over time. Together, these real-world
+signals motivate the study of query distribution drift as a first-class challenge for
+persistent shared RAG systems.}
+    \label{fig:motivation0}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{motivation/mo1_sudden_appendix.pdf}
+    \caption{QD in simple direct-evidence settings. Compared with frozen, supply-side,
+recency-driven, on-demand, and delayed log-driven updates, the query-driven writer
+better tracks demand shifts in the query stream.}
     \label{fig:motivation1}
 \end{figure*}
 
-Our second diagnostic study should likewise be read as a \emph{signal-and-acquisition} problem, not merely as ``multi-hop is harder.'' In bridge-required settings, the query alone often provides a weakly aligned signal for the reusable evidence that should be persisted: a failed query reveals that the KB is insufficient, but does not directly identify which intermediate bridge document or evidence bundle should be written for future reuse. Figure~\ref{fig:motivation2} shows that QueryDrivenCluster remains the strongest \emph{persistent writer} across all datasets, which means the persistent demand signal is still real. The large remaining gap is specifically to on-demand fetching. From an agent perspective, OnDemandFetch is therefore not just a competing baseline; it is the \emph{online acquisition channel} that surfaces candidate evidence outside the current persistent KB. The unresolved problem is how to convert those transient on-demand discoveries---retrieved bridge documents, successful contexts, and other retrieval traces---into persistent KB admissions for future reuse.
-
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.98\textwidth]{motivation/motivation2.pdf}
-    \caption{Signal-and-acquisition setting: QueryDrivenCluster is still the strongest persistent writer, but the dominant remaining gap is fetch-to-persist conversion---how an agent should convert on-demand discoveries into persistent KB admissions when query-only signals under-specify the reusable evidence.}
+    \includegraphics[width=0.98\textwidth]{motivation/mo2_bridge_sudden_appendix.pdf}
+    \caption{QD in complex multi-hop settings. A simple query-only replacement rule
+gains little once useful evidence must be localized through paragraphs, bridge entities,
+or reasoning paths.}
     \label{fig:motivation2}
 \end{figure*}
 
-These two diagnostic studies therefore point to a concrete algorithmic agenda rather than a universal QueryDrivenCluster win. An effective dynamic KB maintenance algorithm must address four coupled challenges. \textbf{First}, it must transform unsupported queries into a reliable demand signal for persistent KB updates, rather than relying solely on supply-triggered document arrivals or delayed feedback. \textbf{Second}, it must determine when that signal is recurrent and stable enough to justify persistence, so that adaptation is triggered neither too early nor too late. \textbf{Third}, it must allocate a fixed KB budget in a reuse-aware manner, preserving high-value evidence while still admitting newly emerging tail knowledge under gradual drift. \textbf{Fourth}, it must support \emph{fetch-to-persist conversion}: when agent-side on-demand retrieval uncovers useful evidence that the query alone did not localize, the system must decide which retrieved documents or evidence bundles should be admitted into the long-lived KB for future reuse.
-
-Toward this end, we develop a query-driven dynamic KB maintenance framework that uses unsupported queries as update signals and integrates demand-aware admission, agent-side acquisition signals, fetch-to-persist handoff, and budget-aware eviction. \textbf{In summary, our main contributions are as follows:}
-
+\textbf{In summary, our main contributions are as follows:}
 \begin{itemize}[leftmargin=*,itemsep=2pt,topsep=2pt]
-    \item We formalize \emph{query distribution drift} as a distinct challenge for persistent RAG systems under fixed KB budgets---including the shared knowledge modules of RAG-augmented agent deployments---and show that it is not adequately captured by prior settings centered on temporal fact updates alone.
-    \item We introduce a quantitative drift-reconstruction protocol for persistent RAG streams that localizes the timing of distribution shift over streaming windows, enabling controlled evaluation of when adaptation should be triggered under sudden and gradual regimes.
-    \item We propose a query-driven dynamic KB maintenance framework that directly targets the dominant failure modes exposed by these diagnostic studies, namely mistimed adaptation, capacity allocation under long gradual drift, and fetch-to-persist admission when query-only signals under-specify reusable evidence.
-    \item We provide an empirical diagnosis of why existing supply-triggered, recency-driven, or lagged-update strategies fail in this regime, characterize the simple settings in which immediate query-demand signals are sufficient, and show when additional agent-side acquisition and evidence-aware admission mechanisms become necessary.
+    \item We formalize \emph{query distribution drift} as a distinct challenge for
+    persistent RAG systems under fixed KB budgets, including the shared knowledge
+    modules of RAG-augmented agent deployments.
+    \item We characterize the simple settings in which query-driven persistence is
+    already effective and the more complex settings in which a query-only document
+    replacement rule becomes insufficient.
+    \item We show that existing static, supply-side, and recency-driven update strategies
+    lack explicit query-drift detection and therefore incur mistimed or wasted updates
+    under demand shift.
+    \item We propose a query-drift-aware dynamic KB maintenance system that explicitly
+    detects query drift and routes different regimes toward demand-aware replacement,
+    online fetch-and-consolidate, or graph-structured evidence expansion.
 \end{itemize}
-

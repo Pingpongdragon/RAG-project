@@ -1,7 +1,7 @@
 """
 Global constants and dataset configurations.
 
-Embedding: all-MiniLM-L6-v2 (Sentence-BERT, 384-dim, cosine similarity).
+Embedding: BAAI/bge-large-en-v1.5 (1024-dim, cosine similarity).
   - Chosen for speed; production would use a larger model.
 
 SF_HIT_THRESH: a document is considered a "hit" for a supporting fact
@@ -12,18 +12,18 @@ K_LIST: standard IR recall cutoffs used in HippoRAG evaluation.
 from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────
-PROJECT_DIR = Path('/home/jyliu/RAG-project')
+PROJECT_DIR = Path('/home/jyliu/RAG_project')
 THIS_DIR    = Path(__file__).resolve().parent
 DATA_DIR    = THIS_DIR / 'data'
 FIG_DIR     = THIS_DIR / 'figures'
-CACHE_DIR   = Path('/data/jyliu/RAG-project/motivation/motivation_4/cache')
+CACHE_DIR   = Path('/home/jyliu/RAG_project/motivation/motivation_2/cache')
 
 # ── Reproducibility ────────────────────────────────
 SEED = 42
 
 # ── Embedding ──────────────────────────────────────
-EMBED_MODEL   = 'all-MiniLM-L6-v2'
-SF_HIT_THRESH = 0.55
+EMBED_MODEL   = 'BAAI/bge-large-en-v1.5'
+SF_HIT_THRESH = 0.62  # calibrated for BGE-large (gold p10~0.62, pool p95~0.44)
 
 # ── Evaluation ─────────────────────────────────────
 K_LIST = [1, 5, 10, 20]
@@ -128,3 +128,6 @@ import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('motivation')
+
+# BGE-style retrieval prefix (applied to QUERIES only, not docs)
+BGE_QUERY_PREFIX = 'Represent this sentence for searching relevant passages: '

@@ -56,6 +56,12 @@ import logging
 from typing import List, Tuple, Optional, Dict, Any, Set, Callable
 from dataclasses import dataclass, field
 
+try:
+    import faiss
+    _FAISS_AVAILABLE = True
+except ImportError:
+    _FAISS_AVAILABLE = False
+
 from updator.qarc.interfaces import BaseKBCurator
 
 
@@ -105,18 +111,23 @@ class DocumentPool:
     """
     内存文档池 — 支持稠密向量检索。
 
-    在生产环境中，这里会封装 FAISS 索引。
-    为清晰起见，当前使用暴力 cosine similarity 检索。
+    规模自适应索引策略:
+      - pool ≤ 50k docs: FAISS IndexFlatIP（精确内积，快速）
+      - pool  > 50k docs: FAISS IndexIVFFlat（ANN，nlist=√N，nprobe=nlist//4）
+        构建时间 O(N)，查询时间 O(nprobe × N/nlist)，约快 20-50×
 
     文档池 D_pool 通常很大，
     而 KB K 只从中选取一小部分
     """
 
+    # pool 大小超过此阈值，自动切换到 IVF-ANN 索引
+    _IVF_THRESHOLD = 50_000
+
     def __init__(self):
         self.documents: Dict[str, Document] = {}
-        self._embedding_matrix: Optional[np.ndarray] = None
         self._id_list: List[str] = []
-        self._dirty = True  # 有新增文档时标记为脏，需要重建索引
+        self._faiss_index = None   # FAISS 索引（懒建）
+        self._dirty = True
 
     def add_document(self, doc: Document):
         """添加单篇文档到池中"""
@@ -130,17 +141,41 @@ class DocumentPool:
         self._dirty = True
 
     def _rebuild_index(self):
-        """重建 embedding 矩阵（懒加载，仅在脏标记时重建）"""
+        """重建 FAISS 索引（懒加载，仅在脏标记时重建）"""
         if not self._dirty:
             return
         self._id_list = list(self.documents.keys())
-        if self._id_list:
-            embeddings = [self.documents[did].embedding for did in self._id_list]
-            self._embedding_matrix = np.vstack(embeddings)
-            norms = np.linalg.norm(self._embedding_matrix, axis=1, keepdims=True)
-            self._embedding_matrix = self._embedding_matrix / np.clip(norms, 1e-10, None)
+        self._faiss_index = None
+
+        if not self._id_list:
+            self._dirty = False
+            return
+
+        embs = np.vstack([self.documents[did].embedding for did in self._id_list]).astype(np.float32)
+        norms = np.linalg.norm(embs, axis=1, keepdims=True)
+        embs = embs / np.clip(norms, 1e-10, None)
+
+        n, d = embs.shape
+
+        if _FAISS_AVAILABLE:
+            if n <= self._IVF_THRESHOLD:
+                # 精确 Flat 索引（内积 ≡ 余弦相似度，因为向量已归一化）
+                idx = faiss.IndexFlatIP(d)
+            else:
+                # IVF-ANN：nlist ≈ √N，nprobe = max(1, nlist//4)
+                nlist = max(8, int(n ** 0.5))
+                nprobe = max(1, nlist // 4)
+                quantizer = faiss.IndexFlatIP(d)
+                idx = faiss.IndexIVFFlat(quantizer, d, nlist, faiss.METRIC_INNER_PRODUCT)
+                idx.train(embs)
+                idx.nprobe = nprobe
+                logger.info(f"DocumentPool: IVF index built (n={n}, nlist={nlist}, nprobe={nprobe})")
+            idx.add(embs)
+            self._faiss_index = idx
         else:
-            self._embedding_matrix = None
+            # fallback: 保存矩阵用于暴力搜索
+            self._faiss_index = embs  # np.ndarray fallback
+
         self._dirty = False
 
     def search(
@@ -152,51 +187,67 @@ class DocumentPool:
         """
         检索与查询最相似的 top-k 文档。
 
-        参数:
-            query_embedding: (d,) 归一化查询向量
-            top_k:          返回数量
-            exclude_ids:    要排除的文档 ID 集合
-
-        返回:
-            [(Document, similarity)] 按相似度降序
+        使用 FAISS 索引（IVF-ANN 或 Flat），支持大规模 pool。
+        exclude_ids: 后处理过滤（不影响 ANN 精度），适合少量排除。
         """
         self._rebuild_index()
 
-        if self._embedding_matrix is None:
+        if not self._id_list or self._faiss_index is None:
             return []
 
-        query = query_embedding.reshape(1, -1)
+        query = query_embedding.reshape(1, -1).astype(np.float32)
         qnorm = np.linalg.norm(query)
         if qnorm > 1e-10:
             query = query / qnorm
 
-        sims = (self._embedding_matrix @ query.T).flatten()
+        # 多取一些候选以应对 exclude_ids 过滤
+        fetch_k = top_k + len(exclude_ids) if exclude_ids else top_k
+        fetch_k = min(fetch_k, len(self._id_list))
 
-        if exclude_ids:
-            for i, did in enumerate(self._id_list):
-                if did in exclude_ids:
-                    sims[i] = -2.0
-
-        if len(sims) <= top_k:
-            top_idx = np.argsort(sims)[::-1]
+        if _FAISS_AVAILABLE and not isinstance(self._faiss_index, np.ndarray):
+            sims_arr, idx_arr = self._faiss_index.search(query, fetch_k)
+            sims_arr = sims_arr[0]
+            idx_arr  = idx_arr[0]
         else:
-            top_idx = np.argpartition(sims, -top_k)[-top_k:]
-            top_idx = top_idx[np.argsort(sims[top_idx])[::-1]]
+            # numpy fallback
+            mat = self._faiss_index if isinstance(self._faiss_index, np.ndarray) else None
+            if mat is None:
+                return []
+            sims_all = (mat @ query.T).flatten()
+            k = min(fetch_k, len(sims_all))
+            raw_idx = np.argpartition(sims_all, -k)[-k:]
+            raw_idx = raw_idx[np.argsort(sims_all[raw_idx])[::-1]]
+            sims_arr = sims_all[raw_idx]
+            idx_arr  = raw_idx
 
         results = []
-        for i in top_idx:
-            if sims[i] > -1.0:
-                did = self._id_list[i]
-                results.append((self.documents[did], float(sims[i])))
+        for sim, i in zip(sims_arr, idx_arr):
+            if i < 0:
+                continue
+            did = self._id_list[i]
+            if exclude_ids and did in exclude_ids:
+                continue
+            results.append((self.documents[did], float(sim)))
+            if len(results) >= top_k:
+                break
 
         return results
 
     def get_all_embeddings(self) -> np.ndarray:
-        """返回所有文档的 (n, d) embedding 矩阵"""
+        """返回所有文档的 (n, d) embedding 矩阵（只读视图，不复制）"""
         self._rebuild_index()
-        if self._embedding_matrix is None:
+        if not self._id_list:
             return np.empty((0, 0))
-        return self._embedding_matrix.copy()
+        if _FAISS_AVAILABLE and not isinstance(self._faiss_index, np.ndarray):
+            # 从 FAISS 重建矩阵（用于子模计算，此时 pool 通常不超大）
+            n = len(self._id_list)
+            d = self._faiss_index.d
+            mat = np.zeros((n, d), dtype=np.float32)
+            self._faiss_index.reconstruct_n(0, n, mat)
+            return mat
+        elif isinstance(self._faiss_index, np.ndarray):
+            return self._faiss_index  # numpy fallback，直接共享（只读）
+        return np.empty((0, 0))
 
     def get_all_ids(self) -> List[str]:
         """返回所有文档 ID"""
@@ -439,6 +490,10 @@ class QARCKBCurator(BaseKBCurator):
         # 当前 KB 状态: doc_id → Document
         self.kb_docs: Dict[str, Document] = {}
 
+        # FAISS KB 索引缓存（增量维护，避免每次 retrieve 重建）
+        self._kb_index = None   # FAISS IndexFlatIP 或 None
+        self._kb_index_ids: List[str] = []   # 与索引行号对应的 doc_id
+
         # 统计
         self.recuration_count = 0
 
@@ -654,6 +709,10 @@ class QARCKBCurator(BaseKBCurator):
                     except Exception as e:
                         logger.warning(f"ERASE 一致性检查失败 [{doc.doc_id}]: {e}")
 
+        # KB 变化 → 使检索索引缓存失效（下次 retrieve 时重建）
+        if to_add_ids or to_remove_ids:
+            self._invalidate_kb_index()
+
         # 计算替换后的目标函数值
         obj_after = submodular_objective(
             self.get_kb_embeddings(), centroids, weights
@@ -682,6 +741,37 @@ class QARCKBCurator(BaseKBCurator):
     # 从 KB 检索 (供 RAG 使用)
     # -------------------------------------------------------
 
+    def _invalidate_kb_index(self):
+        """KB 内容变化后调用，使缓存索引失效。"""
+        self._kb_index = None
+        self._kb_index_ids = []
+
+    def _rebuild_kb_index(self):
+        """懒加载：构建/更新 FAISS KB 索引。
+        
+        KB 通常几千到几万条，使用 IndexFlatIP（精确搜索，O(N_kb × d)）。
+        相比每次 retrieve 都重新 np.vstack + matmul，这里只在 KB 变化时重建一次。
+        """
+        if self._kb_index is not None:
+            return  # 未失效，直接复用
+
+        self._kb_index_ids = list(self.kb_docs.keys())
+        if not self._kb_index_ids:
+            self._kb_index = None
+            return
+
+        embs = np.vstack([self.kb_docs[did].embedding for did in self._kb_index_ids]).astype(np.float32)
+        norms = np.linalg.norm(embs, axis=1, keepdims=True)
+        embs = embs / np.clip(norms, 1e-10, None)
+
+        if _FAISS_AVAILABLE:
+            d = embs.shape[1]
+            idx = faiss.IndexFlatIP(d)
+            idx.add(embs)
+            self._kb_index = idx
+        else:
+            self._kb_index = embs  # numpy fallback
+
     def retrieve(
         self,
         query_embedding: np.ndarray,
@@ -690,30 +780,42 @@ class QARCKBCurator(BaseKBCurator):
         """
         从当前 KB 中检索 top-k 文档 — RAG 的检索步骤。
 
-        注意: 这里只在 KB (小型) 中检索，不是在整个文档池中检索。
-        QARC 的思想: 先通过策展让 KB 对齐兴趣，然后检索就自然准确了。
+        使用增量维护的 FAISS IndexFlatIP 缓存，KB 不变时无需重建索引。
+        支持 KB 规模从几百到几万条，每次查询 O(N_kb × d) → 实际∼1ms@50k。
         """
         if not self.kb_docs:
             return []
 
-        kb_embs = self.get_kb_embeddings()
-        kb_ids = list(self.kb_docs.keys())
+        self._rebuild_kb_index()
 
-        query = query_embedding.reshape(1, -1)
+        if self._kb_index is None:
+            return []
+
+        query = query_embedding.reshape(1, -1).astype(np.float32)
         qnorm = np.linalg.norm(query)
         if qnorm > 1e-10:
             query = query / qnorm
 
-        sims = (kb_embs @ query.T).flatten()
+        k = min(top_k, len(self._kb_index_ids))
 
-        k = min(top_k, len(sims))
-        top_idx = np.argpartition(sims, -k)[-k:]
-        top_idx = top_idx[np.argsort(sims[top_idx])[::-1]]
+        if _FAISS_AVAILABLE and not isinstance(self._kb_index, np.ndarray):
+            sims_arr, idx_arr = self._kb_index.search(query, k)
+            sims_arr = sims_arr[0]
+            idx_arr  = idx_arr[0]
+        else:
+            mat = self._kb_index
+            sims_all = (mat @ query.T).flatten()
+            raw_idx = np.argpartition(sims_all, -k)[-k:]
+            raw_idx = raw_idx[np.argsort(sims_all[raw_idx])[::-1]]
+            sims_arr = sims_all[raw_idx]
+            idx_arr  = raw_idx
 
         results = []
-        for i in top_idx:
-            did = kb_ids[i]
-            results.append((self.kb_docs[did], float(sims[i])))
+        for sim, i in zip(sims_arr, idx_arr):
+            if i < 0:
+                continue
+            did = self._kb_index_ids[i]
+            results.append((self.kb_docs[did], float(sim)))
 
         return results
 

@@ -57,6 +57,11 @@ DATASET_CONFIGS = {
     # FEVER: q/SF22488, Cond-B224898.6%, pool=SF+4xdistractor, drift: film->sport+music.
     # kb_head_mult=2.96: KB/pool224824%, matching HotpotQA (default 1.2 gives 10% 2192 RandomFIFO self-harms H1).
     'fever': dict(_DEFAULT_CFG, n_source=8000, kb_head_mult=1.8),
+    # TREC-COVID: real biomedical temporal drift. 50 queries, 25K pool.
+    # n_windows=20, window_size=5 (query repetition via sampling).
+    # kb_head_mult=1.5: keeps KB at ~30% of pool, similar to FEVER setting.
+    'trec_covid': dict(_DEFAULT_CFG, n_source=None, n_windows=20,
+                       window_size=5, kb_head_mult=1.5, n_clusters=4),
 }
 
 WRITE_CAP        = 200
@@ -67,35 +72,30 @@ DOC_ADD_CAP      = WRITE_CAP
 EDIT_BATCH       = WRITE_CAP
 QD_TOP_K         = PROBE_TOPK
 QD_REPLACE_CAP   = WRITE_CAP
-FIFO_BATCH       = 40  # tight cap: ~LogDriven effective rate (200/5 windows); keeps RandomFIFO fair vs QDC empirical ~95/w and vs LogDriven amortised 40/w
-FETCH_TOP_K      = PROBE_TOPK
-LOG_FIX_TOP_K    = PROBE_TOPK
-LOG_FIX_CAP      = WRITE_CAP
-LOG_LAG_WINDOWS  = 5
-
 STRATEGY_ORDER = [
-    'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDrivenCluster', 'Oracle',
+    'Static', 'DocArrival', 'KnowledgeEdit',
+    'LRU', 'GPTCacheStyle', 'MemGPTStyle',
+    'QueryDrivenCluster', 'Oracle',
 ]
 STRATEGY_LABELS = {
-    'Static':           'Static (no update)',
-    'RandomFIFO':       'Random FIFO (blind ingest)',
-    'DocArrival':       'Doc-Arrival (HippoRAG)',
-    'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
-    'OnDemandFetch':    'On-Demand Fetch (CRAG)',
-    'LogDrivenArrival': 'Log-Driven (lagging)',
-    'QueryDrivenCluster': 'Query-Driven Cluster (ours)',
-    'Oracle':           'Oracle (upper bound)',
+    'Static':             'Static (no update)',
+    'DocArrival':         'Doc-Arrival (HippoRAG/LightRAG)',
+    'KnowledgeEdit':      'Knowledge-Edit (RECIPE)',
+    'LRU':                'LRU Cache',
+    'GPTCacheStyle':      'Semantic Cache (GPTCache)',
+    'MemGPTStyle':        'Importance-Weighted (MemGPT)',
+    'QueryDrivenCluster': 'Query-Driven (ours)',
+    'Oracle':             'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
-    'Static':           {'color': '#9CA3AF', 'marker': 'D', 'ls': '--'},
-    'RandomFIFO':       {'color': '#D97706', 'marker': 'v', 'ls': '-.'},
-    'DocArrival':       {'color': '#059669', 'marker': '^', 'ls': '-'},
-    'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
-    'OnDemandFetch':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
-    'LogDrivenArrival': {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
-    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
-    'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
+    'Static':             {'color': '#9CA3AF', 'marker': 'D',  'ls': '--'},
+    'DocArrival':         {'color': '#059669', 'marker': '^',  'ls': '-'},
+    'KnowledgeEdit':      {'color': '#7C3AED', 'marker': 's',  'ls': '-'},
+    'LRU':                {'color': '#D97706', 'marker': 'v',  'ls': '-.'},
+    'GPTCacheStyle':      {'color': '#0891B2', 'marker': 'P',  'ls': ':'},
+    'MemGPTStyle':        {'color': '#BE185D', 'marker': 'X',  'ls': '-.'},
+    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D',  'ls': '-'},
+    'Oracle':             {'color': '#DC2626', 'marker': '*',  'ls': '--'},
 }
 
 import logging

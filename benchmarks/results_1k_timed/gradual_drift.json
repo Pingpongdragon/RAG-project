@@ -1,0 +1,7197 @@
+{
+  "QARC": {
+    "method": "QARC",
+    "experiment": "gradual_drift",
+    "total_queries": 1000,
+    "total_time_s": 33.73,
+    "avg_recall@k": 0.3785,
+    "avg_gold_in_kb": 0.7545,
+    "avg_topic_alignment": 0.629,
+    "avg_retrieval_sim": 0.7145,
+    "adaptation_speed": 0.83,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.3,
+          "Child care": 0.25,
+          "Ferrari": 0.35,
+          "Jazz": 0.1
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.6441,
+        "avg_sim": 0.6765,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.108,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.06
+        },
+        "latency_ms": 49.7
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.05,
+          "Ferrari": 0.3,
+          "Niagara Falls": 0.15,
+          "Child care": 0.15
+        },
+        "recall@k": 0.1765,
+        "gold_in_kb": 0.5294,
+        "topic_align": 0.6717,
+        "avg_sim": 0.6999,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.061
+        },
+        "latency_ms": 24.4
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Ferrari": 0.4,
+          "Child care": 0.1,
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.15
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.7368,
+        "topic_align": 0.6749,
+        "avg_sim": 0.7146,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.06
+        },
+        "latency_ms": 74.3
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.15,
+          "Child care": 0.2,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.5,
+        "topic_align": 0.7663,
+        "avg_sim": 0.7016,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.9
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Child care": 0.55,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.25
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.85,
+        "topic_align": 0.4742,
+        "avg_sim": 0.6924,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.5
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Chronic fatigue syndrome": 0.25,
+          "Child care": 0.3,
+          "Niagara Falls": 0.05,
+          "Ferrari": 0.15
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.75,
+        "topic_align": 0.6829,
+        "avg_sim": 0.7094,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.45,
+          "Child care": 0.2,
+          "Ferrari": 0.3,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.5757,
+        "avg_sim": 0.7171,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.3
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.35,
+          "Child care": 0.15,
+          "Jazz": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.7222,
+        "topic_align": 0.6654,
+        "avg_sim": 0.7211,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.062
+        },
+        "latency_ms": 21.0
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Ferrari": 0.2,
+          "Jazz": 0.3,
+          "Child care": 0.15,
+          "Niagara Falls": 0.15,
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.6667,
+        "topic_align": 0.8225,
+        "avg_sim": 0.7127,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.111,
+          "Child care": 0.061
+        },
+        "latency_ms": 20.0
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Jazz": 0.3,
+          "Ferrari": 0.15,
+          "Child care": 0.25,
+          "Niagara Falls": 0.1,
+          "Chronic fatigue syndrome": 0.2
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.85,
+        "topic_align": 0.7404,
+        "avg_sim": 0.7293,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.8889,
+        "topic_align": 0.7838,
+        "avg_sim": 0.6961,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 21.3
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Child care": 0.15
+        },
+        "recall@k": 0.5263,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.742,
+        "avg_sim": 0.7308,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 21.6
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Niagara Falls": 0.3,
+          "Child care": 0.1,
+          "Pizza": 0.05,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.2,
+          "Ferrari": 0.2
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.7778,
+        "topic_align": 0.776,
+        "avg_sim": 0.7231,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.068,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.068,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.062
+        },
+        "latency_ms": 71.4
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Chronic fatigue syndrome": 0.15,
+          "Niagara Falls": 0.15,
+          "Pizza": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.5,
+        "gold_in_kb": 0.9,
+        "topic_align": 0.8191,
+        "avg_sim": 0.7196,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.068,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.3
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Child care": 0.15,
+          "Jazz": 0.2,
+          "Ferrari": 0.25,
+          "Superman": 0.05,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.15
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.8,
+        "topic_align": 0.8459,
+        "avg_sim": 0.6982,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.155,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.073,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.8
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Jazz": 0.6,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.05,
+          "Niagara Falls": 0.1,
+          "Superman": 0.05,
+          "Ferrari": 0.05,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.7222,
+        "topic_align": 0.6492,
+        "avg_sim": 0.749,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.074,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 69.1
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.25,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05,
+          "Superman": 0.05
+        },
+        "recall@k": 0.5263,
+        "gold_in_kb": 0.8947,
+        "topic_align": 0.8023,
+        "avg_sim": 0.7116,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.074,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 21.5
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Manta ray": 0.05,
+          "Niagara Falls": 0.35,
+          "Jazz": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.1
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.695,
+        "avg_sim": 0.7417,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.068,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.074,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.5
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Superman": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Ferrari": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.5,
+        "gold_in_kb": 0.7222,
+        "topic_align": 0.724,
+        "avg_sim": 0.7294,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.074,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 20.8
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Superman": 0.1,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Child care": 0.05,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.5556,
+        "gold_in_kb": 0.8889,
+        "topic_align": 0.6954,
+        "avg_sim": 0.7151,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.074,
+          "Baking": 0.11,
+          "Child care": 0.061
+        },
+        "latency_ms": 20.7
+      },
+      {
+        "window": 20,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Ferrari": 0.05,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Niagara Falls": 0.4,
+          "Pizza": 0.25
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.75,
+        "topic_align": 0.6171,
+        "avg_sim": 0.711,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.3
+      },
+      {
+        "window": 21,
+        "topic_dist": {
+          "Superman": 0.25,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.25,
+          "Child care": 0.1,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.6301,
+        "avg_sim": 0.7046,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.07,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.4
+      },
+      {
+        "window": 22,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.15,
+          "Superman": 0.15,
+          "Jazz": 0.05,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.4444,
+        "gold_in_kb": 0.8333,
+        "topic_align": 0.5525,
+        "avg_sim": 0.7489,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.07,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 20.9
+      },
+      {
+        "window": 23,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.15,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.2,
+          "Jazz": 0.2,
+          "Baking": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.7413,
+        "avg_sim": 0.7043,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.153,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.07,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 24,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Jazz": 0.25,
+          "Baking": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.15,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.6567,
+        "avg_sim": 0.7445,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.153,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 21.1
+      },
+      {
+        "window": 25,
+        "topic_dist": {
+          "Jazz": 0.2,
+          "Pizza": 0.4,
+          "Superman": 0.15,
+          "Manta ray": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Niagara Falls": 0.1
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.75,
+        "topic_align": 0.5862,
+        "avg_sim": 0.707,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.074,
+          "Baking": 0.109,
+          "Child care": 0.061
+        },
+        "latency_ms": 22.7
+      },
+      {
+        "window": 26,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Pizza": 0.15,
+          "Superman": 0.1,
+          "Baking": 0.1,
+          "Rock and roll": 0.05,
+          "Ferrari": 0.1,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.7368,
+        "topic_align": 0.6023,
+        "avg_sim": 0.6979,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.075,
+          "Baking": 0.109,
+          "Child care": 0.06
+        },
+        "latency_ms": 22.2
+      },
+      {
+        "window": 27,
+        "topic_dist": {
+          "Baking": 0.05,
+          "Pizza": 0.3,
+          "Superman": 0.1,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.2,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.75,
+        "topic_align": 0.6959,
+        "avg_sim": 0.6961,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.07,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.111,
+          "Rock and roll": 0.075,
+          "Baking": 0.109,
+          "Child care": 0.059
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 28,
+        "topic_dist": {
+          "Superman": 0.3,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.15
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.65,
+        "topic_align": 0.5516,
+        "avg_sim": 0.7239,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.071,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.075,
+          "Baking": 0.109,
+          "Child care": 0.059
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 29,
+        "topic_dist": {
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.25,
+          "Superman": 0.2,
+          "Jazz": 0.25,
+          "Pizza": 0.2
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.8947,
+        "topic_align": 0.6375,
+        "avg_sim": 0.7152,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.071,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.075,
+          "Baking": 0.109,
+          "Child care": 0.059
+        },
+        "latency_ms": 21.8
+      },
+      {
+        "window": 30,
+        "topic_dist": {
+          "Rock and roll": 0.1,
+          "Jazz": 0.25,
+          "Niagara Falls": 0.2,
+          "Pizza": 0.2,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Baking": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.6111,
+        "topic_align": 0.7741,
+        "avg_sim": 0.7054,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.071,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.096,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.075,
+          "Baking": 0.109,
+          "Child care": 0.059
+        },
+        "latency_ms": 21.4
+      },
+      {
+        "window": 31,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Rock and roll": 0.3
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.559,
+        "avg_sim": 0.7099,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.071,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.096,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.076,
+          "Baking": 0.109,
+          "Child care": 0.059
+        },
+        "latency_ms": 21.8
+      },
+      {
+        "window": 32,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Baking": 0.05,
+          "Superman": 0.35,
+          "Chronic fatigue syndrome": 0.05,
+          "Niagara Falls": 0.15,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.7368,
+        "topic_align": 0.4687,
+        "avg_sim": 0.6994,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.072,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.072,
+          "Chronic fatigue syndrome": 0.096,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.076,
+          "Baking": 0.109,
+          "Child care": 0.058
+        },
+        "latency_ms": 21.8
+      },
+      {
+        "window": 33,
+        "topic_dist": {
+          "Manta ray": 0.1,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.2
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.5263,
+        "topic_align": 0.5601,
+        "avg_sim": 0.7032,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Superman": 0.072,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.095,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.077,
+          "Baking": 0.109,
+          "Child care": 0.058
+        },
+        "latency_ms": 22.1
+      },
+      {
+        "window": 34,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.2,
+          "Manta ray": 0.05,
+          "Baking": 0.35,
+          "Superman": 0.15
+        },
+        "recall@k": 0.5263,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.5253,
+        "avg_sim": 0.7378,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.072,
+          "Jazz": 0.16,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.095,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.077,
+          "Baking": 0.109,
+          "Child care": 0.058
+        },
+        "latency_ms": 21.9
+      },
+      {
+        "window": 35,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.15
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.6667,
+        "topic_align": 0.5632,
+        "avg_sim": 0.6915,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.072,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.094,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.077,
+          "Baking": 0.11,
+          "Child care": 0.058
+        },
+        "latency_ms": 70.5
+      },
+      {
+        "window": 36,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Superman": 0.35,
+          "Rock and roll": 0.25,
+          "Pizza": 0.15,
+          "Baking": 0.1
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.509,
+        "avg_sim": 0.7206,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.072,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.094,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.077,
+          "Baking": 0.11,
+          "Child care": 0.058
+        },
+        "latency_ms": 22.7
+      },
+      {
+        "window": 37,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Baking": 0.2,
+          "Manta ray": 0.1,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Superman": 0.1
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.6618,
+        "avg_sim": 0.7108,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.072,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.077,
+          "Baking": 0.111,
+          "Child care": 0.058
+        },
+        "latency_ms": 23.0
+      },
+      {
+        "window": 38,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Superman": 0.4,
+          "Baking": 0.25,
+          "Manta ray": 0.05,
+          "Rock and roll": 0.15,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.4,
+        "gold_in_kb": 0.7,
+        "topic_align": 0.5221,
+        "avg_sim": 0.7253,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.077,
+          "Baking": 0.11,
+          "Child care": 0.058
+        },
+        "latency_ms": 23.8
+      },
+      {
+        "window": 39,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.35,
+          "Baking": 0.3,
+          "Superman": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.4952,
+        "avg_sim": 0.7007,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.151,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.11,
+          "Child care": 0.058
+        },
+        "latency_ms": 23.0
+      },
+      {
+        "window": 40,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.05,
+          "Baking": 0.25,
+          "Rock and roll": 0.2,
+          "Pizza": 0.15,
+          "Jazz": 0.1,
+          "Manta ray": 0.1
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.8,
+        "topic_align": 0.7016,
+        "avg_sim": 0.7043,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.11,
+          "Child care": 0.057
+        },
+        "latency_ms": 23.6
+      },
+      {
+        "window": 41,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Rock and roll": 0.2,
+          "Baking": 0.45,
+          "Niagara Falls": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.4737,
+        "gold_in_kb": 0.7895,
+        "topic_align": 0.5232,
+        "avg_sim": 0.7121,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.074,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.11,
+          "Child care": 0.057
+        },
+        "latency_ms": 22.8
+      },
+      {
+        "window": 42,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Manta ray": 0.25,
+          "Superman": 0.05,
+          "Baking": 0.4,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.5307,
+        "avg_sim": 0.7055,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.074,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 22.6
+      },
+      {
+        "window": 43,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Niagara Falls": 0.05,
+          "Superman": 0.2,
+          "Manta ray": 0.25,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.6316,
+        "gold_in_kb": 0.9474,
+        "topic_align": 0.5278,
+        "avg_sim": 0.7175,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.074,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 22.9
+      },
+      {
+        "window": 44,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Superman": 0.25,
+          "Rock and roll": 0.15,
+          "Manta ray": 0.2
+        },
+        "recall@k": 0.6111,
+        "gold_in_kb": 0.8889,
+        "topic_align": 0.5265,
+        "avg_sim": 0.7272,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.074,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 21.8
+      },
+      {
+        "window": 45,
+        "topic_dist": {
+          "Manta ray": 0.25,
+          "Rock and roll": 0.5,
+          "Pizza": 0.05,
+          "Superman": 0.15,
+          "Baking": 0.05
+        },
+        "recall@k": 0.6316,
+        "gold_in_kb": 1.0,
+        "topic_align": 0.4281,
+        "avg_sim": 0.739,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.161,
+          "Manta ray": 0.095,
+          "Pizza": 0.074,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 22.4
+      },
+      {
+        "window": 46,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Baking": 0.25,
+          "Manta ray": 0.4,
+          "Superman": 0.1
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.8333,
+        "topic_align": 0.5166,
+        "avg_sim": 0.6916,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Superman": 0.073,
+          "Jazz": 0.16,
+          "Manta ray": 0.096,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.093,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 71.1
+      },
+      {
+        "window": 47,
+        "topic_dist": {
+          "Manta ray": 0.4,
+          "Rock and roll": 0.2,
+          "Superman": 0.15,
+          "Baking": 0.25
+        },
+        "recall@k": 0.5,
+        "gold_in_kb": 0.7,
+        "topic_align": 0.5266,
+        "avg_sim": 0.7321,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.149,
+          "Superman": 0.073,
+          "Jazz": 0.16,
+          "Manta ray": 0.097,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.092,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.112,
+          "Child care": 0.057
+        },
+        "latency_ms": 23.4
+      },
+      {
+        "window": 48,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Manta ray": 0.4,
+          "Rock and roll": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.4737,
+        "gold_in_kb": 0.7895,
+        "topic_align": 0.4951,
+        "avg_sim": 0.7321,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.149,
+          "Superman": 0.073,
+          "Jazz": 0.16,
+          "Manta ray": 0.098,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.092,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 22.1
+      },
+      {
+        "window": 49,
+        "topic_dist": {
+          "Baking": 0.5,
+          "Rock and roll": 0.1,
+          "Superman": 0.1,
+          "Pizza": 0.05,
+          "Manta ray": 0.25
+        },
+        "recall@k": 0.3125,
+        "gold_in_kb": 0.8125,
+        "topic_align": 0.5145,
+        "avg_sim": 0.7183,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.149,
+          "Superman": 0.073,
+          "Jazz": 0.16,
+          "Manta ray": 0.098,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.092,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.078,
+          "Baking": 0.111,
+          "Child care": 0.057
+        },
+        "latency_ms": 20.0
+      }
+    ]
+  },
+  "ComRAG": {
+    "method": "ComRAG",
+    "experiment": "gradual_drift",
+    "total_queries": 1000,
+    "total_time_s": 3.89,
+    "avg_recall@k": 0.3512,
+    "avg_gold_in_kb": 0.2493,
+    "avg_topic_alignment": 0.6225,
+    "avg_retrieval_sim": 0.6755,
+    "adaptation_speed": 0.88,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.3,
+          "Child care": 0.25,
+          "Ferrari": 0.35,
+          "Jazz": 0.1
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6408,
+        "avg_sim": 0.6756,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.3
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.05,
+          "Ferrari": 0.3,
+          "Niagara Falls": 0.15,
+          "Child care": 0.15
+        },
+        "recall@k": 0.1176,
+        "gold_in_kb": 0.2353,
+        "topic_align": 0.6696,
+        "avg_sim": 0.6895,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.4
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Ferrari": 0.4,
+          "Child care": 0.1,
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.15
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.4211,
+        "topic_align": 0.6718,
+        "avg_sim": 0.6998,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.6
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.15,
+          "Child care": 0.2,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.7621,
+        "avg_sim": 0.6802,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.7
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Child care": 0.55,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.25
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.4678,
+        "avg_sim": 0.6516,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.8
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Chronic fatigue syndrome": 0.25,
+          "Child care": 0.3,
+          "Niagara Falls": 0.05,
+          "Ferrari": 0.15
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6773,
+        "avg_sim": 0.6592,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.9
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.45,
+          "Child care": 0.2,
+          "Ferrari": 0.3,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5711,
+        "avg_sim": 0.6609,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.1
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.35,
+          "Child care": 0.15,
+          "Jazz": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.6604,
+        "avg_sim": 0.7008,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.0
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Ferrari": 0.2,
+          "Jazz": 0.3,
+          "Child care": 0.15,
+          "Niagara Falls": 0.15,
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.05
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.818,
+        "avg_sim": 0.6711,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.2
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Jazz": 0.3,
+          "Ferrari": 0.15,
+          "Child care": 0.25,
+          "Niagara Falls": 0.1,
+          "Chronic fatigue syndrome": 0.2
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.7346,
+        "avg_sim": 0.6748,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.5
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.5,
+        "topic_align": 0.7797,
+        "avg_sim": 0.6799,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.2
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Child care": 0.15
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.7361,
+        "avg_sim": 0.7112,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.3
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Niagara Falls": 0.3,
+          "Child care": 0.1,
+          "Pizza": 0.05,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.2,
+          "Ferrari": 0.2
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.0556,
+        "topic_align": 0.7719,
+        "avg_sim": 0.6689,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.6
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Chronic fatigue syndrome": 0.15,
+          "Niagara Falls": 0.15,
+          "Pizza": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.8146,
+        "avg_sim": 0.6879,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.3
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Child care": 0.15,
+          "Jazz": 0.2,
+          "Ferrari": 0.25,
+          "Superman": 0.05,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.15
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.8406,
+        "avg_sim": 0.6608,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 1.8
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Jazz": 0.6,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.05,
+          "Niagara Falls": 0.1,
+          "Superman": 0.05,
+          "Ferrari": 0.05,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.6454,
+        "avg_sim": 0.71,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.5
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.25,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05,
+          "Superman": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.4211,
+        "topic_align": 0.7995,
+        "avg_sim": 0.6887,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.0
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Manta ray": 0.05,
+          "Niagara Falls": 0.35,
+          "Jazz": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.1
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.6943,
+        "avg_sim": 0.7099,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.6
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Superman": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Ferrari": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.2222,
+        "topic_align": 0.7219,
+        "avg_sim": 0.68,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.5
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Superman": 0.1,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Child care": 0.05,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.5556,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.693,
+        "avg_sim": 0.6943,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.9
+      },
+      {
+        "window": 20,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Ferrari": 0.05,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Niagara Falls": 0.4,
+          "Pizza": 0.25
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6149,
+        "avg_sim": 0.6783,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.6
+      },
+      {
+        "window": 21,
+        "topic_dist": {
+          "Superman": 0.25,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.25,
+          "Child care": 0.1,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.6257,
+        "avg_sim": 0.6871,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.3
+      },
+      {
+        "window": 22,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.15,
+          "Superman": 0.15,
+          "Jazz": 0.05,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.5,
+        "gold_in_kb": 0.4444,
+        "topic_align": 0.5496,
+        "avg_sim": 0.7276,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 2.7
+      },
+      {
+        "window": 23,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.15,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.2,
+          "Jazz": 0.2,
+          "Baking": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.7369,
+        "avg_sim": 0.6848,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.6
+      },
+      {
+        "window": 24,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Jazz": 0.25,
+          "Baking": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.15,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.05
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.6514,
+        "avg_sim": 0.7186,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.3
+      },
+      {
+        "window": 25,
+        "topic_dist": {
+          "Jazz": 0.2,
+          "Pizza": 0.4,
+          "Superman": 0.15,
+          "Manta ray": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Niagara Falls": 0.1
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.5791,
+        "avg_sim": 0.6549,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.2
+      },
+      {
+        "window": 26,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Pizza": 0.15,
+          "Superman": 0.1,
+          "Baking": 0.1,
+          "Rock and roll": 0.05,
+          "Ferrari": 0.1,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.599,
+        "avg_sim": 0.6685,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 14.8
+      },
+      {
+        "window": 27,
+        "topic_dist": {
+          "Baking": 0.05,
+          "Pizza": 0.3,
+          "Superman": 0.1,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.2,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6882,
+        "avg_sim": 0.6337,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.5
+      },
+      {
+        "window": 28,
+        "topic_dist": {
+          "Superman": 0.3,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.15
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.5407,
+        "avg_sim": 0.6892,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 29,
+        "topic_dist": {
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.25,
+          "Superman": 0.2,
+          "Jazz": 0.25,
+          "Pizza": 0.2
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.6255,
+        "avg_sim": 0.6621,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.7
+      },
+      {
+        "window": 30,
+        "topic_dist": {
+          "Rock and roll": 0.1,
+          "Jazz": 0.25,
+          "Niagara Falls": 0.2,
+          "Pizza": 0.2,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Baking": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.2778,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.7649,
+        "avg_sim": 0.6674,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.7
+      },
+      {
+        "window": 31,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Rock and roll": 0.3
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.544,
+        "avg_sim": 0.6631,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.8
+      },
+      {
+        "window": 32,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Baking": 0.05,
+          "Superman": 0.35,
+          "Chronic fatigue syndrome": 0.05,
+          "Niagara Falls": 0.15,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.46,
+        "avg_sim": 0.6384,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.3
+      },
+      {
+        "window": 33,
+        "topic_dist": {
+          "Manta ray": 0.1,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.2
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5522,
+        "avg_sim": 0.6451,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.7
+      },
+      {
+        "window": 34,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.2,
+          "Manta ray": 0.05,
+          "Baking": 0.35,
+          "Superman": 0.15
+        },
+        "recall@k": 0.6316,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5193,
+        "avg_sim": 0.6888,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.8
+      },
+      {
+        "window": 35,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.15
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.5507,
+        "avg_sim": 0.6368,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.3
+      },
+      {
+        "window": 36,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Superman": 0.35,
+          "Rock and roll": 0.25,
+          "Pizza": 0.15,
+          "Baking": 0.1
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.4939,
+        "avg_sim": 0.6851,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 37,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Baking": 0.2,
+          "Manta ray": 0.1,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Superman": 0.1
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.6474,
+        "avg_sim": 0.6492,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 6.6
+      },
+      {
+        "window": 38,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Superman": 0.4,
+          "Baking": 0.25,
+          "Manta ray": 0.05,
+          "Rock and roll": 0.15,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5094,
+        "avg_sim": 0.6733,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 39,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.35,
+          "Baking": 0.3,
+          "Superman": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.4816,
+        "avg_sim": 0.6475,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.3
+      },
+      {
+        "window": 40,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.05,
+          "Baking": 0.25,
+          "Rock and roll": 0.2,
+          "Pizza": 0.15,
+          "Jazz": 0.1,
+          "Manta ray": 0.1
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.6884,
+        "avg_sim": 0.6764,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 3.1
+      },
+      {
+        "window": 41,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Rock and roll": 0.2,
+          "Baking": 0.45,
+          "Niagara Falls": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.5789,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.5164,
+        "avg_sim": 0.6802,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.3
+      },
+      {
+        "window": 42,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Manta ray": 0.25,
+          "Superman": 0.05,
+          "Baking": 0.4,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5263,
+        "avg_sim": 0.6554,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.4
+      },
+      {
+        "window": 43,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Niagara Falls": 0.05,
+          "Superman": 0.2,
+          "Manta ray": 0.25,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.5263,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5276,
+        "avg_sim": 0.6865,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.2
+      },
+      {
+        "window": 44,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Superman": 0.25,
+          "Rock and roll": 0.15,
+          "Manta ray": 0.2
+        },
+        "recall@k": 0.6667,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.5211,
+        "avg_sim": 0.6547,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 6.1
+      },
+      {
+        "window": 45,
+        "topic_dist": {
+          "Manta ray": 0.25,
+          "Rock and roll": 0.5,
+          "Pizza": 0.05,
+          "Superman": 0.15,
+          "Baking": 0.05
+        },
+        "recall@k": 0.8421,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.4136,
+        "avg_sim": 0.6726,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.1
+      },
+      {
+        "window": 46,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Baking": 0.25,
+          "Manta ray": 0.4,
+          "Superman": 0.1
+        },
+        "recall@k": 0.4444,
+        "gold_in_kb": 0.2222,
+        "topic_align": 0.5095,
+        "avg_sim": 0.6539,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.9
+      },
+      {
+        "window": 47,
+        "topic_dist": {
+          "Manta ray": 0.4,
+          "Rock and roll": 0.2,
+          "Superman": 0.15,
+          "Baking": 0.25
+        },
+        "recall@k": 0.6,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5173,
+        "avg_sim": 0.6941,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 6.0
+      },
+      {
+        "window": 48,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Manta ray": 0.4,
+          "Rock and roll": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.4911,
+        "avg_sim": 0.6931,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 5.5
+      },
+      {
+        "window": 49,
+        "topic_dist": {
+          "Baking": 0.5,
+          "Rock and roll": 0.1,
+          "Superman": 0.1,
+          "Pizza": 0.05,
+          "Manta ray": 0.25
+        },
+        "recall@k": 0.5,
+        "gold_in_kb": 0.1875,
+        "topic_align": 0.5091,
+        "avg_sim": 0.6537,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 6.1
+      }
+    ]
+  },
+  "ERASE": {
+    "method": "ERASE",
+    "experiment": "gradual_drift",
+    "total_queries": 1000,
+    "total_time_s": 40.61,
+    "avg_recall@k": 0.3014,
+    "avg_gold_in_kb": 0.5925,
+    "avg_topic_alignment": 0.6233,
+    "avg_retrieval_sim": 0.7071,
+    "adaptation_speed": 0.83,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.3,
+          "Child care": 0.25,
+          "Ferrari": 0.35,
+          "Jazz": 0.1
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.6414,
+        "avg_sim": 0.6728,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Ferrari": 0.154,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06
+        },
+        "latency_ms": 32.4
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.05,
+          "Ferrari": 0.3,
+          "Niagara Falls": 0.15,
+          "Child care": 0.15
+        },
+        "recall@k": 0.1765,
+        "gold_in_kb": 0.4706,
+        "topic_align": 0.6702,
+        "avg_sim": 0.6885,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.158,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Ferrari": 0.154,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06
+        },
+        "latency_ms": 41.0
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Ferrari": 0.4,
+          "Child care": 0.1,
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.15
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.6723,
+        "avg_sim": 0.6979,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Pizza": 0.069,
+          "Ferrari": 0.154,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097
+        },
+        "latency_ms": 42.5
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.15,
+          "Child care": 0.2,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.4,
+        "topic_align": 0.7628,
+        "avg_sim": 0.6936,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Pizza": 0.069
+        },
+        "latency_ms": 33.8
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Child care": 0.55,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.25
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.4699,
+        "avg_sim": 0.6823,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Pizza": 0.069
+        },
+        "latency_ms": 42.9
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Chronic fatigue syndrome": 0.25,
+          "Child care": 0.3,
+          "Niagara Falls": 0.05,
+          "Ferrari": 0.15
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.45,
+        "topic_align": 0.6787,
+        "avg_sim": 0.6961,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Pizza": 0.069
+        },
+        "latency_ms": 33.7
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.45,
+          "Child care": 0.2,
+          "Ferrari": 0.3,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.7895,
+        "topic_align": 0.5725,
+        "avg_sim": 0.7078,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Pizza": 0.069
+        },
+        "latency_ms": 43.0
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.35,
+          "Child care": 0.15,
+          "Jazz": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.6667,
+        "topic_align": 0.6612,
+        "avg_sim": 0.7192,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.099,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Pizza": 0.069
+        },
+        "latency_ms": 41.6
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Ferrari": 0.2,
+          "Jazz": 0.3,
+          "Child care": 0.15,
+          "Niagara Falls": 0.15,
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.05
+        },
+        "recall@k": 0.2778,
+        "gold_in_kb": 0.4444,
+        "topic_align": 0.8189,
+        "avg_sim": 0.7058,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.11,
+          "Chronic fatigue syndrome": 0.098,
+          "Jazz": 0.159,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Pizza": 0.069
+        },
+        "latency_ms": 32.8
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Jazz": 0.3,
+          "Ferrari": 0.15,
+          "Child care": 0.25,
+          "Niagara Falls": 0.1,
+          "Chronic fatigue syndrome": 0.2
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.5,
+        "topic_align": 0.7356,
+        "avg_sim": 0.722,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.11,
+          "Chronic fatigue syndrome": 0.098,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Pizza": 0.069
+        },
+        "latency_ms": 44.2
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.6667,
+        "topic_align": 0.7798,
+        "avg_sim": 0.6907,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.11,
+          "Chronic fatigue syndrome": 0.098,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Pizza": 0.069
+        },
+        "latency_ms": 32.4
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Child care": 0.15
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.7366,
+        "avg_sim": 0.7205,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.098,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 44.8
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Niagara Falls": 0.3,
+          "Child care": 0.1,
+          "Pizza": 0.05,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.2,
+          "Ferrari": 0.2
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.5556,
+        "topic_align": 0.7723,
+        "avg_sim": 0.7157,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.098,
+          "Jazz": 0.158,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 42.7
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Chronic fatigue syndrome": 0.15,
+          "Niagara Falls": 0.15,
+          "Pizza": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.75,
+        "topic_align": 0.8146,
+        "avg_sim": 0.7124,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 37.2
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Child care": 0.15,
+          "Jazz": 0.2,
+          "Ferrari": 0.25,
+          "Superman": 0.05,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.15
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.8411,
+        "avg_sim": 0.6913,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 44.0
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Jazz": 0.6,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.05,
+          "Niagara Falls": 0.1,
+          "Superman": 0.05,
+          "Ferrari": 0.05,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.6111,
+        "topic_align": 0.6465,
+        "avg_sim": 0.7469,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 32.6
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.25,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05,
+          "Superman": 0.05
+        },
+        "recall@k": 0.4211,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.7994,
+        "avg_sim": 0.7054,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 43.4
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Manta ray": 0.05,
+          "Niagara Falls": 0.35,
+          "Jazz": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.1
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.6936,
+        "avg_sim": 0.7417,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.074,
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 43.1
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Superman": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Ferrari": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.4444,
+        "gold_in_kb": 0.6111,
+        "topic_align": 0.7216,
+        "avg_sim": 0.7129,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.074,
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 32.4
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Superman": 0.1,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Child care": 0.05,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.5556,
+        "topic_align": 0.6932,
+        "avg_sim": 0.7081,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 42.8
+      },
+      {
+        "window": 20,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Ferrari": 0.05,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Niagara Falls": 0.4,
+          "Pizza": 0.25
+        },
+        "recall@k": 0.4,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.6151,
+        "avg_sim": 0.7103,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.073,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 33.5
+      },
+      {
+        "window": 21,
+        "topic_dist": {
+          "Superman": 0.25,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.25,
+          "Child care": 0.1,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.35,
+        "gold_in_kb": 0.55,
+        "topic_align": 0.6266,
+        "avg_sim": 0.7029,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.069,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 42.1
+      },
+      {
+        "window": 22,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.15,
+          "Superman": 0.15,
+          "Jazz": 0.05,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.6667,
+        "topic_align": 0.5501,
+        "avg_sim": 0.7351,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.112,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.069
+        },
+        "latency_ms": 42.9
+      },
+      {
+        "window": 23,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.15,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.2,
+          "Jazz": 0.2,
+          "Baking": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.7377,
+        "avg_sim": 0.7004,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.111,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 33.1
+      },
+      {
+        "window": 24,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Jazz": 0.25,
+          "Baking": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.15,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.6527,
+        "avg_sim": 0.7397,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.111,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.5
+      },
+      {
+        "window": 25,
+        "topic_dist": {
+          "Jazz": 0.2,
+          "Pizza": 0.4,
+          "Superman": 0.15,
+          "Manta ray": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Niagara Falls": 0.1
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.65,
+        "topic_align": 0.5811,
+        "avg_sim": 0.6954,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.111,
+          "Jazz": 0.158,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 33.5
+      },
+      {
+        "window": 26,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Pizza": 0.15,
+          "Superman": 0.1,
+          "Baking": 0.1,
+          "Rock and roll": 0.05,
+          "Ferrari": 0.1,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.5995,
+        "avg_sim": 0.6928,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.158,
+          "Baking": 0.111,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.9
+      },
+      {
+        "window": 27,
+        "topic_dist": {
+          "Baking": 0.05,
+          "Pizza": 0.3,
+          "Superman": 0.1,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.2,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.65,
+        "topic_align": 0.6904,
+        "avg_sim": 0.6875,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.158,
+          "Baking": 0.111,
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 41.7
+      },
+      {
+        "window": 28,
+        "topic_dist": {
+          "Superman": 0.3,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.15
+        },
+        "recall@k": 0.3,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.5441,
+        "avg_sim": 0.7193,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.111,
+          "Superman": 0.07,
+          "Jazz": 0.158,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.11,
+          "Pizza": 0.07
+        },
+        "latency_ms": 34.7
+      },
+      {
+        "window": 29,
+        "topic_dist": {
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.25,
+          "Superman": 0.2,
+          "Jazz": 0.25,
+          "Pizza": 0.2
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.5263,
+        "topic_align": 0.6291,
+        "avg_sim": 0.6958,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.11,
+          "Superman": 0.07,
+          "Jazz": 0.158,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.11,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.5
+      },
+      {
+        "window": 30,
+        "topic_dist": {
+          "Rock and roll": 0.1,
+          "Jazz": 0.25,
+          "Niagara Falls": 0.2,
+          "Pizza": 0.2,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Baking": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.5,
+        "topic_align": 0.7672,
+        "avg_sim": 0.6954,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Baking": 0.11,
+          "Jazz": 0.159,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 31.2
+      },
+      {
+        "window": 31,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Rock and roll": 0.3
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.5485,
+        "avg_sim": 0.7019,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Baking": 0.11,
+          "Jazz": 0.159,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 41.6
+      },
+      {
+        "window": 32,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Baking": 0.05,
+          "Superman": 0.35,
+          "Chronic fatigue syndrome": 0.05,
+          "Niagara Falls": 0.15,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.4622,
+        "avg_sim": 0.6892,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Jazz": 0.159,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.9
+      },
+      {
+        "window": 33,
+        "topic_dist": {
+          "Manta ray": 0.1,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.2
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.5543,
+        "avg_sim": 0.6987,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 32.2
+      },
+      {
+        "window": 34,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.2,
+          "Manta ray": 0.05,
+          "Baking": 0.35,
+          "Superman": 0.15
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.5789,
+        "topic_align": 0.5188,
+        "avg_sim": 0.7223,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.074,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.7
+      },
+      {
+        "window": 35,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.15
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.5556,
+        "topic_align": 0.5538,
+        "avg_sim": 0.6901,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 34.3
+      },
+      {
+        "window": 36,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Superman": 0.35,
+          "Rock and roll": 0.25,
+          "Pizza": 0.15,
+          "Baking": 0.1
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.4986,
+        "avg_sim": 0.7132,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.3
+      },
+      {
+        "window": 37,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Baking": 0.2,
+          "Manta ray": 0.1,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Superman": 0.1
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.6501,
+        "avg_sim": 0.7097,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 31.9
+      },
+      {
+        "window": 38,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Superman": 0.4,
+          "Baking": 0.25,
+          "Manta ray": 0.05,
+          "Rock and roll": 0.15,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.65,
+        "topic_align": 0.5111,
+        "avg_sim": 0.7202,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 42.4
+      },
+      {
+        "window": 39,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.35,
+          "Baking": 0.3,
+          "Superman": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.7895,
+        "topic_align": 0.4845,
+        "avg_sim": 0.6994,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Manta ray": 0.097,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.7
+      },
+      {
+        "window": 40,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.05,
+          "Baking": 0.25,
+          "Rock and roll": 0.2,
+          "Pizza": 0.15,
+          "Jazz": 0.1,
+          "Manta ray": 0.1
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.6,
+        "topic_align": 0.6894,
+        "avg_sim": 0.7026,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Ferrari": 0.153,
+          "Manta ray": 0.097,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 32.7
+      },
+      {
+        "window": 41,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Rock and roll": 0.2,
+          "Baking": 0.45,
+          "Niagara Falls": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.4737,
+        "gold_in_kb": 0.6842,
+        "topic_align": 0.5146,
+        "avg_sim": 0.7005,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.07,
+          "Ferrari": 0.153,
+          "Manta ray": 0.097,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 40.5
+      },
+      {
+        "window": 42,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Manta ray": 0.25,
+          "Superman": 0.05,
+          "Baking": 0.4,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.7368,
+        "topic_align": 0.5246,
+        "avg_sim": 0.6962,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Manta ray": 0.096,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 32.8
+      },
+      {
+        "window": 43,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Niagara Falls": 0.05,
+          "Superman": 0.2,
+          "Manta ray": 0.25,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.6842,
+        "gold_in_kb": 0.8421,
+        "topic_align": 0.5232,
+        "avg_sim": 0.7055,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Manta ray": 0.096,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 41.0
+      },
+      {
+        "window": 44,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Superman": 0.25,
+          "Rock and roll": 0.15,
+          "Manta ray": 0.2
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.5556,
+        "topic_align": 0.5187,
+        "avg_sim": 0.7087,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Pizza": 0.071,
+          "Manta ray": 0.096,
+          "Chronic fatigue syndrome": 0.098,
+          "Superman": 0.07,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109
+        },
+        "latency_ms": 42.1
+      },
+      {
+        "window": 45,
+        "topic_dist": {
+          "Manta ray": 0.25,
+          "Rock and roll": 0.5,
+          "Pizza": 0.05,
+          "Superman": 0.15,
+          "Baking": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.4189,
+        "avg_sim": 0.7297,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Manta ray": 0.096,
+          "Chronic fatigue syndrome": 0.098,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07
+        },
+        "latency_ms": 31.8
+      },
+      {
+        "window": 46,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Baking": 0.25,
+          "Manta ray": 0.4,
+          "Superman": 0.1
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.7222,
+        "topic_align": 0.5088,
+        "avg_sim": 0.6883,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Manta ray": 0.096,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.07,
+          "Chronic fatigue syndrome": 0.098
+        },
+        "latency_ms": 40.4
+      },
+      {
+        "window": 47,
+        "topic_dist": {
+          "Manta ray": 0.4,
+          "Rock and roll": 0.2,
+          "Superman": 0.15,
+          "Baking": 0.25
+        },
+        "recall@k": 0.45,
+        "gold_in_kb": 0.65,
+        "topic_align": 0.5165,
+        "avg_sim": 0.73,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Manta ray": 0.096,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.098
+        },
+        "latency_ms": 32.3
+      },
+      {
+        "window": 48,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Manta ray": 0.4,
+          "Rock and roll": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.6316,
+        "topic_align": 0.4871,
+        "avg_sim": 0.7254,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Baking": 0.11,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.098
+        },
+        "latency_ms": 41.7
+      },
+      {
+        "window": 49,
+        "topic_dist": {
+          "Baking": 0.5,
+          "Rock and roll": 0.1,
+          "Superman": 0.1,
+          "Pizza": 0.05,
+          "Manta ray": 0.25
+        },
+        "recall@k": 0.1875,
+        "gold_in_kb": 0.5625,
+        "topic_align": 0.5044,
+        "avg_sim": 0.7159,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.071,
+          "Baking": 0.109,
+          "Jazz": 0.158,
+          "Ferrari": 0.153,
+          "Rock and roll": 0.075,
+          "Child care": 0.06,
+          "Manta ray": 0.097,
+          "Niagara Falls": 0.109,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.098
+        },
+        "latency_ms": 29.9
+      }
+    ]
+  },
+  "StaticKB": {
+    "method": "StaticKB",
+    "experiment": "gradual_drift",
+    "total_queries": 1000,
+    "total_time_s": 0.44,
+    "avg_recall@k": 0.1181,
+    "avg_gold_in_kb": 0.2493,
+    "avg_topic_alignment": 0.6225,
+    "avg_retrieval_sim": 0.6994,
+    "adaptation_speed": 0.88,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.3,
+          "Child care": 0.25,
+          "Ferrari": 0.35,
+          "Jazz": 0.1
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6408,
+        "avg_sim": 0.6756,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.2
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.05,
+          "Ferrari": 0.3,
+          "Niagara Falls": 0.15,
+          "Child care": 0.15
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.2353,
+        "topic_align": 0.6696,
+        "avg_sim": 0.6868,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Ferrari": 0.4,
+          "Child care": 0.1,
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.15
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.4211,
+        "topic_align": 0.6718,
+        "avg_sim": 0.705,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.15,
+          "Child care": 0.2,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.7621,
+        "avg_sim": 0.6914,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Child care": 0.55,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.25
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.4678,
+        "avg_sim": 0.6734,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Chronic fatigue syndrome": 0.25,
+          "Child care": 0.3,
+          "Niagara Falls": 0.05,
+          "Ferrari": 0.15
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6773,
+        "avg_sim": 0.678,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.45,
+          "Child care": 0.2,
+          "Ferrari": 0.3,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5711,
+        "avg_sim": 0.6933,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.35,
+          "Child care": 0.15,
+          "Jazz": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.6604,
+        "avg_sim": 0.7002,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Ferrari": 0.2,
+          "Jazz": 0.3,
+          "Child care": 0.15,
+          "Niagara Falls": 0.15,
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.05
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.818,
+        "avg_sim": 0.6957,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Jazz": 0.3,
+          "Ferrari": 0.15,
+          "Child care": 0.25,
+          "Niagara Falls": 0.1,
+          "Chronic fatigue syndrome": 0.2
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.7346,
+        "avg_sim": 0.7045,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05
+        },
+        "recall@k": 0.2778,
+        "gold_in_kb": 0.5,
+        "topic_align": 0.7797,
+        "avg_sim": 0.6885,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Child care": 0.15
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.7361,
+        "avg_sim": 0.7149,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Niagara Falls": 0.3,
+          "Child care": 0.1,
+          "Pizza": 0.05,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.2,
+          "Ferrari": 0.2
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.0556,
+        "topic_align": 0.7719,
+        "avg_sim": 0.7115,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Chronic fatigue syndrome": 0.15,
+          "Niagara Falls": 0.15,
+          "Pizza": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.8146,
+        "avg_sim": 0.7067,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Child care": 0.15,
+          "Jazz": 0.2,
+          "Ferrari": 0.25,
+          "Superman": 0.05,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.15
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.8406,
+        "avg_sim": 0.6823,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Jazz": 0.6,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.05,
+          "Niagara Falls": 0.1,
+          "Superman": 0.05,
+          "Ferrari": 0.05,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.6454,
+        "avg_sim": 0.7348,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.25,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05,
+          "Superman": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.4211,
+        "topic_align": 0.7995,
+        "avg_sim": 0.7021,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Manta ray": 0.05,
+          "Niagara Falls": 0.35,
+          "Jazz": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.1
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.6943,
+        "avg_sim": 0.7323,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Superman": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Ferrari": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.2222,
+        "topic_align": 0.7219,
+        "avg_sim": 0.7092,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Superman": 0.1,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Child care": 0.05,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.693,
+        "avg_sim": 0.6978,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 20,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Ferrari": 0.05,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Niagara Falls": 0.4,
+          "Pizza": 0.25
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6149,
+        "avg_sim": 0.6939,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 21,
+        "topic_dist": {
+          "Superman": 0.25,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.25,
+          "Child care": 0.1,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.6257,
+        "avg_sim": 0.6975,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 22,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.15,
+          "Superman": 0.15,
+          "Jazz": 0.05,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.4444,
+        "topic_align": 0.5496,
+        "avg_sim": 0.7265,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 23,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.15,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.2,
+          "Jazz": 0.2,
+          "Baking": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.7369,
+        "avg_sim": 0.6845,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 24,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Jazz": 0.25,
+          "Baking": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.15,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.6514,
+        "avg_sim": 0.7297,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 25,
+        "topic_dist": {
+          "Jazz": 0.2,
+          "Pizza": 0.4,
+          "Superman": 0.15,
+          "Manta ray": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Niagara Falls": 0.1
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.5791,
+        "avg_sim": 0.6924,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 26,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Pizza": 0.15,
+          "Superman": 0.1,
+          "Baking": 0.1,
+          "Rock and roll": 0.05,
+          "Ferrari": 0.1,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.599,
+        "avg_sim": 0.6904,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 27,
+        "topic_dist": {
+          "Baking": 0.05,
+          "Pizza": 0.3,
+          "Superman": 0.1,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.2,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6882,
+        "avg_sim": 0.6735,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 28,
+        "topic_dist": {
+          "Superman": 0.3,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.15
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.5407,
+        "avg_sim": 0.7128,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 29,
+        "topic_dist": {
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.25,
+          "Superman": 0.2,
+          "Jazz": 0.25,
+          "Pizza": 0.2
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.6255,
+        "avg_sim": 0.6998,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 30,
+        "topic_dist": {
+          "Rock and roll": 0.1,
+          "Jazz": 0.25,
+          "Niagara Falls": 0.2,
+          "Pizza": 0.2,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Baking": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.7649,
+        "avg_sim": 0.6913,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 31,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Rock and roll": 0.3
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.544,
+        "avg_sim": 0.7027,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 32,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Baking": 0.05,
+          "Superman": 0.35,
+          "Chronic fatigue syndrome": 0.05,
+          "Niagara Falls": 0.15,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.46,
+        "avg_sim": 0.6821,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 33,
+        "topic_dist": {
+          "Manta ray": 0.1,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.2
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5522,
+        "avg_sim": 0.6943,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 34,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.2,
+          "Manta ray": 0.05,
+          "Baking": 0.35,
+          "Superman": 0.15
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5193,
+        "avg_sim": 0.7178,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 35,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.15
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.5507,
+        "avg_sim": 0.6742,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 36,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Superman": 0.35,
+          "Rock and roll": 0.25,
+          "Pizza": 0.15,
+          "Baking": 0.1
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.4939,
+        "avg_sim": 0.7098,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 37,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Baking": 0.2,
+          "Manta ray": 0.1,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Superman": 0.1
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.6474,
+        "avg_sim": 0.6957,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 38,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Superman": 0.4,
+          "Baking": 0.25,
+          "Manta ray": 0.05,
+          "Rock and roll": 0.15,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5094,
+        "avg_sim": 0.7038,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 39,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.35,
+          "Baking": 0.3,
+          "Superman": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.4816,
+        "avg_sim": 0.6892,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 40,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.05,
+          "Baking": 0.25,
+          "Rock and roll": 0.2,
+          "Pizza": 0.15,
+          "Jazz": 0.1,
+          "Manta ray": 0.1
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.6884,
+        "avg_sim": 0.6926,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 41,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Rock and roll": 0.2,
+          "Baking": 0.45,
+          "Niagara Falls": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.5164,
+        "avg_sim": 0.6914,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 42,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Manta ray": 0.25,
+          "Superman": 0.05,
+          "Baking": 0.4,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5263,
+        "avg_sim": 0.6902,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 43,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Niagara Falls": 0.05,
+          "Superman": 0.2,
+          "Manta ray": 0.25,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5276,
+        "avg_sim": 0.6982,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 44,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Superman": 0.25,
+          "Rock and roll": 0.15,
+          "Manta ray": 0.2
+        },
+        "recall@k": 0.1667,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.5211,
+        "avg_sim": 0.7089,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 45,
+        "topic_dist": {
+          "Manta ray": 0.25,
+          "Rock and roll": 0.5,
+          "Pizza": 0.05,
+          "Superman": 0.15,
+          "Baking": 0.05
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.4136,
+        "avg_sim": 0.7333,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 46,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Baking": 0.25,
+          "Manta ray": 0.4,
+          "Superman": 0.1
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.2222,
+        "topic_align": 0.5095,
+        "avg_sim": 0.6838,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 47,
+        "topic_dist": {
+          "Manta ray": 0.4,
+          "Rock and roll": 0.2,
+          "Superman": 0.15,
+          "Baking": 0.25
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.15,
+        "topic_align": 0.5173,
+        "avg_sim": 0.7143,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 48,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Manta ray": 0.4,
+          "Rock and roll": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.4911,
+        "avg_sim": 0.7065,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      },
+      {
+        "window": 49,
+        "topic_dist": {
+          "Baking": 0.5,
+          "Rock and roll": 0.1,
+          "Superman": 0.1,
+          "Pizza": 0.05,
+          "Manta ray": 0.25
+        },
+        "recall@k": 0.0625,
+        "gold_in_kb": 0.1875,
+        "topic_align": 0.5091,
+        "avg_sim": 0.7062,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.154,
+          "Superman": 0.069,
+          "Jazz": 0.159,
+          "Manta ray": 0.097,
+          "Pizza": 0.069,
+          "Chronic fatigue syndrome": 0.098,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073,
+          "Baking": 0.112,
+          "Child care": 0.059
+        },
+        "latency_ms": 0.1
+      }
+    ]
+  },
+  "RandomKB": {
+    "method": "RandomKB",
+    "experiment": "gradual_drift",
+    "total_queries": 1000,
+    "total_time_s": 6.29,
+    "avg_recall@k": 0.1321,
+    "avg_gold_in_kb": 0.252,
+    "avg_topic_alignment": 0.6209,
+    "avg_retrieval_sim": 0.7003,
+    "adaptation_speed": 0.88,
+    "per_window": [
+      {
+        "window": 0,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.3,
+          "Child care": 0.25,
+          "Ferrari": 0.35,
+          "Jazz": 0.1
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6311,
+        "avg_sim": 0.6755,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Manta ray": 0.086,
+          "Chronic fatigue syndrome": 0.088,
+          "Pizza": 0.069,
+          "Rock and roll": 0.069,
+          "Child care": 0.059,
+          "Jazz": 0.168,
+          "Baking": 0.123,
+          "Superman": 0.069,
+          "Ferrari": 0.159,
+          "Niagara Falls": 0.11
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 1,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.05,
+          "Ferrari": 0.3,
+          "Niagara Falls": 0.15,
+          "Child care": 0.15
+        },
+        "recall@k": 0.1176,
+        "gold_in_kb": 0.3529,
+        "topic_align": 0.6581,
+        "avg_sim": 0.7028,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.072,
+          "Pizza": 0.073,
+          "Chronic fatigue syndrome": 0.097,
+          "Superman": 0.064,
+          "Child care": 0.065,
+          "Ferrari": 0.148,
+          "Jazz": 0.162,
+          "Niagara Falls": 0.105,
+          "Baking": 0.124,
+          "Manta ray": 0.091
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 2,
+        "topic_dist": {
+          "Ferrari": 0.4,
+          "Child care": 0.1,
+          "Chronic fatigue syndrome": 0.35,
+          "Jazz": 0.15
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.6585,
+        "avg_sim": 0.7076,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.068,
+          "Jazz": 0.173,
+          "Superman": 0.062,
+          "Niagara Falls": 0.108,
+          "Chronic fatigue syndrome": 0.094,
+          "Manta ray": 0.092,
+          "Ferrari": 0.149,
+          "Baking": 0.124,
+          "Child care": 0.06,
+          "Pizza": 0.071
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 3,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.15,
+          "Child care": 0.2,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.7646,
+        "avg_sim": 0.6959,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.099,
+          "Jazz": 0.167,
+          "Ferrari": 0.157,
+          "Superman": 0.069,
+          "Manta ray": 0.094,
+          "Baking": 0.122,
+          "Rock and roll": 0.069,
+          "Niagara Falls": 0.102,
+          "Child care": 0.057,
+          "Pizza": 0.064
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 4,
+        "topic_dist": {
+          "Child care": 0.55,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.25
+        },
+        "recall@k": 0.15,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.464,
+        "avg_sim": 0.6799,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.098,
+          "Manta ray": 0.092,
+          "Pizza": 0.065,
+          "Ferrari": 0.141,
+          "Superman": 0.065,
+          "Jazz": 0.169,
+          "Baking": 0.131,
+          "Child care": 0.063,
+          "Niagara Falls": 0.104,
+          "Rock and roll": 0.072
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 5,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Chronic fatigue syndrome": 0.25,
+          "Child care": 0.3,
+          "Niagara Falls": 0.05,
+          "Ferrari": 0.15
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6923,
+        "avg_sim": 0.6887,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Child care": 0.06,
+          "Niagara Falls": 0.104,
+          "Chronic fatigue syndrome": 0.095,
+          "Ferrari": 0.156,
+          "Superman": 0.071,
+          "Baking": 0.115,
+          "Pizza": 0.068,
+          "Jazz": 0.177,
+          "Manta ray": 0.087,
+          "Rock and roll": 0.068
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 6,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.45,
+          "Child care": 0.2,
+          "Ferrari": 0.3,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.5567,
+        "avg_sim": 0.6927,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.112,
+          "Jazz": 0.167,
+          "Rock and roll": 0.069,
+          "Baking": 0.118,
+          "Chronic fatigue syndrome": 0.089,
+          "Child care": 0.069,
+          "Manta ray": 0.089,
+          "Ferrari": 0.153,
+          "Pizza": 0.07,
+          "Superman": 0.065
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 7,
+        "topic_dist": {
+          "Ferrari": 0.35,
+          "Chronic fatigue syndrome": 0.35,
+          "Child care": 0.15,
+          "Jazz": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.6477,
+        "avg_sim": 0.7158,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.169,
+          "Baking": 0.124,
+          "Chronic fatigue syndrome": 0.094,
+          "Ferrari": 0.154,
+          "Rock and roll": 0.066,
+          "Pizza": 0.063,
+          "Superman": 0.068,
+          "Manta ray": 0.101,
+          "Niagara Falls": 0.103,
+          "Child care": 0.058
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 8,
+        "topic_dist": {
+          "Ferrari": 0.2,
+          "Jazz": 0.3,
+          "Child care": 0.15,
+          "Niagara Falls": 0.15,
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.05
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.8262,
+        "avg_sim": 0.6921,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Child care": 0.067,
+          "Ferrari": 0.148,
+          "Manta ray": 0.091,
+          "Jazz": 0.164,
+          "Niagara Falls": 0.115,
+          "Superman": 0.073,
+          "Pizza": 0.063,
+          "Rock and roll": 0.068,
+          "Chronic fatigue syndrome": 0.091,
+          "Baking": 0.12
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 9,
+        "topic_dist": {
+          "Jazz": 0.3,
+          "Ferrari": 0.15,
+          "Child care": 0.25,
+          "Niagara Falls": 0.1,
+          "Chronic fatigue syndrome": 0.2
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.7363,
+        "avg_sim": 0.7005,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.119,
+          "Jazz": 0.159,
+          "Pizza": 0.069,
+          "Manta ray": 0.096,
+          "Ferrari": 0.16,
+          "Niagara Falls": 0.104,
+          "Superman": 0.067,
+          "Chronic fatigue syndrome": 0.088,
+          "Child care": 0.068,
+          "Rock and roll": 0.069
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 10,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1111,
+        "topic_align": 0.7769,
+        "avg_sim": 0.6957,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.174,
+          "Manta ray": 0.09,
+          "Baking": 0.121,
+          "Chronic fatigue syndrome": 0.082,
+          "Superman": 0.068,
+          "Child care": 0.068,
+          "Ferrari": 0.15,
+          "Pizza": 0.068,
+          "Rock and roll": 0.073,
+          "Niagara Falls": 0.105
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 11,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.25,
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Child care": 0.15
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.7382,
+        "avg_sim": 0.7181,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.107,
+          "Ferrari": 0.153,
+          "Jazz": 0.166,
+          "Rock and roll": 0.072,
+          "Baking": 0.119,
+          "Pizza": 0.069,
+          "Superman": 0.064,
+          "Manta ray": 0.097,
+          "Child care": 0.061,
+          "Chronic fatigue syndrome": 0.092
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 12,
+        "topic_dist": {
+          "Niagara Falls": 0.3,
+          "Child care": 0.1,
+          "Pizza": 0.05,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.2,
+          "Ferrari": 0.2
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.7698,
+        "avg_sim": 0.6987,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.097,
+          "Niagara Falls": 0.111,
+          "Superman": 0.068,
+          "Manta ray": 0.088,
+          "Ferrari": 0.15,
+          "Jazz": 0.165,
+          "Rock and roll": 0.071,
+          "Baking": 0.124,
+          "Child care": 0.057,
+          "Pizza": 0.068
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 13,
+        "topic_dist": {
+          "Jazz": 0.35,
+          "Ferrari": 0.25,
+          "Chronic fatigue syndrome": 0.15,
+          "Niagara Falls": 0.15,
+          "Pizza": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.8137,
+        "avg_sim": 0.7074,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Pizza": 0.065,
+          "Niagara Falls": 0.115,
+          "Ferrari": 0.153,
+          "Jazz": 0.162,
+          "Chronic fatigue syndrome": 0.089,
+          "Child care": 0.062,
+          "Superman": 0.073,
+          "Baking": 0.121,
+          "Manta ray": 0.089,
+          "Rock and roll": 0.071
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 14,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Child care": 0.15,
+          "Jazz": 0.2,
+          "Ferrari": 0.25,
+          "Superman": 0.05,
+          "Pizza": 0.05,
+          "Chronic fatigue syndrome": 0.15
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.8447,
+        "avg_sim": 0.6856,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.093,
+          "Child care": 0.06,
+          "Pizza": 0.066,
+          "Ferrari": 0.155,
+          "Rock and roll": 0.069,
+          "Baking": 0.118,
+          "Niagara Falls": 0.113,
+          "Jazz": 0.165,
+          "Manta ray": 0.089,
+          "Superman": 0.072
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 15,
+        "topic_dist": {
+          "Jazz": 0.6,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.05,
+          "Niagara Falls": 0.1,
+          "Superman": 0.05,
+          "Ferrari": 0.05,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.3333,
+        "topic_align": 0.6473,
+        "avg_sim": 0.7328,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.161,
+          "Manta ray": 0.089,
+          "Child care": 0.063,
+          "Rock and roll": 0.067,
+          "Niagara Falls": 0.112,
+          "Pizza": 0.069,
+          "Baking": 0.124,
+          "Ferrari": 0.152,
+          "Superman": 0.07,
+          "Chronic fatigue syndrome": 0.092
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 16,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.25,
+          "Ferrari": 0.25,
+          "Niagara Falls": 0.1,
+          "Child care": 0.05,
+          "Superman": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.7802,
+        "avg_sim": 0.7198,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.156,
+          "Superman": 0.065,
+          "Niagara Falls": 0.11,
+          "Jazz": 0.174,
+          "Baking": 0.121,
+          "Pizza": 0.064,
+          "Chronic fatigue syndrome": 0.087,
+          "Manta ray": 0.092,
+          "Child care": 0.058,
+          "Rock and roll": 0.073
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 17,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Manta ray": 0.05,
+          "Niagara Falls": 0.35,
+          "Jazz": 0.3,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.1
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.7119,
+        "avg_sim": 0.7245,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.063,
+          "Jazz": 0.165,
+          "Ferrari": 0.146,
+          "Niagara Falls": 0.116,
+          "Chronic fatigue syndrome": 0.098,
+          "Pizza": 0.07,
+          "Child care": 0.067,
+          "Baking": 0.117,
+          "Manta ray": 0.089,
+          "Rock and roll": 0.07
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 18,
+        "topic_dist": {
+          "Jazz": 0.25,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Superman": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Ferrari": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.3889,
+        "gold_in_kb": 0.4444,
+        "topic_align": 0.7261,
+        "avg_sim": 0.7202,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Chronic fatigue syndrome": 0.091,
+          "Rock and roll": 0.07,
+          "Pizza": 0.069,
+          "Manta ray": 0.09,
+          "Jazz": 0.171,
+          "Ferrari": 0.151,
+          "Baking": 0.122,
+          "Niagara Falls": 0.107,
+          "Superman": 0.065,
+          "Child care": 0.064
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 19,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.2,
+          "Superman": 0.1,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.3,
+          "Child care": 0.05,
+          "Jazz": 0.2
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.6865,
+        "avg_sim": 0.6826,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.168,
+          "Manta ray": 0.098,
+          "Chronic fatigue syndrome": 0.094,
+          "Niagara Falls": 0.103,
+          "Child care": 0.062,
+          "Pizza": 0.069,
+          "Ferrari": 0.148,
+          "Baking": 0.118,
+          "Superman": 0.07,
+          "Rock and roll": 0.071
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 20,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Ferrari": 0.05,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Niagara Falls": 0.4,
+          "Pizza": 0.25
+        },
+        "recall@k": 0.25,
+        "gold_in_kb": 0.3,
+        "topic_align": 0.6051,
+        "avg_sim": 0.6983,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.066,
+          "Manta ray": 0.096,
+          "Chronic fatigue syndrome": 0.084,
+          "Rock and roll": 0.07,
+          "Jazz": 0.165,
+          "Baking": 0.127,
+          "Pizza": 0.068,
+          "Ferrari": 0.151,
+          "Child care": 0.065,
+          "Niagara Falls": 0.108
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 21,
+        "topic_dist": {
+          "Superman": 0.25,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.25,
+          "Child care": 0.1,
+          "Jazz": 0.15,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.25,
+        "topic_align": 0.6068,
+        "avg_sim": 0.6728,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Superman": 0.065,
+          "Ferrari": 0.162,
+          "Niagara Falls": 0.109,
+          "Manta ray": 0.095,
+          "Rock and roll": 0.066,
+          "Baking": 0.124,
+          "Child care": 0.064,
+          "Chronic fatigue syndrome": 0.089,
+          "Jazz": 0.163,
+          "Pizza": 0.063
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 22,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Chronic fatigue syndrome": 0.1,
+          "Pizza": 0.15,
+          "Superman": 0.15,
+          "Jazz": 0.05,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.2222,
+        "gold_in_kb": 0.2778,
+        "topic_align": 0.5202,
+        "avg_sim": 0.7391,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.119,
+          "Pizza": 0.068,
+          "Manta ray": 0.087,
+          "Chronic fatigue syndrome": 0.088,
+          "Jazz": 0.177,
+          "Ferrari": 0.16,
+          "Child care": 0.062,
+          "Rock and roll": 0.069,
+          "Niagara Falls": 0.104,
+          "Superman": 0.067
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 23,
+        "topic_dist": {
+          "Chronic fatigue syndrome": 0.15,
+          "Superman": 0.15,
+          "Pizza": 0.2,
+          "Niagara Falls": 0.2,
+          "Jazz": 0.2,
+          "Baking": 0.05,
+          "Child care": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.3158,
+        "topic_align": 0.7288,
+        "avg_sim": 0.6864,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.153,
+          "Rock and roll": 0.07,
+          "Manta ray": 0.099,
+          "Jazz": 0.165,
+          "Pizza": 0.067,
+          "Baking": 0.117,
+          "Superman": 0.069,
+          "Chronic fatigue syndrome": 0.09,
+          "Niagara Falls": 0.106,
+          "Child care": 0.064
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 24,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Jazz": 0.25,
+          "Baking": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Superman": 0.15,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.6494,
+        "avg_sim": 0.7239,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.12,
+          "Ferrari": 0.15,
+          "Chronic fatigue syndrome": 0.09,
+          "Jazz": 0.161,
+          "Child care": 0.067,
+          "Pizza": 0.067,
+          "Manta ray": 0.093,
+          "Rock and roll": 0.07,
+          "Superman": 0.072,
+          "Niagara Falls": 0.111
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 25,
+        "topic_dist": {
+          "Jazz": 0.2,
+          "Pizza": 0.4,
+          "Superman": 0.15,
+          "Manta ray": 0.05,
+          "Chronic fatigue syndrome": 0.1,
+          "Niagara Falls": 0.1
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.5888,
+        "avg_sim": 0.6971,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.15,
+          "Niagara Falls": 0.113,
+          "Pizza": 0.072,
+          "Chronic fatigue syndrome": 0.091,
+          "Jazz": 0.17,
+          "Superman": 0.068,
+          "Baking": 0.119,
+          "Manta ray": 0.087,
+          "Rock and roll": 0.067,
+          "Child care": 0.061
+        },
+        "latency_ms": 5.2
+      },
+      {
+        "window": 26,
+        "topic_dist": {
+          "Niagara Falls": 0.45,
+          "Pizza": 0.15,
+          "Superman": 0.1,
+          "Baking": 0.1,
+          "Rock and roll": 0.05,
+          "Ferrari": 0.1,
+          "Chronic fatigue syndrome": 0.05
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6078,
+        "avg_sim": 0.6763,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.148,
+          "Manta ray": 0.098,
+          "Chronic fatigue syndrome": 0.089,
+          "Rock and roll": 0.07,
+          "Superman": 0.071,
+          "Niagara Falls": 0.114,
+          "Baking": 0.123,
+          "Jazz": 0.159,
+          "Pizza": 0.067,
+          "Child care": 0.062
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 27,
+        "topic_dist": {
+          "Baking": 0.05,
+          "Pizza": 0.3,
+          "Superman": 0.1,
+          "Jazz": 0.1,
+          "Chronic fatigue syndrome": 0.1,
+          "Ferrari": 0.05,
+          "Niagara Falls": 0.2,
+          "Rock and roll": 0.1
+        },
+        "recall@k": 0.0,
+        "gold_in_kb": 0.1,
+        "topic_align": 0.6747,
+        "avg_sim": 0.6812,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.159,
+          "Baking": 0.124,
+          "Ferrari": 0.156,
+          "Manta ray": 0.093,
+          "Pizza": 0.064,
+          "Child care": 0.064,
+          "Niagara Falls": 0.114,
+          "Rock and roll": 0.069,
+          "Superman": 0.067,
+          "Chronic fatigue syndrome": 0.088
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 28,
+        "topic_dist": {
+          "Superman": 0.3,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.15
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.35,
+        "topic_align": 0.5347,
+        "avg_sim": 0.714,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.166,
+          "Baking": 0.118,
+          "Chronic fatigue syndrome": 0.095,
+          "Superman": 0.068,
+          "Manta ray": 0.096,
+          "Ferrari": 0.152,
+          "Rock and roll": 0.068,
+          "Niagara Falls": 0.106,
+          "Child care": 0.063,
+          "Pizza": 0.069
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 29,
+        "topic_dist": {
+          "Niagara Falls": 0.1,
+          "Rock and roll": 0.25,
+          "Superman": 0.2,
+          "Jazz": 0.25,
+          "Pizza": 0.2
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.6373,
+        "avg_sim": 0.6926,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.112,
+          "Superman": 0.067,
+          "Chronic fatigue syndrome": 0.089,
+          "Baking": 0.116,
+          "Jazz": 0.165,
+          "Ferrari": 0.146,
+          "Child care": 0.066,
+          "Manta ray": 0.096,
+          "Rock and roll": 0.077,
+          "Pizza": 0.067
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 30,
+        "topic_dist": {
+          "Rock and roll": 0.1,
+          "Jazz": 0.25,
+          "Niagara Falls": 0.2,
+          "Pizza": 0.2,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.1,
+          "Baking": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.3333,
+        "gold_in_kb": 0.3333,
+        "topic_align": 0.766,
+        "avg_sim": 0.7022,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.17,
+          "Ferrari": 0.152,
+          "Niagara Falls": 0.108,
+          "Manta ray": 0.097,
+          "Baking": 0.121,
+          "Child care": 0.064,
+          "Rock and roll": 0.073,
+          "Chronic fatigue syndrome": 0.085,
+          "Pizza": 0.065,
+          "Superman": 0.066
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 31,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.1,
+          "Jazz": 0.15,
+          "Pizza": 0.3,
+          "Rock and roll": 0.3
+        },
+        "recall@k": 0.3684,
+        "gold_in_kb": 0.4737,
+        "topic_align": 0.5413,
+        "avg_sim": 0.6979,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.148,
+          "Chronic fatigue syndrome": 0.092,
+          "Niagara Falls": 0.112,
+          "Child care": 0.062,
+          "Jazz": 0.169,
+          "Pizza": 0.067,
+          "Rock and roll": 0.071,
+          "Baking": 0.121,
+          "Manta ray": 0.092,
+          "Superman": 0.065
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 32,
+        "topic_dist": {
+          "Pizza": 0.35,
+          "Baking": 0.05,
+          "Superman": 0.35,
+          "Chronic fatigue syndrome": 0.05,
+          "Niagara Falls": 0.15,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.468,
+        "avg_sim": 0.6896,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Child care": 0.063,
+          "Manta ray": 0.09,
+          "Superman": 0.071,
+          "Jazz": 0.169,
+          "Ferrari": 0.143,
+          "Rock and roll": 0.065,
+          "Chronic fatigue syndrome": 0.095,
+          "Niagara Falls": 0.106,
+          "Baking": 0.124,
+          "Pizza": 0.074
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 33,
+        "topic_dist": {
+          "Manta ray": 0.1,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Chronic fatigue syndrome": 0.05,
+          "Superman": 0.2
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.5288,
+        "avg_sim": 0.6978,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.114,
+          "Chronic fatigue syndrome": 0.094,
+          "Rock and roll": 0.071,
+          "Jazz": 0.171,
+          "Niagara Falls": 0.103,
+          "Child care": 0.067,
+          "Manta ray": 0.089,
+          "Ferrari": 0.16,
+          "Pizza": 0.069,
+          "Superman": 0.064
+        },
+        "latency_ms": 4.3
+      },
+      {
+        "window": 34,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.2,
+          "Manta ray": 0.05,
+          "Baking": 0.35,
+          "Superman": 0.15
+        },
+        "recall@k": 0.1579,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5124,
+        "avg_sim": 0.7185,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.168,
+          "Manta ray": 0.095,
+          "Baking": 0.124,
+          "Ferrari": 0.153,
+          "Chronic fatigue syndrome": 0.095,
+          "Rock and roll": 0.062,
+          "Pizza": 0.064,
+          "Niagara Falls": 0.109,
+          "Child care": 0.064,
+          "Superman": 0.066
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 35,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Baking": 0.2,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Niagara Falls": 0.15
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.2222,
+        "topic_align": 0.5528,
+        "avg_sim": 0.6692,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.152,
+          "Jazz": 0.167,
+          "Manta ray": 0.089,
+          "Chronic fatigue syndrome": 0.092,
+          "Superman": 0.069,
+          "Child care": 0.064,
+          "Baking": 0.126,
+          "Rock and roll": 0.073,
+          "Pizza": 0.061,
+          "Niagara Falls": 0.107
+        },
+        "latency_ms": 4.3
+      },
+      {
+        "window": 36,
+        "topic_dist": {
+          "Niagara Falls": 0.15,
+          "Superman": 0.35,
+          "Rock and roll": 0.25,
+          "Pizza": 0.15,
+          "Baking": 0.1
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1579,
+        "topic_align": 0.4854,
+        "avg_sim": 0.6856,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.118,
+          "Niagara Falls": 0.11,
+          "Chronic fatigue syndrome": 0.092,
+          "Ferrari": 0.146,
+          "Jazz": 0.177,
+          "Child care": 0.064,
+          "Superman": 0.069,
+          "Manta ray": 0.088,
+          "Pizza": 0.068,
+          "Rock and roll": 0.069
+        },
+        "latency_ms": 4.8
+      },
+      {
+        "window": 37,
+        "topic_dist": {
+          "Jazz": 0.15,
+          "Baking": 0.2,
+          "Manta ray": 0.1,
+          "Rock and roll": 0.3,
+          "Pizza": 0.15,
+          "Superman": 0.1
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.4211,
+        "topic_align": 0.6425,
+        "avg_sim": 0.6992,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.166,
+          "Chronic fatigue syndrome": 0.091,
+          "Niagara Falls": 0.109,
+          "Baking": 0.115,
+          "Rock and roll": 0.068,
+          "Ferrari": 0.155,
+          "Manta ray": 0.092,
+          "Pizza": 0.07,
+          "Superman": 0.068,
+          "Child care": 0.065
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 38,
+        "topic_dist": {
+          "Pizza": 0.1,
+          "Superman": 0.4,
+          "Baking": 0.25,
+          "Manta ray": 0.05,
+          "Rock and roll": 0.15,
+          "Jazz": 0.05
+        },
+        "recall@k": 0.1,
+        "gold_in_kb": 0.2,
+        "topic_align": 0.5108,
+        "avg_sim": 0.7048,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.149,
+          "Baking": 0.117,
+          "Child care": 0.063,
+          "Jazz": 0.17,
+          "Rock and roll": 0.074,
+          "Manta ray": 0.091,
+          "Niagara Falls": 0.106,
+          "Pizza": 0.071,
+          "Chronic fatigue syndrome": 0.093,
+          "Superman": 0.067
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 39,
+        "topic_dist": {
+          "Pizza": 0.25,
+          "Rock and roll": 0.35,
+          "Baking": 0.3,
+          "Superman": 0.05,
+          "Manta ray": 0.05
+        },
+        "recall@k": 0.0526,
+        "gold_in_kb": 0.1053,
+        "topic_align": 0.4788,
+        "avg_sim": 0.6832,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.065,
+          "Pizza": 0.065,
+          "Jazz": 0.168,
+          "Ferrari": 0.156,
+          "Niagara Falls": 0.105,
+          "Baking": 0.128,
+          "Manta ray": 0.088,
+          "Superman": 0.069,
+          "Chronic fatigue syndrome": 0.088,
+          "Child care": 0.067
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 40,
+        "topic_dist": {
+          "Superman": 0.15,
+          "Niagara Falls": 0.05,
+          "Baking": 0.25,
+          "Rock and roll": 0.2,
+          "Pizza": 0.15,
+          "Jazz": 0.1,
+          "Manta ray": 0.1
+        },
+        "recall@k": 0.2,
+        "gold_in_kb": 0.4,
+        "topic_align": 0.7013,
+        "avg_sim": 0.702,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Ferrari": 0.147,
+          "Rock and roll": 0.066,
+          "Niagara Falls": 0.109,
+          "Jazz": 0.167,
+          "Manta ray": 0.093,
+          "Superman": 0.081,
+          "Baking": 0.121,
+          "Child care": 0.063,
+          "Chronic fatigue syndrome": 0.089,
+          "Pizza": 0.065
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 41,
+        "topic_dist": {
+          "Superman": 0.2,
+          "Rock and roll": 0.2,
+          "Baking": 0.45,
+          "Niagara Falls": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.2632,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.521,
+        "avg_sim": 0.7017,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.11,
+          "Rock and roll": 0.068,
+          "Jazz": 0.17,
+          "Superman": 0.072,
+          "Child care": 0.063,
+          "Manta ray": 0.086,
+          "Ferrari": 0.16,
+          "Chronic fatigue syndrome": 0.09,
+          "Baking": 0.119,
+          "Pizza": 0.062
+        },
+        "latency_ms": 5.0
+      },
+      {
+        "window": 42,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Manta ray": 0.25,
+          "Superman": 0.05,
+          "Baking": 0.4,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.2105,
+        "topic_align": 0.5277,
+        "avg_sim": 0.6887,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.106,
+          "Baking": 0.124,
+          "Ferrari": 0.153,
+          "Manta ray": 0.088,
+          "Pizza": 0.07,
+          "Jazz": 0.173,
+          "Chronic fatigue syndrome": 0.09,
+          "Rock and roll": 0.069,
+          "Child care": 0.061,
+          "Superman": 0.065
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 43,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Niagara Falls": 0.05,
+          "Superman": 0.2,
+          "Manta ray": 0.25,
+          "Rock and roll": 0.05
+        },
+        "recall@k": 0.1053,
+        "gold_in_kb": 0.2632,
+        "topic_align": 0.5522,
+        "avg_sim": 0.6936,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Manta ray": 0.098,
+          "Chronic fatigue syndrome": 0.09,
+          "Niagara Falls": 0.104,
+          "Jazz": 0.166,
+          "Baking": 0.125,
+          "Ferrari": 0.154,
+          "Rock and roll": 0.069,
+          "Superman": 0.071,
+          "Pizza": 0.066,
+          "Child care": 0.059
+        },
+        "latency_ms": 4.5
+      },
+      {
+        "window": 44,
+        "topic_dist": {
+          "Baking": 0.4,
+          "Superman": 0.25,
+          "Rock and roll": 0.15,
+          "Manta ray": 0.2
+        },
+        "recall@k": 0.1111,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.5312,
+        "avg_sim": 0.7055,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Child care": 0.061,
+          "Ferrari": 0.161,
+          "Baking": 0.126,
+          "Niagara Falls": 0.105,
+          "Jazz": 0.159,
+          "Chronic fatigue syndrome": 0.096,
+          "Superman": 0.063,
+          "Rock and roll": 0.069,
+          "Manta ray": 0.093,
+          "Pizza": 0.067
+        },
+        "latency_ms": 4.4
+      },
+      {
+        "window": 45,
+        "topic_dist": {
+          "Manta ray": 0.25,
+          "Rock and roll": 0.5,
+          "Pizza": 0.05,
+          "Superman": 0.15,
+          "Baking": 0.05
+        },
+        "recall@k": 0.3158,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.4045,
+        "avg_sim": 0.7212,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Baking": 0.122,
+          "Pizza": 0.068,
+          "Child care": 0.063,
+          "Manta ray": 0.093,
+          "Ferrari": 0.148,
+          "Superman": 0.066,
+          "Jazz": 0.167,
+          "Chronic fatigue syndrome": 0.092,
+          "Niagara Falls": 0.109,
+          "Rock and roll": 0.073
+        },
+        "latency_ms": 4.6
+      },
+      {
+        "window": 46,
+        "topic_dist": {
+          "Rock and roll": 0.25,
+          "Baking": 0.25,
+          "Manta ray": 0.4,
+          "Superman": 0.1
+        },
+        "recall@k": 0.0556,
+        "gold_in_kb": 0.1667,
+        "topic_align": 0.4777,
+        "avg_sim": 0.6785,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.069,
+          "Ferrari": 0.168,
+          "Baking": 0.112,
+          "Manta ray": 0.09,
+          "Child care": 0.063,
+          "Jazz": 0.174,
+          "Superman": 0.067,
+          "Niagara Falls": 0.103,
+          "Chronic fatigue syndrome": 0.089,
+          "Pizza": 0.065
+        },
+        "latency_ms": 4.8
+      },
+      {
+        "window": 47,
+        "topic_dist": {
+          "Manta ray": 0.4,
+          "Rock and roll": 0.2,
+          "Superman": 0.15,
+          "Baking": 0.25
+        },
+        "recall@k": 0.05,
+        "gold_in_kb": 0.05,
+        "topic_align": 0.5096,
+        "avg_sim": 0.7199,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Niagara Falls": 0.107,
+          "Pizza": 0.069,
+          "Child care": 0.059,
+          "Ferrari": 0.156,
+          "Jazz": 0.169,
+          "Baking": 0.121,
+          "Manta ray": 0.095,
+          "Rock and roll": 0.066,
+          "Superman": 0.066,
+          "Chronic fatigue syndrome": 0.091
+        },
+        "latency_ms": 4.3
+      },
+      {
+        "window": 48,
+        "topic_dist": {
+          "Baking": 0.45,
+          "Manta ray": 0.4,
+          "Rock and roll": 0.1,
+          "Pizza": 0.05
+        },
+        "recall@k": 0.2105,
+        "gold_in_kb": 0.3684,
+        "topic_align": 0.5161,
+        "avg_sim": 0.7261,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Jazz": 0.167,
+          "Child care": 0.062,
+          "Chronic fatigue syndrome": 0.09,
+          "Manta ray": 0.095,
+          "Superman": 0.065,
+          "Ferrari": 0.151,
+          "Baking": 0.128,
+          "Pizza": 0.067,
+          "Rock and roll": 0.07,
+          "Niagara Falls": 0.104
+        },
+        "latency_ms": 4.8
+      },
+      {
+        "window": 49,
+        "topic_dist": {
+          "Baking": 0.5,
+          "Rock and roll": 0.1,
+          "Superman": 0.1,
+          "Pizza": 0.05,
+          "Manta ray": 0.25
+        },
+        "recall@k": 0.375,
+        "gold_in_kb": 0.4375,
+        "topic_align": 0.5343,
+        "avg_sim": 0.7124,
+        "kb_size": 5000,
+        "kb_topics": {
+          "Rock and roll": 0.069,
+          "Jazz": 0.154,
+          "Ferrari": 0.15,
+          "Baking": 0.125,
+          "Chronic fatigue syndrome": 0.094,
+          "Manta ray": 0.09,
+          "Pizza": 0.07,
+          "Niagara Falls": 0.113,
+          "Superman": 0.071,
+          "Child care": 0.064
+        },
+        "latency_ms": 4.3
+      }
+    ]
+  }
+}

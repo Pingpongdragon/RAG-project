@@ -27,13 +27,14 @@ from loaders import LOADERS
 from strategies import STRATEGY_FACTORIES
 from utils import (compute_embeddings, cluster_and_build_stream,
                    focus_pool, head_biased_init_kb, recall_at_k)
+from llm_expand import augment_with_llm, batch_decompose
 from graph_retrieval import (extract_pool_entities, extract_query_entities,
                              LightGraphRAG, recall_at_k_graph)
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
-                loader_name=None, n_source=None, kb_budget_override=None,
-                retrieval='dense'):
+                loader_name=None, n_source=None, q_type=None, kb_budget_override=None,
+                retrieval='dense', llm_expand=False):
     """Run one dataset experiment.
 
     Args:
@@ -55,12 +56,15 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     lname = loader_name or ds_name
     loader = LOADERS[lname]
     if n_source and lname in ('musique_expanded', '2wiki_expanded', 'hotpotqa_expanded'):
-        doc_pool, queries, title_to_idx = loader(n_source=n_source)
+        if q_type and lname in ('hotpotqa_expanded', '2wiki_expanded'):
+            doc_pool, queries, title_to_idx = loader(n_source=n_source, q_type=q_type)
+        else:
+            doc_pool, queries, title_to_idx = loader(n_source=n_source)
     else:
         doc_pool, queries, title_to_idx = loader()
 
     # ── Embeddings ──
-    tag = f'{ds_name}_{nw}w_{ws}s'
+    tag = f'{ds_name}_{nw}w_{ws}s' + (f'_{q_type}' if q_type else '')
     doc_embs, query_embs = compute_embeddings(doc_pool, queries, tag=tag)
 
     # ── Stream ──
@@ -96,7 +100,36 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     if retrieval == 'graph':
         pool_ents = extract_pool_entities(doc_pool, tag=tag)
         query_ents = extract_query_entities(queries, tag=tag)
+        if llm_expand:
+            import spacy
+            _nlp = spacy.load('en_core_web_sm')
+            query_embs, query_ents = augment_with_llm(
+                queries, query_embs, query_ents, _nlp,
+                tag=tag + '_llmexp')
+            log.info(f'[{ds_name}] LLM query expansion applied.')
+        # Build per-query sub-question embedding lists for union retrieval in graph mode
+        _sub_lists = batch_decompose(queries, tag=tag + '_llmexp')
+        from sentence_transformers import SentenceTransformer as _ST
+        from config import EMBED_MODEL as _EM, BGE_QUERY_PREFIX as _BP
+        _sbert = _ST(_EM, device='cuda')
+        _qpref = _BP if 'bge' in _EM.lower() else ''
+        _flat = [sq for sqs in _sub_lists for sq in sqs]
+        _flat_embs = _sbert.encode([_qpref + q for q in _flat], batch_size=256, show_progress_bar=False,
+                                   normalize_embeddings=True)
+        import spacy as _spacy
+        _nlp2 = _spacy.load('en_core_web_sm')
+        sub_query_embs, sub_query_ents = [], []
+        _ptr = 0
+        for _sqs in _sub_lists:
+            _n = len(_sqs)
+            sub_query_embs.append(_flat_embs[_ptr:_ptr + _n])
+            sub_query_ents.append([[e.text for e in _nlp2(sq).ents] for sq in _sqs])
+            _ptr += _n
+    else:
+        sub_query_embs = sub_query_ents = None
 
+    if retrieval != 'graph' or not llm_expand:
+        sub_query_embs = sub_query_ents = None
     # ── Strategies ──
     strategies = {}
     for name in strategies_to_run:
@@ -145,7 +178,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             effective_kb = st_i.get_effective_kb(wq, wqe) if hasattr(st_i, 'get_effective_kb') else st_i.kb
             if retrieval == 'graph':
                 strategy_graphs[name].sync_to(effective_kb)
-                r = recall_at_k_graph(strategy_graphs[name], wq, doc_pool, K_LIST)
+                r = recall_at_k_graph(
+                    strategy_graphs[name], wq, doc_pool, K_LIST,
+                    sub_embs=sub_query_embs, sub_ents=sub_query_ents)
             else:
                 r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
             for k in K_LIST:
@@ -355,7 +390,11 @@ def main():
     parser.add_argument('--drift', choices=['sudden', 'gradual'], default='sudden')
     parser.add_argument('--expanded', action='store_true',
                         help='Use expanded loaders for 2Wiki and MuSiQue')
+    parser.add_argument('--q-type', default=None,
+                        help='Filter to question type (hotpot: bridge|comparison; 2wiki: compositional|comparison|bridge_comparison|inference)')
     parser.add_argument('--n-source', type=int, default=3500)
+    parser.add_argument('--llm-expand', action='store_true',
+                        help='Use LLM sub-question decomposition to augment retrieval')
     parser.add_argument('--datasets', nargs='+',
                         default=['hotpotqa', '2wikimultihopqa', 'musique'])
     parser.add_argument('--strategies', nargs='+', default=None,
@@ -395,8 +434,10 @@ def main():
             drift_mode=args.drift,
             loader_name=loader_name,
             n_source=n_source,
+            q_type=args.q_type,
             kb_budget_override=args.kb_budget,
-            retrieval=args.retrieval)
+            retrieval=args.retrieval,
+            llm_expand=args.llm_expand)
 
     # ── Save ──
     DATA_DIR.mkdir(parents=True, exist_ok=True)

@@ -181,7 +181,10 @@ def _build_drift_figure(drift, show, fig_w, fig_h, lw_ours, lw_oracle,
                frameon=False, bbox_to_anchor=(0.5, -0.02),
                fontsize=11, handlelength=3.5, columnspacing=1.5,
                handletextpad=0.6)
-    fig.suptitle(f'{DRIFT_LABELS[drift]}', fontsize=14, fontweight='bold', y=1.01)
+    fig.suptitle(
+        f'{DRIFT_LABELS[drift]} — FEVER \u0026 HotpotQA-comparison'
+        '  (MiniLM-L6-v2 + dense flat retrieval)',
+        fontsize=14, fontweight='bold', y=1.01)
     fig.tight_layout(rect=[0, 0.065, 1, 1])
     return fig
 

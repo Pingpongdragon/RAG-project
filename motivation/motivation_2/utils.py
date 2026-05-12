@@ -8,7 +8,7 @@ described in the motivation section of our paper.
 import hashlib
 import numpy as np
 from collections import Counter
-from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log)
+from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log, BGE_QUERY_PREFIX)
 
 
 # ═══════════════════════════════════════════════════
@@ -18,7 +18,7 @@ from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log)
 def compute_embeddings(doc_pool, queries, tag):
     """Encode documents and queries with Sentence-BERT, with disk caching.
 
-    Uses all-MiniLM-L6-v2 (384-dim, L2-normalised).  Cache key is derived
+    Uses BGE-large-en-v1.5 (1024-dim, L2-normalised).  Cache key is derived
     from pool size + query count + tag to avoid stale reads.
 
     Returns:
@@ -27,7 +27,7 @@ def compute_embeddings(doc_pool, queries, tag):
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     key = hashlib.md5(
-        f"{len(doc_pool)}_{len(queries)}_{tag}_v11".encode()
+        f"{len(doc_pool)}_{len(queries)}_{tag}_{EMBED_MODEL}_v12".encode()
     ).hexdigest()[:12]
     dc = CACHE_DIR / f'de_{key}.npy'
     qc = CACHE_DIR / f'qe_{key}.npy'
@@ -41,8 +41,9 @@ def compute_embeddings(doc_pool, queries, tag):
         [f"{d['title']}: {d['text'][:256]}" for d in doc_pool],
         batch_size=256, show_progress_bar=True, normalize_embeddings=True)
     log.info(f"Encoding {len(queries)} queries...")
+    _qprefix = BGE_QUERY_PREFIX if 'bge' in EMBED_MODEL.lower() else ''
     qe = model.encode(
-        [q['question'] for q in queries],
+        [_qprefix + q['question'] for q in queries],
         batch_size=256, show_progress_bar=True, normalize_embeddings=True)
     np.save(dc, de)
     np.save(qc, qe)
@@ -109,7 +110,16 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
         n_tf = half - n_hf
         n_hb = int(half * 0.03)
         n_tb = half - n_hb
-        front = pick(heads, n_hf) + pick(tails, n_tf)
+        h_front = pick(heads, n_hf)
+        t_front = pick(tails, n_tf)
+        front = h_front + t_front
+        # Guard: if head pool < n_hf, pad front to exactly 'half' with extra tail
+        # queries so the drift transition always falls at window half/ws (= n_windows//2)
+        if len(front) < half:
+            extra = pick(tails, half - len(front))
+            front += extra
+            log.warning(f"Head pool exhausted ({len(h_front)} < {n_hf}); "
+                        f"padded front with {len(extra)} extra tail → front={len(front)}")
         rng.shuffle(front)
         back = pick(heads, n_hb) + pick(tails, n_tb)
         rng.shuffle(back)

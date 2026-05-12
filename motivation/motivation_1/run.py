@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import (DATASET_CONFIGS, STRATEGY_ORDER, STRATEGY_LABELS,
                     K_LIST, DATA_DIR, FIG_DIR, log)
 from loaders import LOADERS
+from loaders_temporal import TEMPORAL_LOADERS
 from strategies import STRATEGY_FACTORIES
 from utils import (compute_embeddings, cluster_and_build_stream,
                    head_biased_init_kb, recall_at_k)
@@ -33,8 +34,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     t0 = time.time()
     nw = cfg['n_windows']; ws = cfg['window_size']
     lname = loader_name or ds_name
-    loader = LOADERS[lname]
-    doc_pool, queries, title_to_idx = loader(n_source=n_source or cfg.get('n_source'))
+    if lname in TEMPORAL_LOADERS:
+        loader = TEMPORAL_LOADERS[lname]
+        doc_pool, queries, title_to_idx = loader()
+    else:
+        loader = LOADERS[lname]
+        doc_pool, queries, title_to_idx = loader(n_source=n_source or cfg.get('n_source'))
 
     tag = f'{ds_name}_{nw}w_{ws}s'
     doc_embs, query_embs = compute_embeddings(doc_pool, queries, tag=tag)
@@ -70,6 +75,8 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
 
     results = {n: {f'recall@{k}': [] for k in K_LIST} for n in strategies_to_run}
     cov_per_window = {n: [] for n in strategies_to_run}
+    step_latency  = {n: [] for n in strategies_to_run}   # seconds per window
+    step_overhead = {n: [] for n in strategies_to_run}   # KB replacements per window
 
     for w in range(nw):
         wq = stream[w * ws:(w + 1) * ws]
@@ -99,7 +106,17 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             if name != 'Oracle':
                 # freeze_until: skip updates before drift onset for ablation
                 if w >= cfg.get('freeze_until', 0):
+                    _cost_before = s.update_cost
+                    _t0_step = time.perf_counter()
                     s.step(wq, wqe, w)
+                    step_latency[name].append(time.perf_counter() - _t0_step)
+                    step_overhead[name].append(s.update_cost - _cost_before)
+                else:
+                    step_latency[name].append(0.0)
+                    step_overhead[name].append(0)
+            else:
+                step_latency[name].append(0.0)
+                step_overhead[name].append(0)
         if w % 5 == 0 or w == nw - 1:
             cv = {n: f"{cov_per_window[n][-1]*100:.1f}%" for n in strategies_to_run}
             log.info(f"[{ds_name}] W{w+1}/{nw} Cov: {cv}")
@@ -125,6 +142,10 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         s['serve_retrieval_cost']  = strategies[name].serve_retrieval_cost
         s['retrieval_cost']        = strategies[name].retrieval_cost
         s['cost']                  = strategies[name].cost
+        s['step_latency_mean_ms']  = round(float(np.mean(step_latency[name])) * 1000, 3) if step_latency[name] else 0.0
+        s['step_latency_per_window'] = [round(x * 1000, 3) for x in step_latency[name]]
+        s['step_overhead_mean']    = round(float(np.mean(step_overhead[name])), 2) if step_overhead[name] else 0.0
+        s['step_overhead_per_window'] = step_overhead[name]
         summary[name] = s
     return {
         'dataset': ds_name,
@@ -152,7 +173,7 @@ def print_summary(all_results, strategies_to_run):
         hdr = (f"{'Strategy':>18s} |"
                f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
                f" {'R@5 H1':>6s} {'R@5 H2':>6s} |"
-               f" {'Writes':>6s} {'MaintR':>7s} {'ServeR':>7s}")
+               f" {'Writes':>6s} {'OvhW':>6s} {'Lat(ms)':>8s}")
         print(hdr)
         print("-" * len(hdr))
         for name in strategies_to_run:
@@ -165,8 +186,8 @@ def print_summary(all_results, strategies_to_run):
                   f" {c1:>5.1f}% {c2:>5.1f}% {c2-c1:>+5.1f} |"
                   f" {r1:>5.1f}% {r2:>5.1f}% |"
                   f" {s['update_cost']:>6d}"
-                  f" {s['maint_retrieval_cost']:>7d}"
-                  f" {s['serve_retrieval_cost']:>7d}")
+                  f" {s.get('step_overhead_mean', 0):>6.1f}"
+                  f" {s.get('step_latency_mean_ms', 0):>8.1f}")
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
