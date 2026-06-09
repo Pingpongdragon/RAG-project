@@ -1222,7 +1222,7 @@ class DRYAD(RoutedCache):
                   G(t) = 1 - mean_q max_{d in KB} sim(q, d), with an
                   EMA/MAD adaptive threshold (a lightweight, KB-rebuild-free
                   instantiation of the QARC DriftLens idea; the full
-                  alignment-feature FID lives in updator/qarc and is the
+                  alignment-feature FID lives in algorithms/qarc and is the
                   drop-in upgrade).
       ② DECIDE  — rule agent maps the drift signal to an action + replacement
                   ratio λ, which becomes the per-window write budget λ·B:
@@ -1239,7 +1239,7 @@ class DRYAD(RoutedCache):
     detect→decide→admit loop, so the system updates *when alignment drifts*
     and *as hard as the drift warrants*, not on every miss.
     """
-    # Module ② decision hyperparameters (mirror updator/qarc kb_agent defaults)
+    # Module ② decision hyperparameters (mirror algorithms/qarc kb_agent defaults)
     WARMUP_WINDOWS = 3
     GAP_EMA_BETA   = 0.85   # EMA smoothing for the gap baseline
     GAP_K          = 1.0    # MAD multiplier for the "gap high" threshold

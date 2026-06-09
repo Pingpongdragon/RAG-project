@@ -27,7 +27,7 @@
 │    FID > threshold → 对齐模式偏离了 → KB 需要更新          │
 └───────────────────────────────────────────────────────────┘
 
-运行: python -m updator.qarc.tests.test_2_drift_detector
+运行: python -m algorithms.qarc.tests.test_2_drift_detector
 """
 
 import numpy as np
@@ -81,7 +81,7 @@ print("""
   3. 存下这些对齐特征的均值 μ₀ 和协方差 Σ₀ → 基线
 """)
 
-from updator.qarc.detection.drift_detector import DriftLensDetector
+from algorithms.qarc.detection.drift_detector import DriftLensDetector
 
 detector = DriftLensDetector(
     n_clusters=3,     # KB 最多分 3 个主题

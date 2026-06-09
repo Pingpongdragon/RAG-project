@@ -17,7 +17,7 @@
 │    Gap≈0 → KB完美覆盖, Gap≈1 → KB完全不匹配        │
 └─────────────────────────────────────────────────────┘
 
-运行: python -m updator.qarc.tests.test_1_interest_model
+运行: python -m algorithms.qarc.tests.test_1_interest_model
 """
 
 import numpy as np
@@ -45,7 +45,7 @@ print("""
 流程: add() → is_full? → flush() 取出数据
 """)
 
-from updator.qarc.curation.interest_model import QueryWindowBuffer
+from algorithms.qarc.curation.interest_model import QueryWindowBuffer
 
 buf = QueryWindowBuffer(window_size=5)
 print(f"窗口大小: {buf.window_size}")
@@ -80,7 +80,7 @@ print("""
   → 体育 weight=0.67, 美食 weight=0.33
 """)
 
-from updator.qarc.curation.interest_model import auto_kmeans
+from algorithms.qarc.curation.interest_model import auto_kmeans
 
 # 制造两簇不同方向的向量 (模拟两个不同主题)
 center_sports = np.zeros(DIM); center_sports[0:8] = 1.0  # "体育"方向
@@ -120,7 +120,7 @@ print("""
   G ≈ 1 → query和KB文档完全不搭 → 匹配差, 需要更新KB
 """)
 
-from updator.qarc.curation.interest_model import compute_alignment_gap
+from algorithms.qarc.curation.interest_model import compute_alignment_gap
 
 # 场景 A: KB 和 query 匹配得很好 (KB包含体育和美食文档)
 kb_good = np.vstack([

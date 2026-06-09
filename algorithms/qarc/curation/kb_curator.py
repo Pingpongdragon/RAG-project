@@ -62,7 +62,7 @@ try:
 except ImportError:
     _FAISS_AVAILABLE = False
 
-from updator.qarc.interfaces import BaseKBCurator
+from algorithms.qarc.interfaces import BaseKBCurator
 
 
 logger = logging.getLogger(__name__)

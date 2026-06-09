@@ -36,8 +36,8 @@ import json
 import logging
 from typing import Dict, List, Optional, Any, Callable
 
-from updator.comrag.memory import DynamicMemory, SearchResult
-from updator.comrag.updater import ComRAGUpdater
+from algorithms.comrag.memory import DynamicMemory, SearchResult
+from algorithms.comrag.updater import ComRAGUpdater
 
 logger = logging.getLogger(__name__)
 

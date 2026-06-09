@@ -1,5 +1,5 @@
 """
-updator/base.py — 所有 KB 更新策略的抽象基类
+algorithms/base.py — 所有 KB 更新策略的抽象基类
 
 设计思想:
   - 统一接口让 QARC / ComRAG / ERASE 可以公平对比

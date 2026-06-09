@@ -296,8 +296,8 @@ class QARCAdapter(MethodAdapter):
         self._doc_embeddings: Dict[str, np.ndarray] = {}
 
     def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
-        from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
-        from updator.qarc.pipeline import QARCPipeline, QARCPhase
+        from algorithms.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
+        from algorithms.qarc.pipeline import QARCPipeline, QARCPhase
 
         self._doc_embeddings = doc_embeddings
         pool = DocumentPool()
@@ -321,7 +321,7 @@ class QARCAdapter(MethodAdapter):
                     curator.kb_docs[did] = curator.pool.documents[did]
             logger.info(f"QARC: random bootstrap ({len(curator.kb_docs)} docs)")
 
-        from updator.qarc.config import QARCConfig
+        from algorithms.qarc.config import QARCConfig
         cfg_overrides = {k: v for k, v in self.extra_kw.items()
                          if k not in ("candidate_top_k", "exploit_lambda_max")}
         cfg_overrides["window_size"] = self.window_size
@@ -412,7 +412,7 @@ class ComRAGAdapter(MethodAdapter):
         self._last_query_embedding = None
 
     def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
-        from updator.comrag.memory import DynamicMemory
+        from algorithms.comrag.memory import DynamicMemory
 
         for pd in pool_docs:
             self._pool_map[pd.doc_id] = pd
@@ -553,7 +553,7 @@ class ERASEAdapter(MethodAdapter):
         self._pending_gold_ids: List[str] = []
 
     def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
-        from updator.erase.knowledge_base import ERASEKnowledgeBase
+        from algorithms.erase.knowledge_base import ERASEKnowledgeBase
 
         self._doc_embeddings = doc_embeddings
         self._pool_map = {pd.doc_id: pd for pd in pool_docs}
@@ -592,7 +592,7 @@ class ERASEAdapter(MethodAdapter):
             q = q / qnorm
 
         # Retrieve from ERASE KB
-        from updator.erase.knowledge_base import RetrievalResult
+        from algorithms.erase.knowledge_base import RetrievalResult
         results = self.kb.retrieve(q, top_k=self.top_k, threshold=0.0, only_true=True)
         ret_ids = []
         for r in results:

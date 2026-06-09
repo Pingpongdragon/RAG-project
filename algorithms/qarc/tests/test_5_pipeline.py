@@ -28,7 +28,7 @@
 │  └───────────────────────────────────────────────────────────│
 └──────────────────────────────────────────────────────────────┘
 
-运行: python -m updator.qarc.tests.test_5_pipeline
+运行: python -m algorithms.qarc.tests.test_5_pipeline
 """
 
 import numpy as np
@@ -56,8 +56,8 @@ center_sports  = np.zeros(DIM); center_sports[0:8] = 1.0
 center_food    = np.zeros(DIM); center_food[8:16] = 1.0
 center_science = np.zeros(DIM); center_science[16:24] = 1.0
 
-from updator.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
-from updator.qarc.pipeline import QARCPipeline
+from algorithms.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
+from algorithms.qarc.pipeline import QARCPipeline
 
 # 文档池
 pool = DocumentPool()
@@ -92,7 +92,7 @@ curator = QARCKBCurator(
     candidate_top_k=30,
 )
 
-from updator.qarc.config import QARCConfig
+from algorithms.qarc.config import QARCConfig
 cfg = QARCConfig(
     window_size=WINDOW,
     agent_warmup_windows=2,     # 前 2 个窗口 warmup

@@ -1,5 +1,5 @@
 """
-benchmark/adapters.py — updator/ 三个方法的 KBUpdateStrategy 适配器
+benchmark/adapters.py — algorithms/ 三个方法的 KBUpdateStrategy 适配器
 
 每个适配器将对应方法的内部逻辑适配到统一的 base.KBUpdateStrategy 接口，
 使得 run_experiments.py 可以公平对比 QARC / ComRAG / ERASE / Static / Random
@@ -21,7 +21,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from updator.base import KBUpdateStrategy, ProcessResult, MethodMetrics, select_diverse_initial_kb
+from algorithms.base import KBUpdateStrategy, ProcessResult, MethodMetrics, select_diverse_initial_kb
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +95,8 @@ class QARCStrategyAdapter(KBUpdateStrategy):
         self._kb_budget = kb_budget
         self._pool_id_to_idx = {d["doc_id"]: i for i, d in enumerate(doc_pool)}
 
-        from updator.qarc.curation.kb_curator import DocumentPool, Document, QARCKBCurator
-        from updator.qarc.pipeline import QARCPipeline
+        from algorithms.qarc.curation.kb_curator import DocumentPool, Document, QARCKBCurator
+        from algorithms.qarc.pipeline import QARCPipeline
 
         # 1) 构建 QARC DocumentPool
         qarc_pool = DocumentPool()
@@ -118,7 +118,7 @@ class QARCStrategyAdapter(KBUpdateStrategy):
         )
 
         # 3) 构建 QARCPipeline (通过 QARCConfig 传入所有参数)
-        from updator.qarc.config import QARCConfig
+        from algorithms.qarc.config import QARCConfig
         cfg = QARCConfig(
             window_size=self._window_size,
             retrieve_top_k=10,
@@ -267,7 +267,7 @@ class ComRAGStrategyAdapter(KBUpdateStrategy):
         self._pool_embs_normed = embs
         self._kb_ids_dirty = True  # 标记缓存是否需要刷新
 
-        from updator.comrag.memory import DynamicMemory
+        from algorithms.comrag.memory import DynamicMemory
 
         self._memory = DynamicMemory(tau=0.75, delta=0.9, gamma=0.6)
 
@@ -459,7 +459,7 @@ class ERASEStrategyAdapter(KBUpdateStrategy):
         self._pool_index = faiss.IndexFlatIP(d)
         self._pool_index.add(embs)
 
-        from updator.erase.knowledge_base import ERASEKnowledgeBase
+        from algorithms.erase.knowledge_base import ERASEKnowledgeBase
 
         self._erase_kb = ERASEKnowledgeBase(similarity_threshold=0.3)
 

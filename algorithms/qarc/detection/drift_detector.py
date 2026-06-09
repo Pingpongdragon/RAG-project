@@ -36,12 +36,12 @@ import numpy as np
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from scipy import linalg
-from updator.qarc.interfaces import BaseDriftDetector
+from algorithms.qarc.interfaces import BaseDriftDetector
 
 logger = logging.getLogger(__name__)
 
 
-from updator.qarc.interfaces import DriftResult  # 从接口层导入
+from algorithms.qarc.interfaces import DriftResult  # 从接口层导入
 
 
 class DriftLensDetector(BaseDriftDetector):

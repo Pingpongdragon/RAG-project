@@ -35,8 +35,18 @@ results/
 *.tmp
 *.bak
 *~
+nohup.out
 core/_deprecated/
 motivation/motivation_1/data/wildchat_sampled.json
+
+# Third-party reference libs (own .git, not imported by our code)
+/third_party/
+/HippoRAG/
+/LightRAG/
+/RECIPE/
+# baseline source mirrors (GPTCache / MemGPT) kept for reference only
+experiments/baselines_src/
+motivation/baselines_src/
 
 # Motivation experiment artifacts (cache + generated outputs)
 motivation/motivation_4/cache/

@@ -74,7 +74,7 @@ The right reading of mo2 is not "single-hop vs multi-hop" and not "QDC is useles
 - OnDemandFetch is not merely a competing baseline. From an agent perspective, it is the online acquisition path that can populate the candidate pool with documents the static pool/QDC did not already expose.
 - The main gap is therefore **fetch-to-write conversion**: after the agent discovers useful evidence on demand, which documents should be admitted into persistent KB for future queries?
 - This reframes the missing capability as trace-aware / evidence-aware admission. Query-only QDC uses the query embedding as the demand signal; agent QDC should also use on-demand retrieval traces, clicked/read docs, successful answer contexts, and repeated failures.
-- Concrete algorithm directions stay in [`../docs/design/DESIGN_DIRECTIONS.md`](../docs/design/DESIGN_DIRECTIONS.md) and [`../docs/design/ALGORITHM_DESIGN.md`](../docs/design/ALGORITHM_DESIGN.md), not in the main README / tex narrative.
+- Concrete algorithm directions stay in [`../../docs/design/DESIGN_DIRECTIONS.md`](../../docs/design/DESIGN_DIRECTIONS.md) and [`../../docs/design/ALGORITHM_DESIGN.md`](../../docs/design/ALGORITHM_DESIGN.md), not in the main README / tex narrative.
 
 ## Reproduce
 

@@ -1,5 +1,5 @@
 """
-updator — 所有 RAG KB 更新方法的统一包
+algorithms — 所有 RAG KB 更新方法的统一包
 
 Sub-packages:
   comrag/  — ComRAG: 动态记忆 + centroid 检测 + 路由更新

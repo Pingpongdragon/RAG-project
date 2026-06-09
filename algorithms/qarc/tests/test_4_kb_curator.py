@@ -23,7 +23,7 @@ QARC 做法: 从文档池 D_pool 中"挑选"一个子集作为 KB
   2. 单调递增 → 加文档只会更好不会更差
   3. 贪心保证 → (1-1/e) ≈ 63% 的最优近似比
 
-运行: python -m updator.qarc.tests.test_4_kb_curator
+运行: python -m algorithms.qarc.tests.test_4_kb_curator
 """
 
 import numpy as np
@@ -48,7 +48,7 @@ center_sports  = np.zeros(DIM); center_sports[0:8] = 1.0
 center_food    = np.zeros(DIM); center_food[8:16] = 1.0
 center_science = np.zeros(DIM); center_science[16:24] = 1.0
 
-from updator.qarc.curation.kb_curator import (
+from algorithms.qarc.curation.kb_curator import (
     Document, DocumentPool, QARCKBCurator,
     _interest_coverage, _diversity_coverage, submodular_objective,
     greedy_submodular_select,

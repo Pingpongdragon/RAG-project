@@ -20,22 +20,13 @@
 | [DATASET_ANALYSIS.md](experiments/DATASET_ANALYSIS.md) | QDC 生效的三充要条件 + 8 数据集 breakdown |
 | [REVIEWER_RESPONSE_SUMMARY.md](experiments/REVIEWER_RESPONSE_SUMMARY.md) | v3 revision 实验清单（cache baseline / 噪声敏感性 / 真实漂移） |
 
-## design/ — 算法设计
+## design/ 与 literature/ — 已上移到项目顶层 docs/
 
-| 文件 | 内容 |
-|---|---|
-| [FINAL_METHOD.md](design/FINAL_METHOD.md) | 🟢 **DRYAD 权威设计**：漂移检测驱动的**双层缓存**（agent memory + doc hot-tier），三模块 DETECT/DECIDE/ADMIT + 实体桥接 + 审稿人反驳 |
-| [REFERENCES.md](design/REFERENCES.md) | 文献调研：drift detection / RAG cache / agentic memory，related work + baseline + 白点 |
-| [UNIFICATION.md](design/UNIFICATION.md) | `updator/` 与 `motivation/` 两套代码统一到 DRYAD 的关系与接缝 |
-| [ALGORITHM_DESIGN.md](design/ALGORITHM_DESIGN.md) | ⚠️ 早期单层 doc-cache 版，已被 FINAL_METHOD 取代，留作历史 |
-| [DESIGN_DIRECTIONS.md](design/DESIGN_DIRECTIONS.md) | gap 分类（G1–G5）与机制方向（D1–D6），设计素材来源 |
+算法设计（DRYAD）与文献综述属于全项目级，已移到 [../../docs/](../../docs/)：
+- 算法设计 → [../../docs/design/](../../docs/design/)（FINAL_METHOD / REFERENCES / UNIFICATION / ALGORITHM_DESIGN / DESIGN_DIRECTIONS）
+- 文献背景 → [../../docs/literature/](../../docs/literature/)（query shift / agent memory notes）
 
-## literature/ — 文献背景
-
-| 文件 | 内容 |
-|---|---|
-| [DOC_3_QUERY_SHIFT_LITERATURE.md](literature/DOC_3_QUERY_SHIFT_LITERATURE.md) | query distribution shift 相关工作调研（MS-Shift / TCR / StreamingQA） |
-| [agent_memory_notes.md](literature/agent_memory_notes.md) | LLM agent memory 分层综述笔记（shared KB 定位） |
+本目录（motivation/docs）此后只保留 motivation 实验台专属的 narrative / experiments / verification。
 
 ## verification/ — 复现验证
 

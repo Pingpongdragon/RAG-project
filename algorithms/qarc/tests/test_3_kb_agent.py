@@ -26,7 +26,7 @@
 Gap阈值是自适应的: EMA(Gap) + k * MAD(Gap)
   不是固定阈值, 而是跟着历史 Gap 趋势走
 
-运行: python -m updator.qarc.tests.test_3_kb_agent
+运行: python -m algorithms.qarc.tests.test_3_kb_agent
 """
 
 import numpy as np
@@ -35,9 +35,9 @@ from dataclasses import dataclass
 # ─── 构造假的 DriftResult 和 AlignmentGapResult ───
 # 这样可以不依赖真正的 detector, 直接喂信号给 Agent
 
-from updator.qarc.detection.drift_detector import DriftResult
-from updator.qarc.curation.interest_model import AlignmentGapResult
-from updator.qarc.decision.kb_agent import KBUpdateAgent, UpdateAction
+from algorithms.qarc.detection.drift_detector import DriftResult
+from algorithms.qarc.curation.interest_model import AlignmentGapResult
+from algorithms.qarc.decision.kb_agent import KBUpdateAgent, UpdateAction
 
 def fake_drift(is_drifted, fid=0.5, threshold=1.0):
     """构造一个假的漂移检测结果"""

@@ -35,10 +35,10 @@ from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
 
-from updator.qarc.interfaces import BaseDriftDetector, BaseUpdateAgent, DriftResult, AgentDecision as _BaseDecision
-from updator.qarc.detection.drift_detector import DriftLensDetector
-from updator.qarc.curation.interest_model import AlignmentGapResult
-from updator.qarc.curation.kb_curator import QARCKBCurator, CurationResult
+from algorithms.qarc.interfaces import BaseDriftDetector, BaseUpdateAgent, DriftResult, AgentDecision as _BaseDecision
+from algorithms.qarc.detection.drift_detector import DriftLensDetector
+from algorithms.qarc.curation.interest_model import AlignmentGapResult
+from algorithms.qarc.curation.kb_curator import QARCKBCurator, CurationResult
 
 logger = logging.getLogger(__name__)
 

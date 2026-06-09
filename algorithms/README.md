@@ -1,28 +1,35 @@
-# Updator 模块文档 — KB 动态更新策略
+# algorithms/ — 核心算法 DRYAD 与 baseline
 
-> 本文档总结 `updator/` 目录下所有代码的具体逻辑，涵盖 3 种 KB 更新策略 + 2 种 Baseline + 统一接口层。
+> 本目录是项目算法的**唯一归属地**。区分：
+> - 🟢 **核心方法（ours）**：`qarc/` —— DRYAD 的生产实现（漂移检测 + Agent 决策 + 子模 KB 策展）。
+>   论文最终算法 DRYAD 的设计见 [../docs/design/FINAL_METHOD.md](../docs/design/FINAL_METHOD.md)。
+>   （注：`qarc` 是历史代号，对应论文的 DRYAD 检测+决策骨架；motivation 实验台里的 DRYAD/RoutedCache 是其 demand-ledger + 实体桥接后端。）
+> - **baseline / 对照**：`comrag/`（ACL 2025）、`erase/`（Li 2024）、`base.py`（Static / Random + 统一接口 `KBUpdateStrategy`）。
+>
+> 实验对比框架在 [../benchmark/](../benchmark/)（通过 `from algorithms.qarc...` 等引用本目录）。
+> 本文档总结各模块逻辑，涵盖 3 种 KB 更新策略 + 2 种 baseline + 统一接口层。
 
 ---
 
 ## 1. 整体架构
 
 ```
-updator/
-├── base.py                  # 统一抽象基类 + 2 个 Baseline
+algorithms/
+├── base.py                  # 统一抽象基类 KBUpdateStrategy + 2 个 baseline (Static/Random)
 ├── __init__.py              # 包级导出
-├── comrag/                  # ComRAG (ACL 2025) — 查询驱动的 QA 记忆路由
+├── comrag/                  # [baseline] ComRAG (ACL 2025) — 查询驱动的 QA 记忆路由
 │   ├── memory.py            #   双向量库 (V_high / V_low) + 质心聚类
 │   ├── pipeline.py          #   三层路由 + 自适应温度 + 端到端管线
 │   └── updater.py           #   评分 → 路由 → 聚类放置
-├── erase/                   # ERASE (Li et al. 2024) — 文档驱动的事实编辑
+├── erase/                   # [baseline] ERASE (Li et al. 2024) — 文档驱动的事实编辑
 │   ├── knowledge_base.py    #   可编辑事实库: 增删改查 + 历史追踪
 │   └── updater.py           #   三步流水线: Retrieve → Update → Add
-└── qarc/                    # QARC (ours) — 兴趣驱动的对齐漂移检测 + 子模KB策展
-    ├── drift_detector.py    #   Part 1: Query-KB 对齐特征的正则化 FID 漂移检测
-    ├── kb_agent.py          #   Part 2: Agent-in-the-Loop KB 更新决策
-    ├── interest_model.py    #   AutoKMeans 兴趣聚类 + AlignmentGap
-    ├── kb_curator.py        #   子模函数 KB 策展 (bootstrap + re-curation)
-    └── pipeline.py          #   Bootstrap → Online 主流水线
+└── qarc/                    # [ours / DRYAD 核心] 漂移检测 + Agent 决策 + 子模 KB 策展
+    ├── detection/drift_detector.py  #  对齐特征 FID 漂移检测（DRYAD 模块①）
+    ├── decision/kb_agent.py         #  Agent-in-the-Loop 更新决策（DRYAD 模块②）
+    ├── curation/interest_model.py   #  AutoKMeans 兴趣聚类 + AlignmentGap
+    ├── curation/kb_curator.py       #  子模函数 KB 策展（DRYAD 模块③ per-cluster 后端）
+    └── pipeline.py                  #  Bootstrap → Online 主流水线
 ```
 
 ---

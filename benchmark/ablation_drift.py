@@ -11,9 +11,9 @@ logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
 from benchmark.data import build_gradual_drift, build_sudden_shift, build_cyclic_return
 from benchmark.rag_pipeline import RAGPipeline
 from benchmark.adapters import QARCStrategyAdapter
-from updator.qarc.detection.drift_detector import DriftResult
-from updator.qarc.curation.interest_model import AlignmentGapResult
-from updator.qarc.decision import kb_agent as _kb_agent_module
+from algorithms.qarc.detection.drift_detector import DriftResult
+from algorithms.qarc.curation.interest_model import AlignmentGapResult
+from algorithms.qarc.decision import kb_agent as _kb_agent_module
 from core.evaluator import recall_at_k
 
 # ─── 全局决策日志 ───
@@ -80,7 +80,7 @@ def run_scenario(name, build_fn, pipeline, n_queries=300, pool_size=3000, kb_bud
         _im = None
         _orig_gap = None
         if gap_off:
-            import updator.qarc.curation.interest_model as _im_mod
+            import algorithms.qarc.curation.interest_model as _im_mod
             _im = _im_mod
             _orig_gap = _im_mod.compute_alignment_gap
             def _stub_gap(*a, **kw):

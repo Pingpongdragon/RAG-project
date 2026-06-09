@@ -2,7 +2,7 @@
 QARC 超参数配置 — 所有可调参数集中在此
 
 使用方式:
-    from updator.qarc.config import QARCConfig
+    from algorithms.qarc.config import QARCConfig
     cfg = QARCConfig()                    # 全部默认值
     cfg = QARCConfig(window_size=16)      # 覆盖个别参数
     cfg = QARCConfig.from_dict({...})     # 从字典构造

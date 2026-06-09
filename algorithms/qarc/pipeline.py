@@ -29,17 +29,17 @@ from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 from collections import deque
 
-from updator.qarc.curation.interest_model import (
+from algorithms.qarc.curation.interest_model import (
     QueryWindowBuffer,
     InterestCluster,
     auto_kmeans,
     compute_alignment_gap,
 )
-from updator.qarc.detection.drift_detector import DriftLensDetector, DriftResult
-from updator.qarc.decision.kb_agent import KBUpdateAgent, AgentDecision, UpdateAction
-from updator.qarc.config import QARCConfig
-from updator.qarc.interfaces import BaseDriftDetector, BaseUpdateAgent, BaseKBCurator
-from updator.qarc.curation.kb_curator import (
+from algorithms.qarc.detection.drift_detector import DriftLensDetector, DriftResult
+from algorithms.qarc.decision.kb_agent import KBUpdateAgent, AgentDecision, UpdateAction
+from algorithms.qarc.config import QARCConfig
+from algorithms.qarc.interfaces import BaseDriftDetector, BaseUpdateAgent, BaseKBCurator
+from algorithms.qarc.curation.kb_curator import (
     QARCKBCurator,
     DocumentPool,
     Document,

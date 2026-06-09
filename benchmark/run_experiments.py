@@ -37,7 +37,7 @@ from benchmark.adapters import (
     ComRAGStrategyAdapter,
     ERASEStrategyAdapter,
 )
-from updator.base import (
+from algorithms.base import (
     KBUpdateStrategy,
     StaticKBStrategy,
     RandomKBStrategy,
