@@ -67,9 +67,36 @@
 
 ---
 
+## D. 自适应缓存 / cache replacement（主 baseline 族，2026-06 调研）
+
+| 文献 | 出处 | 角色 |
+|---|---|---|
+| ARC (Adaptive Replacement Cache) | Megiddo&Modha FAST'03 | 经典自适应缓存，**必比**（随 workload 自调 recency/freq） |
+| LeCaR | HotStorage'18 | LRU+LFU 专家 + regret 最小化，working-set≫cache SOTA |
+| CACHEUS | FAST'21 | LeCaR 升级，把 workload 分 LFU/LRU/scan/churn 四 primitive |
+| TinyLFU / W-TinyLFU | 1512.00727 | admission policy（Caffeine 核心） |
+| Belady/MIN (OPT) | Belady 1966 | 离线最优上界（=现 Oracle，建议正名） |
+| **ARC — Agent RAG Cache** ⚠️ | **arXiv:2511.02919 (2025.11)** | **DRYAD 最近邻威胁**：query distribution + 缓存几何管理 per-agent 语料；必引并区分（漂移检测 vs 分布几何、单信号双层、实体桥接） |
+| RAGCache | arXiv:2404.12457 | RAG 知识缓存（KV 状态 + 替换策略），systems-side 近邻 |
+| Online semantic eviction | arXiv:2508.07675 | 语义缓存淘汰（带 mismatch cost）+ online adaptation，正面重叠 |
+| GroundedCache | arXiv:2605.27494 | answer 缓存的 admission gate（相似度+证据重叠+版本有效性） |
+
+## E. cache↔memory 等价的操作同构证据（统一叙事 C 的支撑）
+
+- memory 六操作 survey（Consolidation/Updating/Indexing/Forgetting/Retrieval/Condensation） — arXiv:2505.00675 → 映射 cache 的 admit/merge/index/evict/lookup/compress
+- xMemory「Beyond RAG for Agent Memory」（corpus shape 区分 RAG vs memory） — arXiv:2602.02007
+- MemArchitect(decay/conflict/eviction governance) 2603.18330 / StageMem(promotion/eviction lifecycle) 2604.16774 / SleepGate(forgetting-as-eviction) 2603.14517 / FadeMem(decay forgetting) 2601.18642
+- MemGPT(OS 虚拟内存/paging) 2310.08560 / MemoryOS(FIFO+page) 2506.06326 — memory 用 cache 词汇
+- ⚠️ **无论文把 memory consolidation/forgetting ≡ cache admission/eviction 作为正式贡献证明** → DRYAD 当洞察用，不当 headline。
+
+---
+
 ## DRYAD 占据的白点（四篇调研交叉确认无人同时做）
 
 1. 单一漂移信号同时驱动 **memory 层 + doc 层** 的 admission/eviction。
 2. 用 **demand/drift 经济学**（非 access-control）治理多用户共享 memory。
 3. **entity-chained bridge prefetch** 统一 graph-memory 检索与 demand-ledger 缓存。
 4. 把 **memory drift** 当作与 query/corpus drift 同级的一等现象，eviction=forgetting 绑定到测量的对齐漂移。
+
+> 定位结论：主词 **cache** + drift-aware/adaptive；agent memory 作 cache 的一个 tier；
+> 等价性作洞察支撑"单信号驱动两层"；必引并区分 ARC(2511.02919)。

@@ -20,11 +20,25 @@ import numpy as np
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# project root for the shared algorithms.cache.* package (appended, so the
+# local motivation_2 modules — config.py, loaders.py — keep import priority)
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from config import (DATASET_CONFIGS, STRATEGY_ORDER, STRATEGY_LABELS,
                     STRATEGY_STYLES, K_LIST, DATA_DIR, FIG_DIR, log)
+import config as _mo2cfg
 from loaders import LOADERS
-from strategies import STRATEGY_FACTORIES
+# Strategies now live in the shared algorithms.cache package (single source).
+# Inject this experiment's hyper-params so the same code reproduces mo2 numbers.
+from algorithms.cache.params import PARAMS as _P
+_P.update(
+    SEED=_mo2cfg.SEED, SF_HIT_THRESH=_mo2cfg.SF_HIT_THRESH,
+    DOC_ARRIVE=_mo2cfg.DOC_ARRIVE, DOC_ADD_CAP=_mo2cfg.DOC_ADD_CAP,
+    EDIT_BATCH=_mo2cfg.EDIT_BATCH, FIFO_BATCH=_mo2cfg.FIFO_BATCH,
+    FETCH_TOP_K=_mo2cfg.FETCH_TOP_K, LOG_FIX_TOP_K=_mo2cfg.LOG_FIX_TOP_K,
+    LOG_FIX_CAP=_mo2cfg.LOG_FIX_CAP, LOG_LAG_WINDOWS=_mo2cfg.LOG_LAG_WINDOWS,
+)
+from algorithms.cache.registry import STRATEGY_FACTORIES
 from utils import (compute_embeddings, cluster_and_build_stream,
                    focus_pool, head_biased_init_kb, recall_at_k)
 from llm_expand import augment_with_llm, batch_decompose

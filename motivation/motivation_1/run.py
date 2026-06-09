@@ -19,12 +19,25 @@ import numpy as np
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# project root for the shared algorithms.cache.* package (appended so local
+# config.py / loaders.py keep import priority)
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from config import (DATASET_CONFIGS, STRATEGY_ORDER, STRATEGY_LABELS,
                     K_LIST, DATA_DIR, FIG_DIR, log)
+import config as _mo1cfg
 from loaders import LOADERS
 from loaders_temporal import TEMPORAL_LOADERS
-from strategies import STRATEGY_FACTORIES
+# Strategies now live in the shared algorithms.cache package (single source).
+# Inject motivation_1's hyper-params (StreamingQA / MiniLM: SF_HIT_THRESH=0.55,
+# EDIT_BATCH=8). QueryDriven uses the unified mo2 implementation.
+from algorithms.cache.params import PARAMS as _P
+_P.update(
+    SEED=_mo1cfg.SEED, SF_HIT_THRESH=_mo1cfg.SF_HIT_THRESH,
+    DOC_ARRIVE=_mo1cfg.DOC_ARRIVE, DOC_ADD_CAP=_mo1cfg.DOC_ADD_CAP,
+    EDIT_BATCH=_mo1cfg.EDIT_BATCH, FETCH_TOP_K=_mo1cfg.FETCH_TOP_K,
+)
+from algorithms.cache.registry import STRATEGY_FACTORIES
 from utils import (compute_embeddings, cluster_and_build_stream,
                    head_biased_init_kb, recall_at_k)
 

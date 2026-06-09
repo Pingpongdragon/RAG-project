@@ -27,6 +27,21 @@
 3. **entity-chained bridge prefetch 统一 graph-memory 检索与 demand-ledger 缓存**（HippoRAG/Zep 做检索不做缓存经济学，缓存论文不做实体桥接多跳）。
 4. **把 memory drift 当作与 query/corpus drift 同级的一等现象**，eviction = forgetting 绑定到一个被测量的对齐漂移上。
 
+### 0.1 定位与命名（cache vs memory，调研确认）
+
+- **主定位 = 自适应 cache（叙事 A）**：hot-tier 装的是 cold corpus 文档，按 agent-memory 社区自己的定义
+  （xMemory 2602.02007："RAG 针对大而异质语料；memory 是有界、自生成的交互流"），这**属于 cache 领域**。
+  agent memory 层书写为"cache 管理的一个 tier"，**不要**把整体叫"memory 系统"（会被 agent 社区当成贴标签的 RAG 打回）。
+- **cache↔memory 等价 = 洞察，非 headline（叙事 C）**：admission/eviction ≈ consolidation/forgetting 是同一个
+  "预算约束下内容选择"问题（操作同构见 survey 2505.00675）。**无论文把此等价作为正式贡献证明过** → 当作 intro 统一视角，
+  支撑真正新意（**一个漂移信号驱动两层**），不当作主张，否则 over-claim。
+- **标题关键词**：cache + drift-aware/adaptive + RAG(+agentic/two-tier)。可选副标
+  *"Unifying Document Caching and Agent Memory under a Single Drift Signal"*。
+- **⚠️ 最近邻威胁 — ARC (Agent RAG Cache, arXiv:2511.02919, 2025.11)**：也用 query distribution + 缓存项几何
+  动态管理 per-agent 小语料，既叫 cache 又做 memory 功能。**必引并明确区分**：
+  (a) DRYAD 做 alignment-feature **漂移检测** vs ARC 的分布几何综合；(b) **一个信号驱动两层**；
+  (c) **entity-chained bridge 多跳准入**。这是 DRYAD novelty 能否站住的关键对照。
+
 ---
 
 ## 1. 系统模型：三类对象、两层缓存、一个检测器
