@@ -10,6 +10,7 @@
 | [FINAL_METHOD.md](design/FINAL_METHOD.md) | 🟢 **权威设计**：漂移检测驱动的双层缓存（agent memory + doc hot-tier），三模块 DETECT/DECIDE/ADMIT + 实体桥接 |
 | [REFERENCES.md](design/REFERENCES.md) | 文献调研：drift detection / RAG cache / agentic memory + baseline 选择 + 白点 |
 | [UNIFICATION.md](design/UNIFICATION.md) | `algorithms/`（生产）与 `motivation/`（实验台）两套代码如何统一到 DRYAD |
+| [ARC_COMPARISON.md](design/ARC_COMPARISON.md) | ⚠️ 最近邻威胁 ARC(2511.02919) 的对照与差异化定位 |
 | [ALGORITHM_DESIGN.md](design/ALGORITHM_DESIGN.md) | ⚠️ 早期单层版，已被 FINAL_METHOD 取代，留作历史 |
 | [DESIGN_DIRECTIONS.md](design/DESIGN_DIRECTIONS.md) | gap 分类 G1–G5，设计素材来源 |
 

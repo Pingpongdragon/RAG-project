@@ -62,6 +62,7 @@
 | **GPTCacheStyle** | 语义缓存 | GPTCache | embedding 相似度命中下界 |
 | **RAGCache** ⭐ | RAG 知识缓存 | Jin 2024 (2404.12457) | RAG 缓存方向必比近邻 |
 | **Online semantic eviction** | 语义淘汰（带 mismatch cost） | 2508.07675 | 与本命题正面重叠，重点对比/引用 |
+| **ARC** ⭐ | per-agent RAG cache（最近邻威胁） | 2511.02919 | **必比+必区分**：query 分布几何缓存；见 [ARC_COMPARISON.md](ARC_COMPARISON.md) |
 | **Belady / OPT** | 上界 | Belady 1966 | 离线最优（=现有 Oracle，**建议改名 Belady/OPT** 让审稿人秒懂） |
 | **SemFlow (QueryDriven)** | ours | 本文 | demand 账本（L1/L2） |
 | **RoutedCache** | ours | 本文 | +实体桥接（L3 消融） |

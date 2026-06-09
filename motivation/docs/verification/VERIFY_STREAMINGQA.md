@@ -4,6 +4,14 @@ This document accompanies `motivation.tex` §1 / Fig.~1 (`fig:streamingqa`).
 It explains the data partition, the baseline lineup, the expected per-round
 behavior, and the exact commands to reproduce the numbers in the paper.
 
+> **迁移对拍（2026-06）**：策略代码已统一到 `algorithms/cache/`（见 docs/design/EXPERIMENT_PROTOCOL §4）。
+> 用相同命令（`EMBED_MODEL=BAAI/bge-base-en-v1.5`）重跑验证，H2 Recall@5：
+> **MissLRU 28.8=28.8、OnDemandFetch 46.4=46.4、Oracle 81.2=81.2（零误差）**，
+> QueryDriven 27.1→27.9（mo1 统一用 mo2 的 DEMAND_DECAY=0.92，+0.8pp）。
+> Fig1 核心结论保持：单跳时序下 access-history(MissLRU 28.8) ≥ SemFlow(27.9)，
+> RecencyTTL(timestamp oracle) 仍崩到 5.9、纯 LRU 1.4。迁移逐字保真无 bug。
+> ⚠️ 复现必须设 `EMBED_MODEL=BAAI/bge-base-en-v1.5`（默认 MiniLM 会得不同数字）。
+
 ---
 
 ## 1. Data partition (natural temporal stream)
