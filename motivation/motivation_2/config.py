@@ -12,11 +12,11 @@ K_LIST: standard IR recall cutoffs used in HippoRAG evaluation.
 from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────
-PROJECT_DIR = Path('/home/jyliu/RAG_project')
+PROJECT_DIR = Path('/home/jyliu/RAG-project')
 THIS_DIR    = Path(__file__).resolve().parent
 DATA_DIR    = THIS_DIR / 'data'
 FIG_DIR     = THIS_DIR / 'figures'
-CACHE_DIR   = Path('/home/jyliu/RAG_project/motivation/motivation_2/cache')
+CACHE_DIR   = THIS_DIR / 'cache'
 
 # ── Reproducibility ────────────────────────────────
 SEED = 42
@@ -100,16 +100,21 @@ LOG_LAG_WINDOWS = 5    # human review cycle: apply fix every N windows
 # ── Strategy registry (display order, labels, plot styles) ──
 STRATEGY_ORDER = [
     'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDrivenCluster', 'Oracle',
+    'LRU', 'GPTCacheStyle', 'MemGPTStyle',
+    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'QueryDrivenLoose', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':           'Static (no update)',
     'RandomFIFO':       'Random FIFO (blind ingest)',
     'DocArrival':       'Doc-Arrival (HippoRAG)',
     'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
+    'LRU':              'LRU Cache',
+    'GPTCacheStyle':    'Semantic Cache (GPTCache)',
+    'MemGPTStyle':      'Importance-Weighted (MemGPT)',
     'OnDemandFetch':    'On-Demand Fetch (CRAG)',
     'LogDrivenArrival': 'Log-Driven (lagging)',
-    'QueryDrivenCluster': 'Query-Driven Cluster (ours)',
+    'QueryDriven': 'Query-Driven Cluster (ours)',
+    'QueryDrivenLoose':   'Query-Driven Loose (probe=50)',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -117,9 +122,13 @@ STRATEGY_STYLES = {
     'RandomFIFO':       {'color': '#D97706', 'marker': 'v', 'ls': '-.'},
     'DocArrival':       {'color': '#059669', 'marker': '^', 'ls': '-'},
     'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
-    'OnDemandFetch':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
-    'LogDrivenArrival': {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
-    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
+    'LRU':              {'color': '#F59E0B', 'marker': 'v', 'ls': '-.'},
+    'GPTCacheStyle':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
+    'MemGPTStyle':      {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
+    'OnDemandFetch':    {'color': '#1E3A8A', 'marker': 'h', 'ls': ':'},
+    'LogDrivenArrival': {'color': '#9D174D', 'marker': '*', 'ls': '-.'},
+    'QueryDriven': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
+    'QueryDrivenLoose':   {'color': '#047857', 'marker': 'X', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

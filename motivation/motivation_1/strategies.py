@@ -36,7 +36,7 @@ All strategies share the same interface:
    滞后式日志更新：先积累一段时间失败查询，再在下一个 review 周期把最相关的候选文档写回 KB。
    它代表依赖历史日志、人工回看或批处理反馈的慢更新系统。
 
-7. QueryDrivenCluster
+7. QueryDriven
    需求侧更新（本文方法）：直接用失败查询暴露出的“缺哪些文档”信号积累 demand，
    再和当前 KB 文档的 serve 价值比较，只有当候选需求显著高于现驻留文档价值时才替换。
 
@@ -44,7 +44,7 @@ All strategies share the same interface:
    非因果上界：直接使用当前 window 的 gold supporting facts 重建 KB，只用于给出理论天花板。
 """
 import numpy as np
-from config import (SEED, SF_HIT_THRESH, DOC_ARRIVE, DOC_ADD_CAP,
+from config import (SEED, SF_HIT_THRESH, DOC_ARRIVE, DOC_ADD_CAP, FETCH_TOP_K,
                     EDIT_BATCH, QD_TOP_K, QD_REPLACE_CAP, log)
 
 
@@ -198,7 +198,7 @@ class KnowledgeEdit(BaseStrategy):
 
 
 
-class QueryDrivenCluster(BaseStrategy):
+class QueryDriven(BaseStrategy):
     # 中文解释：这是本文的 demand-side persistent writer。
     # 核心思想不是“看到新文档就写”，而是“看到查询失败，就推断 KB 里缺什么”。
     #
@@ -276,6 +276,12 @@ class QueryDrivenCluster(BaseStrategy):
         self.demand = {p: v*d for p, v in self.demand.items() if v*d >= m}
         self.serve  = {p: v*s for p, v in self.serve.items()  if v*s >= m}
 
+    PREFETCH_TOPK = 5
+    TAU_ADMIT     = 0.95
+    LAMBDA_RED    = 1.5
+    RED_THRESH    = 0.85
+    NEIGH_GAMMA   = 0.4
+
     def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
@@ -289,7 +295,6 @@ class QueryDrivenCluster(BaseStrategy):
 
         self._decay()
 
-        # 1) Credit serve for every succeeding query (best KB doc gets +1).
         succ = max_s >= SF_HIT_THRESH
         if succ.any():
             best_pos = np.argmax(q_kb[succ], axis=1)
@@ -297,36 +302,54 @@ class QueryDrivenCluster(BaseStrategy):
                 pi = int(kb_idx[pos])
                 self.serve[pi] = self.serve.get(pi, 0.0) + 1.0
 
-        # 2) Credit demand for every failing query.
-        # Unified failure definition: a query fails iff its best KB hit is
-        # below the SF threshold. Same definition as serve, applies to
-        # single-hop and multi-hop without dataset-specific switches.
         fail = max_s < SF_HIT_THRESH
         n_fail = int(fail.sum())
         if n_fail == 0:
-            self.update_cost += 0
-            return
+                return
+
         fqe = nqe[fail]
         pool_sims = fqe @ self.doc_embs.T
-        probe = min(self.PROBE_TOPK, pool_sims.shape[1])
-        self.maint_retrieval_cost += n_fail * probe
-        kb_pos = set(int(i) for i in kb_idx)
+
+        # Top-1 miss demand
         for qi in range(n_fail):
-            top = np.argpartition(pool_sims[qi], -probe)[-probe:]
-            top = top[np.argsort(-pool_sims[qi, top])]
-            # Unit-aligned with serve: each failing query contributes
-            # exactly 1.0 demand mass, distributed by similarity weight.
-            sims = pool_sims[qi, top].astype(float)
-            sims = np.maximum(sims, 0.0)
+            t1 = int(np.argmax(pool_sims[qi]))
+            self.demand[t1] = self.demand.get(t1, 0.0) + 1.0
+
+        # NEIGHBORHOOD DEMAND: warm semantic neighbors of each missed query
+        topk = min(self.PREFETCH_TOPK, pool_sims.shape[1])
+        self.maint_retrieval_cost += n_fail * topk
+        for qi in range(n_fail):
+            row = pool_sims[qi]
+            top = np.argpartition(row, -topk)[-topk:]
+            sims = np.maximum(row[top].astype(float), 0.0)
             tot = sims.sum()
             if tot <= 0:
                 continue
-            weights = sims / tot
-            for w, pi in zip(weights, top):
+            w = sims / tot
+            for wj, pi in zip(w, top):
                 pi = int(pi)
-                self.demand[pi] = self.demand.get(pi, 0.0) + float(w)
+                self.demand[pi] = self.demand.get(pi, 0.0) + float(wj) * self.NEIGH_GAMMA
 
-        # 3) Candidate ordering: high accumulated demand wins.
+        # Redundancy field
+        kb_self = kb_emb @ kb_emb.T
+        np.fill_diagonal(kb_self, -1.0)
+        red_vec = kb_self.max(axis=1)
+        red_map = {int(p): float(red_vec[i]) for i, p in enumerate(kb_idx)}
+        kb_pos = set(int(i) for i in kb_idx)
+
+        def _is_dup(cp, kb_emb_now):
+            return float((self.doc_embs[cp] @ kb_emb_now.T).max()) > self.TAU_ADMIT
+
+
+        # Compute KB embeddings for tier-2
+        kb_arr = np.array(sorted(kb_pos), dtype=int)
+        kb_emb_now = self.doc_embs[kb_arr]
+        kb_self2 = kb_emb_now @ kb_emb_now.T
+        np.fill_diagonal(kb_self2, -1.0)
+        red_vec2 = kb_self2.max(axis=1)
+        red_map2 = {int(p): float(red_vec2[i]) for i, p in enumerate(kb_arr)}
+
+        # === TIER 2: demand-gated admission with redundancy-aware eviction ===
         cands = sorted(
             ((v, p) for p, v in self.demand.items() if p not in kb_pos),
             reverse=True,
@@ -334,14 +357,13 @@ class QueryDrivenCluster(BaseStrategy):
         if not cands:
             return
 
-        # 4) Eviction ordering: low (serve + demand) loses first.
-        evict_val = {int(p): self.serve.get(int(p), 0.0) + self.demand.get(int(p), 0.0)
-                     for p in kb_idx}
+        def vscore(p):
+            base = self.serve.get(p, 0.0) + self.demand.get(p, 0.0)
+            pen = self.LAMBDA_RED * max(0.0, red_map2.get(p, 0.0) - self.RED_THRESH)
+            return base - pen
+        evict_val = {p: vscore(p) for p in kb_pos}
         evictable = sorted(kb_pos, key=lambda p: evict_val[p])
 
-        # 5) Universal admission gate: replace e by c iff demand[c] > evict_val[e].
-        # No write cap: the gate is self-limiting because remaining
-        # candidates are sorted by demand desc and evict_val[e] is sorted asc.
         n = 0
         ei = 0
         for cval, cp in cands:
@@ -349,15 +371,15 @@ class QueryDrivenCluster(BaseStrategy):
                 break
             ep = evictable[ei]
             if cval <= evict_val[ep]:
-                break  # remaining candidates are even smaller
+                break
+            if _is_dup(cp, kb_emb_now):
+                continue
             self.kb.discard(self.p2d[ep])
             self.kb.add(self.p2d[cp])
-            self.serve.pop(ep, None)   # fresh doc has no serve history
+            self.serve.pop(ep, None)
             ei += 1
             n += 1
         self.update_cost += n
-
-
 
 class Oracle(BaseStrategy):
     # 中文解释：Oracle 不是可部署策略，只是理论上界。
@@ -412,6 +434,50 @@ class Oracle(BaseStrategy):
 
 
 # ── Factory registry ──────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════
+# On-Demand Fetch — passive per-query pool retrieval (no KB persistence)
+# Models CRAG / Agent-RAG: when KB hit is poor, search external pool live.
+# KB never updated; results returned only for current window.
+# Demonstrates that real-time fetch cannot replace KB consolidation:
+#   (a) every query incurs search latency, (b) no cross-window learning.
+# ═══════════════════════════════════════════════════════════════════
+class OnDemandFetch(BaseStrategy):
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.fetch_k = FETCH_TOP_K
+        self._fetched_this_window = set()
+
+    def prepare_window(self, window_queries, window_query_embs, window_idx):
+        self._fetched_this_window = set()
+        if not self.kb:
+            # cold start: still allow fetch
+            kb_emb = None
+            kb_max = -np.ones(len(window_queries))
+        else:
+            kb_list = sorted(self.kb)
+            kb_idx = np.array([self.d2p[d] for d in kb_list])
+            kb_emb = self.doc_embs[kb_idx]
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
+        for qi in range(len(window_queries)):
+            if kb_emb is not None:
+                q_kb_sim = nqe[qi] @ kb_emb.T
+                if float(np.max(q_kb_sim)) >= SF_HIT_THRESH:
+                    continue
+            pool_sim = nqe[qi] @ self.doc_embs.T
+            top_idx = np.argpartition(pool_sim, -self.fetch_k)[-self.fetch_k:]
+            for pi in top_idx:
+                self._fetched_this_window.add(self.p2d[pi])
+            self.serve_retrieval_cost += len(top_idx)
+
+    def get_effective_kb(self, window_queries, window_query_embs):
+        return self.kb | self._fetched_this_window
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        pass
+
+
 STRATEGY_FACTORIES = {
     'Static':             lambda dp, de, ti: Static('Static', dp, de, ti),
     'DocArrival':         lambda dp, de, ti: DocArrival('DocArrival', dp, de, ti),
@@ -419,36 +485,504 @@ STRATEGY_FACTORIES = {
     'LRU':                lambda dp, de, ti: LRU('LRU', dp, de, ti),
     'GPTCacheStyle':      lambda dp, de, ti: GPTCacheStyle('GPTCacheStyle', dp, de, ti),
     'MemGPTStyle':        lambda dp, de, ti: MemGPTStyle('MemGPTStyle', dp, de, ti),
-    'QueryDrivenCluster': lambda dp, de, ti: QueryDrivenCluster('QueryDrivenCluster', dp, de, ti),
+    'OnDemandFetch':      lambda dp, de, ti: OnDemandFetch('OnDemandFetch', dp, de, ti),
+    'QueryDriven': lambda dp, de, ti: QueryDriven('QueryDriven', dp, de, ti),
     'Oracle':             lambda dp, de, ti: Oracle('Oracle', dp, de, ti),
 }
 
 
 # ═══════════════════════════════════════════════════════════════════
-# NEW BASELINES — added to respond to reviewer requests for stronger
-# cache-style and agent-memory-style comparisons
+# NEW BASELINES — cache-style and agent-memory-style baselines.
+# IMPORTANT: these baselines do NOT receive QDC's query-failure-driven
+# top-K candidate retrieval. Their admission stream is the same passive
+# DocArrival stream used by HippoRAG/LightRAG; only the eviction policy
+# differs. This isolates the *signal source* (failure-targeted demand)
+# as QDC's contribution, rather than letting baselines piggyback on it.
 # ═══════════════════════════════════════════════════════════════════
 
 
-class LRU(BaseStrategy):
-    """Least-Recently-Used cache eviction (direct reviewer request).
+class _ArrivalCacheBase(BaseStrategy):
+    """Shared scaffolding: random doc arrivals + per-window query touch.
 
-    Trigger: query failure signal (same as QDC) — a pool doc is
-    considered for admission whenever a window has failing queries.
-    Eviction: the KB doc with the oldest last-hit timestamp is removed.
-
-    This decouples the eviction policy (pure recency) from the
-    admission policy (query-failure demand), making it a fair
-    ablation of QDC's demand/serve accounting.
+    Each window:
+      1. Sample DOC_ARRIVE pool docs as "arrivals" (no failure probing).
+      2. Update per-doc bookkeeping based on which KB docs got hit by queries.
+      3. Subclass decides which KB docs to evict and whether to admit each
+         arrival, then admits up to DOC_ADD_CAP entries.
     """
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        # last_hit[pool_idx] = most recent window index that query hit this doc
+        self.rng = np.random.default_rng(SEED + 200 + hash(name) % 1000)
+        self.all_ids = [d['doc_id'] for d in doc_pool]
+
+    # subclass hooks
+    def _on_init_kb(self, did, pi):
+        pass
+    def _on_query_hit(self, kb_pi, window_idx):
+        pass
+    def _on_query_seen(self, kb_pi, sim, window_idx):
+        pass
+    def _evict_score(self, pi, window_idx):
+        # lower = more evictable
+        return 0.0
+    def _admit_score(self, pi, sim_to_kb_max, window_idx):
+        # higher = more worth admitting; return None to skip
+        return 1.0
+
+    def _should_swap(self, arrival_score, evict_score):
+        # subclasses can override to gate admission on quality improvement
+        return True
+
+    def set_kb(self, ids):
+        super().set_kb(ids)
+        for did in self.kb:
+            self._on_init_kb(did, self.d2p[did])
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        if not self.kb:
+            return
+
+        kb_list = sorted(self.kb)
+        kb_idx = np.array([self.d2p[d] for d in kb_list])
+        kb_emb = self.doc_embs[kb_idx]
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
+        q_kb = nqe @ kb_emb.T  # (n_q, |KB|)
+
+        # per-KB-doc passive observation: max sim from any query in window
+        max_sim_per_kb = np.max(q_kb, axis=0) if q_kb.size else np.zeros(len(kb_list))
+        for i, pi in enumerate(kb_idx):
+            self._on_query_seen(int(pi), float(max_sim_per_kb[i]), window_idx)
+
+        # successful hits credit recency/frequency
+        max_s = np.max(q_kb, axis=1) if q_kb.size else np.zeros(len(window_queries))
+        succ = max_s >= SF_HIT_THRESH
+        if succ.any():
+            best_pos = np.argmax(q_kb[succ], axis=1)
+            for pos in best_pos:
+                self._on_query_hit(int(kb_idx[pos]), window_idx)
+
+        # passive arrival stream (no failure-driven probing)
+        arrivals = self.rng.choice(
+            self.all_ids,
+            min(DOC_ARRIVE, len(self.all_ids)),
+            replace=False,
+        )
+        self.maint_retrieval_cost += len(arrivals)
+
+        kb_pos_set = set(int(i) for i in kb_idx)
+        # admission candidates with scores
+        cand_scored = []
+        for did in arrivals:
+            ni = self.d2p[did]
+            if ni in kb_pos_set:
+                continue
+            ne = self.doc_embs[ni]
+            sims = kb_emb @ ne
+            best_sim = float(np.max(sims)) if sims.size else 0.0
+            score = self._admit_score(ni, best_sim, window_idx)
+            if score is None:
+                continue
+            cand_scored.append((score, ni))
+
+        if not cand_scored:
+            return
+
+        # most attractive arrivals first
+        cand_scored.sort(reverse=True)
+        # least valuable KB docs first (eviction order)
+        evict_order = sorted(
+            kb_pos_set,
+            key=lambda p: self._evict_score(p, window_idx),
+        )
+
+        n = 0
+        for score, ni in cand_scored:
+            if n >= min(DOC_ADD_CAP, len(evict_order)):
+                break
+            ep = evict_order[n]
+            if not self._should_swap(score, self._evict_score(ep, window_idx)):
+                break  # lists are sorted; if best arrival can't beat worst KB doc, stop
+            old = self.p2d[ep]
+            new = self.p2d[ni]
+            self.kb.discard(old)
+            self.kb.add(new)
+            self._on_query_hit(ni, window_idx)
+            n += 1
+        self.update_cost += n
+
+
+class LRU(_ArrivalCacheBase):
+    """Pure least-recently-used cache.
+
+    Admission source: random doc-arrival stream (no failure probing).
+    Eviction: oldest last-touch wins (lowest last_hit window).
+    Passive recency: any KB doc that gets touched by a query updates last_hit.
+    """
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.last_hit = {}
+
+    def _on_init_kb(self, did, pi):
+        self.last_hit[pi] = -1
+    def _on_query_hit(self, kb_pi, window_idx):
+        self.last_hit[kb_pi] = window_idx
+    def _evict_score(self, pi, window_idx):
+        return self.last_hit.get(pi, -1)
+
+
+class GPTCacheStyle(_ArrivalCacheBase):
+    """Semantic cache (GPTCache-style).
+
+    Admission source: random arrivals with semantic-dedup gate.
+      - skip arrival if sim to existing KB > DEDUP_HIGH (already covered)
+      - skip arrival if sim to existing KB < DEDUP_LOW  (off-topic noise)
+    Eviction: lowest decayed cache score (max sim seen from queries lately).
+    """
+    DEDUP_HIGH = 0.85
+    DEDUP_LOW  = 0.30
+    DECAY      = 0.97
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.cache_score = {}
+
+    def _on_init_kb(self, did, pi):
+        self.cache_score[pi] = 1.0
+    def _on_query_seen(self, kb_pi, sim, window_idx):
+        # decayed running max
+        prev = self.cache_score.get(kb_pi, 0.0) * self.DECAY
+        self.cache_score[kb_pi] = max(prev, sim)
+    def _evict_score(self, pi, window_idx):
+        return self.cache_score.get(pi, 0.0)
+    def _admit_score(self, pi, sim_to_kb_max, window_idx):
+        if sim_to_kb_max > self.DEDUP_HIGH:
+            return None
+        if sim_to_kb_max < self.DEDUP_LOW:
+            return None
+        # admit with score = relevance to current KB topic distribution
+        return sim_to_kb_max
+
+    def _should_swap(self, arrival_score, evict_score):
+        # only admit if arrival looks more relevant than the KB doc it would replace
+        return arrival_score > evict_score
+
+
+class MemGPTStyle(_ArrivalCacheBase):
+    """MemGPT-style importance memory.
+
+    Admission source: random arrivals.
+    Importance(d) = decayed access frequency.
+    Eviction: lowest importance.
+    Passive freq: any query hit on a KB doc increments freq.
+    """
+    DECAY = 0.88
+    INIT_FREQ = 1.0
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.freq = {}
+        self.last_hit = {}
+
+    def _importance(self, pi, window_idx):
+        f = self.freq.get(pi, 0.0)
+        lh = self.last_hit.get(pi, -1)
+        return f * (self.DECAY ** max(0, window_idx - lh))
+
+    def _on_init_kb(self, did, pi):
+        self.freq[pi] = self.INIT_FREQ
+        self.last_hit[pi] = 0
+    def _on_query_hit(self, kb_pi, window_idx):
+        self.freq[kb_pi] = self.freq.get(kb_pi, 0.0) + 1.0
+        self.last_hit[kb_pi] = window_idx
+    def _evict_score(self, pi, window_idx):
+        return self._importance(pi, window_idx)
+    def _admit_score(self, pi, sim_to_kb_max, window_idx):
+        # new arrivals start at INIT_FREQ; return that as ranking score
+        return self.INIT_FREQ * sim_to_kb_max
+
+
+class TemporalAware(_ArrivalCacheBase):
+    """Time-aware hot-tier cache (Temporal RAG / freshness-decay style).
+
+    Models the canonical timestamp-aware baseline: assumes document
+    publication year is available, and prefers documents whose year is
+    closest to the current query era. Admission and eviction both score
+    documents by an exponential freshness decay around the per-window
+    era anchor estimated from incoming query years.
+    """
+    TAU         = 2.0   # years
+    NEUTRAL_GAP = 4.0   # treat unknown-year docs as moderately stale
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.doc_year = {i: doc_pool[i].get('year') for i in range(len(doc_pool))}
+        self.current_era = None
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        ys = [q.get('year') for q in window_queries if q.get('year') is not None]
+        if ys:
+            self.current_era = float(np.mean(ys))
+        super().step(window_queries, window_query_embs, window_idx)
+
+    def _gap(self, pi):
+        y = self.doc_year.get(pi)
+        if y is None or self.current_era is None:
+            return self.NEUTRAL_GAP
+        return abs(float(y) - self.current_era)
+
+    def _admit_score(self, pi, sim_to_kb_max, window_idx):
+        return float(np.exp(-self._gap(pi) / self.TAU))
+
+    def _evict_score(self, pi, window_idx):
+        return float(np.exp(-self._gap(pi) / self.TAU))
+
+
+
+
+class RecencyTTL(_ArrivalCacheBase):
+    """Oracle-timestamp TTL cache.
+
+    Demonstrates that *even with* perfect document publication timestamps,
+    the timestamp signal cannot disambiguate within an era: when many
+    candidates share the same year (e.g., thousands of 2015 articles
+    in one StreamingQA window), TTL has no resolution to pick K out
+    of them. Admission: doc.year within +/-YEAR_WINDOW of current
+    query era. Eviction: oldest publication year first (classic TTL).
+    """
+    YEAR_WINDOW = 2.0   # admit if |doc.year - era| <= window
+    NEUTRAL_YEAR = -1.0 # unknown-year docs treated as oldest
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.doc_year = {i: doc_pool[i].get('year') for i in range(len(doc_pool))}
+        self.current_era = None
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        ys = [q.get('year') for q in window_queries if q.get('year') is not None]
+        if ys:
+            self.current_era = float(np.mean(ys))
+        super().step(window_queries, window_query_embs, window_idx)
+
+    def _admit_score(self, pi, sim_to_kb_max, window_idx):
+        y = self.doc_year.get(pi)
+        if y is None or self.current_era is None:
+            return None
+        if abs(float(y) - self.current_era) > self.YEAR_WINDOW:
+            return None
+        # within window: prefer closest-to-era first
+        return -abs(float(y) - self.current_era)
+
+    def _evict_score(self, pi, window_idx):
+        # lower = more evictable; oldest year first
+        y = self.doc_year.get(pi)
+        if y is None:
+            return self.NEUTRAL_YEAR
+        return float(y)
+
+
+# ── Updated registry: add new baselines ──
+STRATEGY_FACTORIES.update({
+    'LRU':           lambda dp, de, ti: LRU('LRU', dp, de, ti),
+    'GPTCacheStyle': lambda dp, de, ti: GPTCacheStyle('GPTCacheStyle', dp, de, ti),
+    'MemGPTStyle':   lambda dp, de, ti: MemGPTStyle('MemGPTStyle', dp, de, ti),
+    'TemporalAware': lambda dp, de, ti: TemporalAware('TemporalAware', dp, de, ti),
+    'RecencyTTL':    lambda dp, de, ti: RecencyTTL('RecencyTTL', dp, de, ti),
+})
+
+
+class QueryDrivenLoose(QueryDriven):
+    """QDC with relaxed probe width and admission gate (sensitivity check).
+
+    Differences from QueryDriven:
+      - PROBE_TOPK 8 -> 50 (each failing query credits demand to many more
+        pool candidates, dramatically increasing eviction pressure).
+      - Admission gate: cval > 0.7 * evict_val (vs strict cval > evict_val),
+        so candidates can dislodge resident docs even at parity.
+    Used to test whether QDC's losses against LRU/GPTCache come from being
+    too conservative on writes vs from a fundamentally weaker signal.
+    """
+    PROBE_TOPK = 50
+    GATE_RATIO = 0.7
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        if not self.kb:
+            return
+        kb_list = sorted(self.kb)
+        kb_idx = np.array([self.d2p[d] for d in kb_list])
+        kb_emb = self.doc_embs[kb_idx]
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
+        q_kb = nqe @ kb_emb.T
+        max_s = np.max(q_kb, axis=1)
+        self._decay()
+        succ = max_s >= SF_HIT_THRESH
+        if succ.any():
+            best_pos = np.argmax(q_kb[succ], axis=1)
+            for pos in best_pos:
+                pi = int(kb_idx[pos])
+                self.serve[pi] = self.serve.get(pi, 0.0) + 1.0
+        fail = max_s < SF_HIT_THRESH
+        n_fail = int(fail.sum())
+        if n_fail == 0:
+            return
+        fqe = nqe[fail]
+        pool_sims = fqe @ self.doc_embs.T
+        probe = min(self.PROBE_TOPK, pool_sims.shape[1])
+        self.maint_retrieval_cost += n_fail * probe
+        kb_pos = set(int(i) for i in kb_idx)
+        for qi in range(n_fail):
+            top = np.argpartition(pool_sims[qi], -probe)[-probe:]
+            sims = pool_sims[qi, top].astype(float)
+            sims = np.maximum(sims, 0.0)
+            tot = sims.sum()
+            if tot <= 0:
+                continue
+            weights = sims / tot
+            for w, pi in zip(weights, top):
+                pi = int(pi)
+                self.demand[pi] = self.demand.get(pi, 0.0) + float(w)
+        cands = sorted(
+            ((v, p) for p, v in self.demand.items() if p not in kb_pos),
+            reverse=True,
+        )
+        if not cands:
+            return
+        evict_val = {int(p): self.serve.get(int(p), 0.0) + self.demand.get(int(p), 0.0)
+                     for p in kb_idx}
+        evictable = sorted(kb_pos, key=lambda p: evict_val[p])
+        n = 0
+        ei = 0
+        for cval, cp in cands:
+            if ei >= len(evictable):
+                break
+            ep = evictable[ei]
+            if cval <= self.GATE_RATIO * evict_val[ep]:
+                break
+            self.kb.discard(self.p2d[ep])
+            self.kb.add(self.p2d[cp])
+            self.serve.pop(ep, None)
+            ei += 1
+            n += 1
+        self.update_cost += n
+
+
+
+
+class TinyLFU(BaseStrategy):
+    """TinyLFU: frequency-sketch admission gate with LFU eviction.
+
+    Core mechanism (Einziger et al., 2017 / Caffeine cache):
+      - Access frequency is tracked per document (exact counts; in production
+        a Count-Min Sketch approximates this over a bounded sliding window).
+      - Admission gate: a candidate document d_new replaces victim d_old
+        only if freq(d_new) >= freq(d_old).
+      - New arriving documents always start at freq=0; once KB documents
+        accumulate frequency they become progressively harder to evict.
+
+    Admission source: random doc-arrival stream (identical to LRU/DocArrival).
+    Eviction order: lowest frequency first (LFU).
+
+    Key contrast with NQM:
+      TinyLFU estimates frequency of OBSERVED (successful) accesses.
+      NQM estimates unmet semantic demand from FAILED queries and projects
+      it into document embedding space—a signal unavailable to any
+      access-history policy.
+
+    In the multi-hop setting, bridge documents are never directly retrieved
+    (the query omits the bridge entity), so their frequency stays at 0.
+    TinyLFU cannot protect them and performs no better than Static.
+    """
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.rng = np.random.default_rng(SEED + 700)
+        self.all_ids = [d['doc_id'] for d in doc_pool]
+        self.freq = {}   # pool_idx -> int (access count)
+
+    def set_kb(self, ids):
+        super().set_kb(ids)
+        for did in self.kb:
+            self.freq[self.d2p[did]] = 0
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        if not self.kb:
+            return
+        kb_list = sorted(self.kb)
+        kb_idx  = np.array([self.d2p[d] for d in kb_list])
+        kb_emb  = self.doc_embs[kb_idx]
+        norms   = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe     = window_query_embs / np.clip(norms, 1e-10, None)
+        q_kb    = nqe @ kb_emb.T
+        max_s   = np.max(q_kb, axis=1)
+
+        # 1) Increment frequency for docs that successfully serve queries.
+        succ = max_s >= SF_HIT_THRESH
+        if succ.any():
+            best_pos = np.argmax(q_kb[succ], axis=1)
+            for pos in best_pos:
+                pi = int(kb_idx[pos])
+                self.freq[pi] = self.freq.get(pi, 0) + 1
+
+        # 2) Process random doc arrivals through the TinyLFU admission gate.
+        arrivals = self.rng.choice(
+            self.all_ids, min(DOC_ARRIVE, len(self.all_ids)), replace=False)
+        self.maint_retrieval_cost += len(arrivals)
+
+        # Eviction queue: ascending frequency (least-frequently-used first).
+        kb_pos_set  = set(int(p) for p in kb_idx)
+        evict_queue = sorted(kb_pos_set, key=lambda p: self.freq.get(p, 0))
+
+        n  = 0
+        ei = 0
+        for did in arrivals:
+            if n >= DOC_ADD_CAP or ei >= len(evict_queue):
+                break
+            if did in self.kb:
+                continue
+            ni         = self.d2p[did]
+            cand_freq  = self.freq.get(ni, 0)        # new arrivals: 0
+            ep         = evict_queue[ei]
+            victim_freq = self.freq.get(ep, 0)
+            # TinyLFU gate: admit only if candidate has >= frequency as victim.
+            if cand_freq >= victim_freq:
+                self.kb.discard(self.p2d[ep])
+                self.kb.add(did)
+                self.freq.pop(ep, None)
+                self.freq[ni] = 0
+                ei += 1
+                n  += 1
+        self.update_cost += n
+
+
+STRATEGY_FACTORIES.update({
+    'QueryDrivenLoose': lambda dp, de, ti: QueryDrivenLoose('QueryDrivenLoose', dp, de, ti),
+})
+
+STRATEGY_FACTORIES.update({
+    'TinyLFU': lambda dp, de, ti: TinyLFU('TinyLFU', dp, de, ti),
+})
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Miss-driven baselines: cache miss → fetch top-1 from cold pool by
+# query embedding → admit → evict per policy.
+# This is the textbook cache pattern that uses query signal directly,
+# but without NQM's cross-query evidence aggregation and admission gate.
+# ═══════════════════════════════════════════════════════════════════
+class MissLRU(BaseStrategy):
+    """Miss-driven LRU: textbook cache.
+
+    Per window, for each query: if best KB hit < SF_HIT_THRESH (miss),
+    fetch the pool's top-1 doc for that query embedding and admit it,
+    evicting the KB doc with smallest last_hit. Successful queries refresh
+    last_hit on the best-hit KB doc. No admission threshold, no aggregation.
+    """
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
         self.last_hit = {}
 
     def set_kb(self, ids):
         super().set_kb(ids)
-        # Initial docs treated as hit at window -1 (oldest)
         for did in self.kb:
             self.last_hit[self.d2p[did]] = -1
 
@@ -462,185 +996,56 @@ class LRU(BaseStrategy):
         nqe = window_query_embs / np.clip(norms, 1e-10, None)
         q_kb = nqe @ kb_emb.T
         max_s = np.max(q_kb, axis=1)
-
-        # Update recency for successfully-hit KB docs
+        # refresh last_hit on successful queries
         succ = max_s >= SF_HIT_THRESH
         if succ.any():
             best_pos = np.argmax(q_kb[succ], axis=1)
             for pos in best_pos:
                 self.last_hit[int(kb_idx[pos])] = window_idx
-
-        # Find failing queries and their best pool candidates
-        fail = max_s < SF_HIT_THRESH
-        n_fail = int(fail.sum())
-        if n_fail == 0:
+        # miss-driven admit
+        fail = ~succ
+        if not fail.any():
             return
-
         fqe = nqe[fail]
         pool_sims = fqe @ self.doc_embs.T
-        tk = min(QD_TOP_K, pool_sims.shape[1])
-        self.maint_retrieval_cost += n_fail * tk
-
-        kb_pos_set = set(int(i) for i in kb_idx)
-        # Accumulate demand per pool doc (simple sum of similarities)
-        demand = {}
-        for qi in range(n_fail):
-            top = np.argpartition(pool_sims[qi], -tk)[-tk:]
-            for pi in top:
-                pi = int(pi)
-                if pi not in kb_pos_set:
-                    demand[pi] = demand.get(pi, 0.0) + float(pool_sims[qi, pi])
-
-        if not demand:
-            return
-
-        # Evict LRU KB docs, admit highest-demand pool docs
-        evictable = sorted(
-            kb_pos_set,
-            key=lambda p: self.last_hit.get(p, -1)  # oldest first
-        )
-        cands = sorted(demand.items(), key=lambda x: -x[1])
-
+        self.maint_retrieval_cost += int(fail.sum())
         n = 0
-        for cp, _ in cands:
-            if n >= len(evictable):
-                break
-            ep = evictable[n]
-            self.kb.discard(self.p2d[ep])
-            self.kb.add(self.p2d[cp])
-            self.last_hit[cp] = window_idx
-            self.last_hit.pop(ep, None)
+        for qi in range(pool_sims.shape[0]):
+            top1 = int(np.argmax(pool_sims[qi]))
+            cand_did = self.p2d[top1]
+            if cand_did in self.kb:
+                self.last_hit[top1] = window_idx
+                continue
+            # evict the LRU KB doc
+            victim = min(self.kb, key=lambda d: self.last_hit.get(self.d2p[d], -1))
+            vp = self.d2p[victim]
+            self.kb.discard(victim)
+            self.last_hit.pop(vp, None)
+            self.kb.add(cand_did)
+            self.last_hit[top1] = window_idx
             n += 1
         self.update_cost += n
 
 
-class GPTCacheStyle(BaseStrategy):
-    """Semantic cache eviction (GPTCache-inspired, direct reviewer request).
+class MissTinyLFU(BaseStrategy):
+    """Miss-driven TinyLFU: textbook cache + frequency-sketch admission.
 
-    Keeps KB docs that are semantically similar to RECENT queries
-    (both hits and misses). Each doc accumulates a decayed "cache score"
-    equal to the max similarity it has seen from any query in recent windows.
-    Eviction: lowest cache score. Admission: highest similarity to failing queries.
-
-    This directly models GPTCache's semantic similarity retention criterion
-    applied to a shared KB rather than a per-user response cache.
+    Like MissLRU, but the admission gate uses access frequency:
+      - access_freq[d]: incremented when d serves a successful query (in KB)
+      - fetch_freq[d]: incremented each time d is fetched as top-1 for a
+        failing query (across all windows, even when not admitted)
+      - admit candidate c (replacing victim e) iff fetch_freq[c] >= access_freq[e]
+      - eviction order: lowest access_freq first
     """
-    CACHE_DECAY = 0.80   # per-window decay on cache scores
-
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        self.cache_score = {}  # pool_idx -> float
+        self.access_freq = {}
+        self.fetch_freq = {}
 
     def set_kb(self, ids):
         super().set_kb(ids)
         for did in self.kb:
-            self.cache_score[self.d2p[did]] = 1.0  # initial prior
-
-    def step(self, window_queries, window_query_embs, window_idx):
-        if not self.kb:
-            return
-        kb_list = sorted(self.kb)
-        kb_idx = np.array([self.d2p[d] for d in kb_list])
-        kb_emb = self.doc_embs[kb_idx]
-        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
-        nqe = window_query_embs / np.clip(norms, 1e-10, None)
-        q_kb = nqe @ kb_emb.T
-
-        # Decay existing cache scores
-        self.cache_score = {p: v * self.CACHE_DECAY
-                            for p, v in self.cache_score.items()
-                            if v * self.CACHE_DECAY > 0.01}
-
-        # Update cache scores for ALL KB docs using max-sim from this window
-        max_sim_per_kb = np.max(q_kb, axis=0)  # shape: (|KB|,)
-        for i, pi in enumerate(kb_idx):
-            pi = int(pi)
-            s = float(max_sim_per_kb[i])
-            self.cache_score[pi] = max(self.cache_score.get(pi, 0.0), s)
-
-        # Check for failing queries
-        max_s = np.max(q_kb, axis=1)
-        fail = max_s < SF_HIT_THRESH
-        n_fail = int(fail.sum())
-        if n_fail == 0:
-            return
-
-        fqe = nqe[fail]
-        pool_sims = fqe @ self.doc_embs.T
-        tk = min(QD_TOP_K, pool_sims.shape[1])
-        self.maint_retrieval_cost += n_fail * tk
-
-        kb_pos_set = set(int(i) for i in kb_idx)
-        # Candidate demand: max sim from failing queries
-        demand = {}
-        for qi in range(n_fail):
-            top = np.argpartition(pool_sims[qi], -tk)[-tk:]
-            for pi in top:
-                pi = int(pi)
-                if pi not in kb_pos_set:
-                    s = float(pool_sims[qi, pi])
-                    demand[pi] = max(demand.get(pi, 0.0), s)
-
-        if not demand:
-            return
-
-        # Evict lowest-cache-score KB docs; admit highest-demand pool docs
-        evictable = sorted(
-            kb_pos_set,
-            key=lambda p: self.cache_score.get(p, 0.0)  # weakest semantic cache first
-        )
-        cands = sorted(demand.items(), key=lambda x: -x[1])
-
-        n = 0
-        for cp, cval in cands:
-            if n >= len(evictable):
-                break
-            ep = evictable[n]
-            # Only swap if candidate is more demanded than evictee's cache score
-            if cval <= self.cache_score.get(ep, 0.0):
-                break
-            self.kb.discard(self.p2d[ep])
-            self.kb.add(self.p2d[cp])
-            self.cache_score[cp] = cval
-            self.cache_score.pop(ep, None)
-            n += 1
-        self.update_cost += n
-
-
-class MemGPTStyle(BaseStrategy):
-    """MemGPT-inspired two-tier importance-weighted memory (direct reviewer request).
-
-    MemGPT maintains a main context (limited) and external context (unlimited),
-    promoting/demoting by importance score. Here:
-      - "main context" = KB (budget-limited)
-      - "external context" = pool (unlimited but slow)
-      - importance(d) = access_freq[d] * decay^(window - last_hit[d])
-
-    A pool doc is promoted to KB when its importance (computed from
-    query-failure signal) exceeds the weakest KB doc's importance.
-    This closely follows MemGPT's recall_memory / archival_memory separation
-    and importance-based retrieval policy.
-    """
-    DECAY = 0.88        # per-window decay on importance
-    FREQ_WEIGHT = 1.0   # weight on access frequency component
-
-    def __init__(self, name, doc_pool, doc_embs, title_to_idx):
-        super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        self.freq = {}       # pool_idx -> cumulative access count
-        self.last_hit = {}   # pool_idx -> last window with a hit
-
-    def _importance(self, pi, window_idx):
-        f = self.freq.get(pi, 0.0)
-        lh = self.last_hit.get(pi, -1)
-        recency = self.DECAY ** max(0, window_idx - lh)
-        return self.FREQ_WEIGHT * f * recency
-
-    def set_kb(self, ids):
-        super().set_kb(ids)
-        for did in self.kb:
-            pi = self.d2p[did]
-            self.freq[pi] = 1.0
-            self.last_hit[pi] = 0
+            self.access_freq[self.d2p[did]] = 0
 
     def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
@@ -652,63 +1057,40 @@ class MemGPTStyle(BaseStrategy):
         nqe = window_query_embs / np.clip(norms, 1e-10, None)
         q_kb = nqe @ kb_emb.T
         max_s = np.max(q_kb, axis=1)
-
-        # Credit frequency + recency for successfully-hit KB docs
         succ = max_s >= SF_HIT_THRESH
         if succ.any():
             best_pos = np.argmax(q_kb[succ], axis=1)
             for pos in best_pos:
-                pi = int(kb_idx[pos])
-                self.freq[pi] = self.freq.get(pi, 0.0) + 1.0
-                self.last_hit[pi] = window_idx
-
-        fail = max_s < SF_HIT_THRESH
-        n_fail = int(fail.sum())
-        if n_fail == 0:
+                self.access_freq[int(kb_idx[pos])] = self.access_freq.get(int(kb_idx[pos]), 0) + 1
+        fail = ~succ
+        if not fail.any():
             return
-
         fqe = nqe[fail]
         pool_sims = fqe @ self.doc_embs.T
-        tk = min(QD_TOP_K, pool_sims.shape[1])
-        self.maint_retrieval_cost += n_fail * tk
-
-        kb_pos_set = set(int(i) for i in kb_idx)
-        # Candidate importance from pool: sim sum (proxy for access frequency
-        # if this doc were in KB)
-        cand_importance = {}
-        for qi in range(n_fail):
-            top = np.argpartition(pool_sims[qi], -tk)[-tk:]
-            for pi in top:
-                pi = int(pi)
-                if pi not in kb_pos_set:
-                    cand_importance[pi] = (
-                        cand_importance.get(pi, 0.0)
-                        + float(pool_sims[qi, pi])
-                    )
-
-        if not cand_importance:
-            return
-
-        # Evict KB doc with lowest importance; promote pool doc with highest
-        evictable = sorted(
-            kb_pos_set,
-            key=lambda p: self._importance(p, window_idx)
-        )
-        cands = sorted(cand_importance.items(), key=lambda x: -x[1])
-
+        self.maint_retrieval_cost += int(fail.sum())
         n = 0
-        for cp, cval in cands:
-            if n >= len(evictable):
-                break
-            ep = evictable[n]
-            if cval <= self._importance(ep, window_idx):
-                break  # remaining cands are weaker
-            self.kb.discard(self.p2d[ep])
-            self.kb.add(self.p2d[cp])
-            # New KB doc inherits sim-sum as initial frequency estimate
-            self.freq[cp] = cval
-            self.last_hit[cp] = window_idx
-            self.freq.pop(ep, None)
-            self.last_hit.pop(ep, None)
+        for qi in range(pool_sims.shape[0]):
+            top1 = int(np.argmax(pool_sims[qi]))
+            self.fetch_freq[top1] = self.fetch_freq.get(top1, 0) + 1
+            cand_did = self.p2d[top1]
+            if cand_did in self.kb:
+                self.access_freq[top1] = self.access_freq.get(top1, 0) + 1
+                continue
+            victim = min(self.kb, key=lambda d: self.access_freq.get(self.d2p[d], 0))
+            vp = self.d2p[victim]
+            cand_f = self.fetch_freq.get(top1, 0)
+            vict_f = self.access_freq.get(vp, 0)
+            if cand_f < vict_f:
+                continue  # TinyLFU gate rejects
+            self.kb.discard(victim)
+            self.access_freq.pop(vp, None)
+            self.kb.add(cand_did)
+            self.access_freq[top1] = 0
             n += 1
         self.update_cost += n
+
+
+STRATEGY_FACTORIES.update({
+    'MissLRU':     lambda dp, de, ti: MissLRU('MissLRU', dp, de, ti),
+    'MissTinyLFU': lambda dp, de, ti: MissTinyLFU('MissTinyLFU', dp, de, ti),
+})

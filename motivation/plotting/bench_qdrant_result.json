@@ -1,0 +1,16 @@
+{
+  "faiss_5k": {
+    "p50_ms": 0.288
+  },
+  "qdrant_rest_new_conn": {
+    "p50_ms": 6.43,
+    "p90_ms": 7.161,
+    "ratio_vs_faiss": 22.4
+  },
+  "qdrant_rest_keepalive": {
+    "p50_ms": 4.04,
+    "p90_ms": 4.292,
+    "ratio_vs_faiss": 14.0
+  },
+  "note": "localhost docker, 5K docs, MiniLM-384, n=200"
+}

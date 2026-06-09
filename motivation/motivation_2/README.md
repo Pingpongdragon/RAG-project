@@ -1,4 +1,27 @@
-# Motivation 2 — Agent-Side Acquisition Gap at 100x50
+# Motivation 2 — Static-Corpus Multi-Hop Diagnosis (Fig. 2)
+
+> 对应 `motivation.tex` 的 **Fig.~\ref{fig:motivation1}** —
+> *"Static-corpus diagnosis of query visibility."*
+> 论证 Intro §*Deconstructing the multi-hop bottleneck: Direct vs. bridge evidence*。
+
+## 这一层在叙事中的角色（L2 / L3）
+
+承接 `motivation_1`（Fig 1）的单跳校准，本层把 static-corpus 多跳拆成两个 regime，
+暴露 query-only 信号的边界，直接 motivate `[METHOD]` 的 entity-chained prefetch：
+
+- **L2 — direct evidence（Fig 2a, HotpotQA）**：query embedding 与目标证据天然对齐，
+  `LRU` 已经不错（44.6%），`SemFlow` 靠 soft demand propagation 再 **+9.7pp → 54.3%**。
+  这是 SemFlow 的 *positive evidence*。
+- **L3 — bridge evidence（Fig 2b, 2WikiMultihopQA）**：证据链 `Q → A → B`，query 只暴露 A，
+  桥接文档 B 在 embedding 空间里离 query 很远 → 纯 query 信号触达不到。
+  `SemFlow` 仅 **+7.3pp**，距 Oracle 仍差 **21pp**。这是引出 `[METHOD]` 的 *negative evidence*。
+
+> 当前 tex Fig 2 直接采用的两个数据文件（被 `../plotting/plot_motivation_v2.py` 的 `fig2()` 读取）：
+> `data/results_hotpotqa_comp_full_gradual_q2k.json`（2a）、
+> `data/results_2wiki_bc_entity_expand_gradual_q2k.json`（2b）→ 输出 `../paper_figs/intro/fig2_*.pdf`。
+> 下方 100×50 三数据集结果是更早的全景诊断证据，仍然保留。
+
+---
 
 Goal: diagnose what remains after Motivation 1 establishes the three conditions under which query-driven persistent KB maintenance works:
 
@@ -51,7 +74,7 @@ The right reading of mo2 is not "single-hop vs multi-hop" and not "QDC is useles
 - OnDemandFetch is not merely a competing baseline. From an agent perspective, it is the online acquisition path that can populate the candidate pool with documents the static pool/QDC did not already expose.
 - The main gap is therefore **fetch-to-write conversion**: after the agent discovers useful evidence on demand, which documents should be admitted into persistent KB for future queries?
 - This reframes the missing capability as trace-aware / evidence-aware admission. Query-only QDC uses the query embedding as the demand signal; agent QDC should also use on-demand retrieval traces, clicked/read docs, successful answer contexts, and repeated failures.
-- Concrete algorithm directions stay in `../DESIGN_DIRECTIONS.md`, not in the main README / tex narrative.
+- Concrete algorithm directions stay in [`../docs/design/DESIGN_DIRECTIONS.md`](../docs/design/DESIGN_DIRECTIONS.md) and [`../docs/design/ALGORITHM_DESIGN.md`](../docs/design/ALGORITHM_DESIGN.md), not in the main README / tex narrative.
 
 ## Reproduce
 

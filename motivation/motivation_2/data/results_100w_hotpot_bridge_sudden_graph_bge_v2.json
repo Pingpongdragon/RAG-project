@@ -2770,7 +2770,7 @@
         "retrieval_cost": 69000,
         "cost": 71600
       },
-      "QueryDrivenCluster": {
+      "QueryDriven": {
         "recall@1_h1": 39.4,
         "recall@1_h2": 4.6,
         "recall@1_h2_first5": 4.2,

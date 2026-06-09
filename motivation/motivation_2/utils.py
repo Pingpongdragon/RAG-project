@@ -35,7 +35,7 @@ def compute_embeddings(doc_pool, queries, tag):
         log.info("Loading cached embeddings")
         return np.load(dc).astype('f'), np.load(qc).astype('f')
     from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer(EMBED_MODEL)
+    model = SentenceTransformer(EMBED_MODEL, device=('cuda' if __import__('torch').cuda.is_available() else 'cpu'))
     log.info(f"Encoding {len(doc_pool)} docs...")
     de = model.encode(
         [f"{d['title']}: {d['text'][:256]}" for d in doc_pool],
@@ -142,6 +142,23 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
         n_h2_windows = half // ws
         for wi in range(n_h2_windows):
             head_pct = 0.97 - wi * 0.94 / max(n_h2_windows - 1, 1)
+            n_h_w = int(ws * head_pct)
+            n_t_w = ws - n_h_w
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
+            rng.shuffle(window)
+            stream.extend(window)
+    elif drift_mode == 'full_gradual':
+        # True gradual: linear ramp across ALL n_windows windows.
+        # head_pct: 0.97 at window 0 → 0.03 at window (n_windows-1)
+        # Window 50 crosses 50/50 so two-zone background at midpoint remains valid.
+        all_heads = [q for q in queries if not q['is_tail']]
+        all_tails = [q for q in queries if q['is_tail']]
+        n_all_windows = n_q // ws
+        stream = []
+        for wi in range(n_all_windows):
+            head_pct = 0.97 - wi * 0.94 / max(n_all_windows - 1, 1)
             n_h_w = int(ws * head_pct)
             n_t_w = ws - n_h_w
             h_idx = rng.integers(0, len(all_heads), n_h_w)

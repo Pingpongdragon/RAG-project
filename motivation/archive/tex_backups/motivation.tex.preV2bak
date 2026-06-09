@@ -1,0 +1,129 @@
+% =========================================================
+% Motivation 叙事注释（RAG cache / hot-tier 版本）
+% =========================================================
+%
+% 核心场景：multi-user agent 的 shared external memory 不是无限大的底层数据库，
+% 而是一个服务在线 query 的 RAG cache / hot-tier semantic cache。
+%   - cold corpus：完整外部知识库，静态存在，例如 Wikipedia / 法律 / 医疗 / 企业文档。
+%   - hot tier：内存里的小型 FAISS / local index，用来满足低延迟检索 SLO。
+%   - 用户需求：multi-user query stream 会随时间发生 topic / demand shift。
+%
+% 关键 framing：
+%   文档不变，需求在变。
+%   我们不是说“存储不够，所以只能存 750/21K 文档”；我们说的是：
+%   为了让 agent 的外部记忆能低延迟服务，需要把完整 corpus 前面的一层 hot cache
+%   保持小而准。问题是 under query drift，哪些文档应该进入/留在 hot tier。
+%
+% 为什么去掉文档时序信息是对的：
+%   本文目标不是新闻爬虫式的 document stream，也不是“新文档按时间到达就进库”。
+%   在 static corpus RAG 中，所有候选文档 day 1 就已经存在；系统通常没有可靠的
+%   creation timestamp、publish time、或者“当前阶段应该用哪个年份文档”的 oracle。
+%   因此所有 admission policy 都不能看到 doc timestamp，只能从 query-side signal 推断
+%   当前 demand 需要哪些文档。若给 LRU/TTL 真实文档时间戳，就变成另一个问题：
+%   document-stream cache；这在新闻 ingestion 场景合理，但在本文的 static-corpus cache
+%   场景下等价于泄露 temporal oracle。
+%
+% LRU/GPTCache/MemGPT-style baseline 如何理解：
+%   它们仍然是 cache / recency / frequency 类 baseline，但只使用访问或 supply-side sample
+%   产生的 recency/frequency 信号，不使用文档 creation time。这个设置回答 reviewer 的问题：
+%   在没有文档时序 metadata 的 shared static corpus 场景下，传统 recency/frequency proxy
+%   能否自己追踪 demand shift？StreamingQA 和 controlled drift 图都显示不能。
+%
+% QD 的定位：
+%   QueryDriven (QD) 是最简单的 query-side admission baseline，不承担最终系统的角色。
+%   它只利用 failed/unsupported queries 去 cold pool 做 ANN probe，然后把反复被 query 需要的
+%   support docs 写入 hot cache。它的意义不是宣称最终 SOTA，而是证明：
+%   在 no-timestamp static corpus 场景下，query-side demand signal 已经足以明显优于 LRU、
+%   GPTCache-style、MemGPT-style 等 recency/frequency cache。
+%
+% 为什么还需要最终框架：
+%   QD 在 single-hop / direct-evidence 场景有效，因为 query embedding 通常指向需要的文档。
+%   但在 multi-hop 场景中，query 只暴露 first-hop entity，真正可复用的 second-hop evidence
+%   需要 entity/path/graph expansion 才能定位；因此 QD 只能作为最简 query-only 基线，无法独立处理 multi-hop。
+%   最终框架应根据 failure 类型路由到：
+%     (1) demand-aware replacement（直接证据）
+%     (2) online cold-tier retrieval（当前 query 即时去冷库补证据）
+%     (3) graph-structured evidence expansion（multi-hop / bridge evidence）
+%   这不是“任何场景都好”的过度承诺，而是把不同 failure regime 拆开处理。
+%
+% 图叙事：
+%   Fig. 0：真实 multi-user demand 会漂移（WildChat / Google Trends）。
+%   Fig. 1：StreamingQA 真实 14 年新闻 QA，cold corpus 静态、无 doc timestamp、hot KB=750；
+%           最简单 QD 明显好于 LRU/GPTCache/MemGPT-style，说明 query-side signal 有用。
+%   Fig. 2：controlled drift；single-hop 中 QD 有效，multi-hop 中 QD 不够；
+%           panel C 展示 quality/latency/update trade-off，说明 QD 是低在线延迟的 cache admission 基线。
+% =========================================================
+
+\section{Introduction}
+
+Long-running LLM agents combine agent-local memory with shared external knowledge. Prior work has made inside-trial and cross-trial memories increasingly adaptive~\cite{zhang2024survey,hu2025memory,du2026memory,packer2023memgpt,zhong2023memorybank,weng2025amem}, but the shared RAG-backed knowledge store is still often managed as static infrastructure. We focus on this shared external memory: a long-lived corpus-backed KB whose hot tier must stay aligned with changing multi-user demand.
+
+The first question is whether this phenomenon is real enough to matter in deployed RAG systems. User-generated queries naturally change over time based on events in the world and the evolution of language~\cite{yang2025murr}; in multi-user LLM reasoning systems, this appears as a shift in the topic distribution of incoming queries, not merely as a change in the facts available to the system. We term this phenomenon \emph{query distribution drift}. Figure~\ref{fig:motivation0} provides direct empirical evidence in the LLM setting: monthly topic mixtures in WildChat-1M real ChatGPT conversation logs shift measurably from month to month (panel~a), and Google Trends interest for five LLM application domains reweights substantially over a multi-year horizon (panel~b). Together with prior findings on long-tail and temporally shifting RAG demand~\cite{vu2023freshllms,zhou2025livesearchbench,peng2025uaeval4rag}, these signals establish that persistent shared-KB maintenance is a demand-alignment problem rather than only a freshness problem.
+
+The next question is what this looks like on a realistic retrieval workload. We therefore begin with StreamingQA~\cite{liska2022streamingqa}, a 14-year real-news QA benchmark whose five historical eras induce piecewise demand drift over a static cold corpus. Figure~\ref{fig:streamingqa} shows the core empirical pattern: once demand crosses into a new era, frozen and recency-/frequency-based hot-tier policies quickly collapse, because they keep the wrong documents hot. QueryDriven already helps by reacting to repeated support failures in the query stream, but OnDemand only recovers the highest recall by paying a much larger cold-tier latency cost, which we make explicit in Figure~\ref{fig:motivation1}c.
+
+Why do the standard baselines fail here? Existing dynamic RAG work does not use the query stream itself as the update trigger: temporal RAG refreshes facts when the world state changes~\cite{hoh2025,dynaquest2025}; index-level methods ingest new documents~\cite{guo2024lightrag,guti2025hipporag2}; editing and pruning methods reshape an existing corpus~\cite{chen2024recipe,zero-rag2025}; caching methods favor recent or frequent access~\cite{comrag2025,jin2024ragcache,wu2025streamingrag}; and log-driven refresh waits for delayed answerability or evaluation feedback~\cite{peng2025uaeval4rag,es2023ragas}. In our static-corpus cache setting, these recency/frequency baselines do not receive document creation timestamps; their time signal comes only from cache access or supply-side samples. A timestamp-aware TTL/LRU policy is appropriate for document-stream ingestion, but would be a temporal oracle for a pre-existing corpus. Without that oracle, these methods systematically mistime updates under demand drift.
+
+If supply-side and temporal heuristics miss the shift, the next question is whether the query stream alone is already enough. To isolate that point, we study a deliberately minimal admission rule, \emph{QueryDriven} (QD), which accumulates demand over candidate support documents retrieved from the cold corpus and rewrites the hot cache only when repeated query failures justify the write. Even this simple no-timestamp rule substantially outperforms LRU, GPTCache-style, and MemGPT-style caches in direct-evidence settings (Figures~\ref{fig:streamingqa} and~\ref{fig:motivation1}a), where the query usually names or strongly implies the needed evidence. However, in complex multi-hop settings (Figure~\ref{fig:motivation1}b), QD brings only small gains: document replacement driven by query embeddings is the wrong abstraction when answering requires connecting entities across a reasoning path, because the query may mention only the first-hop entity while the reusable evidence lies in second-hop documents. Crucially, enriching the admission policy with document arrival timestamps---as in log-driven or frequency-decay caches---does not close this gap: the missing signal is not \emph{when} a document arrived but \emph{which} second-hop document completes the reasoning chain, a relationship that neither query embeddings nor temporal metadata expose. This single-hop/multi-hop gap motivates a drift-aware cache management framework that, instead of always replacing documents from the query embedding, detects when query-only replacement is failing and falls back to either online cold-tier retrieval or entity-level evidence expansion; the concrete mechanism is developed in Section~\ref{sec:method}.
+
+Beyond the real StreamingQA study, we also include controlled abrupt- and gradual-shift benchmarks to diagnose where a minimal query-driven rule works and where it breaks. We defer the construction details of these controlled datasets to the experimental setup; in the introduction, we use them only to expose the empirical pattern in Figure~\ref{fig:motivation1}.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{motivation/paper_figs/intro/fig0_intro_user_query_topic_drift.pdf}
+    \caption{\textbf{Multi-user demand drifts even when the underlying corpus does not.} \textit{(a)} Monthly topic proportions in 32.5K WildChat-1M English ChatGPT conversations~\cite{zhao2024wildchat} (2023.04--2024.04): the dominant topic shifts substantially across months without any change to world facts or to the underlying knowledge corpus. \textit{(b)} Google Trends weekly search interest for five LLM application domains (2022--2026): user attention reweights from chatbot-centric toward coding, education, and agent use cases. These signals motivate \emph{query distribution drift}---demand alignment, not freshness---as the first-class challenge for the hot tier of a multi-user agent's shared external memory.}
+    \label{fig:motivation0}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{motivation/paper_figs/intro/fig1_intro_streamingqa_static_cache.pdf}
+    \caption{\textbf{Hot-tier admission policies on a real 14-year news stream (StreamingQA~\cite{liska2022streamingqa}, ICML 2022).} Cold corpus = 29{,}819 documents (\emph{static}, all pre-existing on day 1, no creation timestamps exposed); hot KB = 750 slots ($\sim$40$\times$ admission ratio). Five historical eras (R1--R5, 2008--2020) drive piecewise topic shift over the 50 windows. Frozen and recency-/frequency-based caches (Static, LRU, GPTCache-, MemGPT-style) all collapse to near-zero Recall@5 once demand crosses into a new era; even the simple QueryDriven rule is markedly better without using document timestamps, while on-demand fetch remains the high-quality but higher-latency upper adaptive route (Fig.~\ref{fig:motivation1}c).}
+    \label{fig:streamingqa}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{motivation/paper_figs/intro/fig2_intro_qd_diagnostic.pdf}
+    \caption{\textbf{The single-hop/multi-hop gap that motivates our framework.} \textit{(a)} Single-hop direct-evidence (HotpotQA-comp, pool=200K, KB=21K): query-side failures are strong admission signals, so the minimal QueryDriven rule already outperforms supply-side and recency/frequency cache baselines without document timestamps. \textit{(b)} Multi-hop (2WikiMultihopQA, pool=67K, KB=6.7K): a query-only replacement rule is insufficient once useful evidence must be reached through bridge entities. \textit{(c)} Hot-tier cost/quality trade-off: QueryDriven serves from the hot tier (1.6\,ms/query) while OnDemand obtains higher recall by querying the cold tier online (7.1\,ms/query); these two operating points bracket the design space that the proposed framework must navigate.}
+    \label{fig:motivation1}
+\end{figure*}
+
+\textbf{In summary, our main contributions are as follows:}
+\begin{itemize}[leftmargin=*,itemsep=2pt,topsep=2pt]
+    \item We formalize \emph{query distribution drift} as a distinct challenge for the hot-tier admission problem in two-tier RAG systems, including the shared knowledge modules of RAG-augmented agent deployments.
+    \item We characterize when a minimal query-driven admission rule is
+    sufficient and when it is not: query-side failures are strong admission
+    signals in direct-evidence settings, but query-only replacement breaks down
+    in multi-hop settings where useful evidence is reached through bridge entities.
+    \item We show that static, supply-side, and recency/frequency cache strategies
+    fail to infer demand drift when document timestamps are unavailable, causing
+    mistimed or wasted hot-tier updates.
+    \item We develop a drift-aware cache management framework that detects when
+    the hot tier is misaligned with incoming demand and routes the response
+    between hot-tier replacement, online cold-tier retrieval, and entity-level
+    evidence expansion (Section~\ref{sec:method}).
+\end{itemize}
+
+
+\section{Proposed Framework}\label{sec:method}
+
+We instantiate the drift-aware cache management framework as three coupled components: a drift detector that decides \emph{when} the hot tier is misaligned with incoming demand, a failure classifier that decides \emph{how} the misalignment should be repaired, and three repair routines that map to the empirical regimes identified in Figures~\ref{fig:streamingqa} and~\ref{fig:motivation1}.
+
+\paragraph{Drift detector.}
+Let $H_t \subset \mathcal{C}$ denote the set of documents in the hot tier at the start of window $t$, where $\mathcal{C}$ is the static cold corpus. We summarise both the incoming queries and the hot tier in the same dense embedding space used for retrieval. Let $\bar{\mathbf{q}}_t$ be the mean of the query embeddings in window $t$ and $\bar{\mathbf{h}}_t$ the mean of the document embeddings in $H_t$. We track the misalignment $d_t = 1 - \cos(\bar{\mathbf{q}}_t, \bar{\mathbf{h}}_t)$ together with the fraction $u_t$ of queries in window $t$ whose top-$K$ retrieval from $H_t$ contains no document above a similarity threshold $\tau$ (an unsupported-query rate). Drift is declared in window $t$ when either $d_t > \mu_d + k \sigma_d$ or $u_t > \mu_u + k \sigma_u$, where $(\mu, \sigma)$ are the running mean and standard deviation maintained over a sliding history of $W$ past windows and $k \in \{2,3\}$ is a sensitivity hyper-parameter. This detector requires no document timestamps and adds only $O(1)$ statistics per window beyond the retrieval already performed for serving.
+
+\paragraph{Failure classifier.}
+Each unsupported query $q$ that triggers the drift detector is routed by inspecting its first-hop retrieval against $H_t$. Let $s_1, s_2, \dots$ be the top-$K$ similarity scores. We distinguish three failure regimes:
+(i) \textbf{R1 — direct-evidence miss in the cold corpus}: $s_1$ is high but the supporting documents identified by query expansion lie in $\mathcal{C} \setminus H_t$, i.e., the hot tier is missing a document that already exists in the cold corpus;
+(ii) \textbf{R2 — cold-only evidence}: every $s_i < \tau$, indicating that the relevant evidence is unlikely to be present in the hot tier and must be served by the cold tier on this query;
+(iii) \textbf{R3 — multi-hop bridge}: $s_1$ is high and $H_t$ does contain the first-hop evidence, but the query requires a second document that is not retrievable from the query embedding alone.
+
+\paragraph{Repair routines.}
+We assign one repair routine to each regime:
+(R1) \emph{Demand-aware replacement} extends the QueryDriven baseline introduced in the introduction: failed queries accumulate evidence over support documents retrieved from $\mathcal{C}$, and once the cumulative demand for a candidate document $d \in \mathcal{C} \setminus H_t$ exceeds an admission threshold, $d$ is admitted into $H_t$ in place of the hot-tier document with the lowest recent demand. The hot-tier serving latency is preserved because admission updates are amortised over many queries.
+(R2) \emph{Online cold-tier retrieval} bypasses $H_t$ for the current query and serves directly from $\mathcal{C}$, as in OnDemand. The cost/quality trade-off in Figure~\ref{fig:motivation1}c shows this is the right operating point when no nearby hot-tier evidence exists; persisting the fetched documents into $H_t$ is then governed by the same demand counter as R1.
+(R3) \emph{Entity-level evidence expansion} addresses the multi-hop case in Figure~\ref{fig:motivation1}b. We pre-compute a one-time inverted index from cold-corpus entities to documents using lightweight named-entity extraction over $\mathcal{C}$. At query time, after retrieving the first-hop document $d_1$ from $H_t$, we extract its entities and use the inverted index to fetch a small candidate set of second-hop documents from $\mathcal{C}$. These candidates are then re-ranked against the original query and the highest-scoring ones are admitted into $H_t$ under the same R1 demand counter. This recovers the bridge evidence that a query-only embedding cannot reach, while the entity index itself is built once offline.
+
+\paragraph{System cost accounting.}
+Beyond Recall@5, we report (a) the per-window detector cost (mean-vector and threshold update), (b) the per-admission update cost (one ANN insert and one re-encode), and (c) the per-query serving latency, separated into hot-tier serving time and the additional cold-tier round-trip when the failure classifier routes to R2 or R3. These are the same axes shown in Figure~\ref{fig:motivation1}c, so the framework can be placed on the same cost/quality plane as QueryDriven and OnDemand and reported as a single trade-off curve.

@@ -14,6 +14,7 @@ This is functionally a single-hop retrieval task while sharing the exact same
 pool, embeddings, and evaluator as Motivation 2 — perfect controlled
 comparison.
 """
+import os
 from pathlib import Path
 
 PROJECT_DIR = Path('/home/jyliu/RAG-project')
@@ -23,8 +24,9 @@ FIG_DIR     = THIS_DIR / 'figures'
 CACHE_DIR   = THIS_DIR / 'cache'
 
 SEED = 42
-EMBED_MODEL   = 'all-MiniLM-L6-v2'
-SF_HIT_THRESH = 0.55
+EMBED_MODEL   = os.environ.get('EMBED_MODEL', 'all-MiniLM-L6-v2')
+SF_HIT_THRESH = float(os.environ.get('SF_HIT_THRESH', '0.55'))
+BGE_QUERY_PREFIX = 'Represent this sentence for searching relevant passages: '
 K_LIST = [1, 5, 10, 20]
 
 _DEFAULT_CFG = {
@@ -61,21 +63,35 @@ DATASET_CONFIGS = {
     # n_windows=20, window_size=5 (query repetition via sampling).
     # kb_head_mult=1.5: keeps KB at ~30% of pool, similar to FEVER setting.
     'trec_covid': dict(_DEFAULT_CFG, n_source=None, n_windows=20,
-                       window_size=5, kb_head_mult=1.5, n_clusters=4),
+                       window_size=5, kb_head_mult=0.2, n_clusters=4),
+    # TREC-COVID temporal: real per-round drift across CORD-19 rounds 1-5.
+    # H1=R1+R2 (origin/transmission/epidemiology), H2=R3+R4+R5 (treatments/
+    # comorbidities/vaccines). n_clusters/top_head unused for temporal mode.
+    'trec_covid_temporal': dict(_DEFAULT_CFG, n_source=None, n_windows=20,
+                                window_size=5, kb_head_mult=0.3, n_clusters=4),
+    # StreamingQA temporal (Liška et al., ICML 2022): 14-year real news QA
+    # stream from FT/WSJ/etc., year-anchored into rounds R1-R5
+    # (2008-10, 2011-13, 2014-16, 2017-18, 2019-20). pool ~50K via context
+    # dedup + distractors; KB sized so cold/hot ratio ~8x.
+    'streamingqa_temporal': dict(_DEFAULT_CFG, n_source=None, n_windows=50,
+                                 window_size=100, kb_head_mult=1.6,
+                                 n_clusters=4),
 }
 
 WRITE_CAP        = 200
 PROBE_TOPK       = 50
+FETCH_TOP_K      = PROBE_TOPK   # OnDemandFetch per-query pool fetch width
 
 DOC_ARRIVE       = 80
 DOC_ADD_CAP      = WRITE_CAP
-EDIT_BATCH       = WRITE_CAP
+EDIT_BATCH       = 8           # ~2% of KB(400) per window; fairer RECIPE modeling
 QD_TOP_K         = PROBE_TOPK
 QD_REPLACE_CAP   = WRITE_CAP
 STRATEGY_ORDER = [
     'Static', 'DocArrival', 'KnowledgeEdit',
-    'LRU', 'GPTCacheStyle', 'MemGPTStyle',
-    'QueryDrivenCluster', 'Oracle',
+    'LRU', 'GPTCacheStyle', 'MemGPTStyle', 'TemporalAware', 'RecencyTTL',
+    'OnDemandFetch',
+    'QueryDriven', 'QueryDrivenLoose', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':             'Static (no update)',
@@ -84,7 +100,11 @@ STRATEGY_LABELS = {
     'LRU':                'LRU Cache',
     'GPTCacheStyle':      'Semantic Cache (GPTCache)',
     'MemGPTStyle':        'Importance-Weighted (MemGPT)',
-    'QueryDrivenCluster': 'Query-Driven (ours)',
+    'TemporalAware':      'Temporal-Aware Cache (Temporal-RAG)',
+    'RecencyTTL':         'Recency-TTL (oracle timestamp)',
+    'OnDemandFetch':      'On-Demand Fetch (per-query)',
+    'QueryDriven': 'Query-Driven (ours)',
+    'QueryDrivenLoose':   'Query-Driven Loose (probe=50)',
     'Oracle':             'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -94,7 +114,10 @@ STRATEGY_STYLES = {
     'LRU':                {'color': '#D97706', 'marker': 'v',  'ls': '-.'},
     'GPTCacheStyle':      {'color': '#0891B2', 'marker': 'P',  'ls': ':'},
     'MemGPTStyle':        {'color': '#BE185D', 'marker': 'X',  'ls': '-.'},
-    'QueryDrivenCluster': {'color': '#10B981', 'marker': 'D',  'ls': '-'},
+    'TemporalAware':      {'color': '#2563EB', 'marker': 'o',  'ls': '-.'},
+    'RecencyTTL':         {'color': '#1E40AF', 'marker': 'h',  'ls': ':'},
+    'QueryDriven': {'color': '#10B981', 'marker': 'D',  'ls': '-'},
+    'QueryDrivenLoose':   {'color': '#047857', 'marker': 'X',  'ls': '-'},
     'Oracle':             {'color': '#DC2626', 'marker': '*',  'ls': '--'},
 }
 

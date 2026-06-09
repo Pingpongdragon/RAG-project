@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Post-drift Recall@5 H2 (\%): QueryDriven vs fair cache baselines. Cache baselines use passive doc-arrival only (no failure probing). \textbf{Bold}=best non-oracle. $\Delta$=QDC minus best cache.}
+\label{tab:h2_comparison}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Dataset & Drift & Static & LRU & GPTCache & MemGPT & \textbf{QDC (ours)} & $\Delta$ \\
+\midrule
+  HotpotQA-comp & Sudden & 16.9 & 16.6 & \textbf{17.8} & 16.5 & 35.0 & +17.2 \\
+  HotpotQA-comp & Gradual & 35.2 & 31.8 & \textbf{35.8} & 31.7 & 48.6 & +12.8 \\
+  \midrule
+  2wiki-simple & Sudden & 4.5 & \textbf{6.1} & 5.7 & 5.9 & 6.8 & +0.7 \\
+  2wiki-simple & Gradual & 29.2 & 25.0 & \textbf{26.8} & 25.1 & 28.2 & +1.4 \\
+  \midrule
+  FEVER & Sudden & 35.5 & 13.2 & \textbf{27.0} & 16.1 & 58.9 & +31.9 \\
+  FEVER & Gradual & 64.6 & 21.7 & \textbf{49.9} & 25.0 & 70.1 & +20.2 \\
+  \midrule
+  TriviaQA-Wiki & Sudden & 5.9 & 6.2 & \textbf{6.7} & 5.5 & 22.3 & +15.6 \\
+  TriviaQA-Wiki & Gradual & 34.1 & 6.7 & \textbf{21.5} & 8.2 & 30.2 & +8.7 \\
+\bottomrule
+\end{tabular}
+\end{table*}

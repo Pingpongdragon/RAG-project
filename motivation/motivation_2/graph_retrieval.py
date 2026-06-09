@@ -489,3 +489,81 @@ def recall_at_k_graph(graph, queries, doc_pool, k_list,
             r = len(gold & set(retrieved_titles[:k])) / len(gold)
             recalls[k].append(r)
     return {k: float(np.mean(v)) if v else 0.0 for k, v in recalls.items()}
+
+
+
+def recall_at_k_entity_expand(pool_ents, kb_ids, queries, d2p, doc_embs,
+                               title_to_idx, query_embs,
+                               step1_k=3, k_list=(5,)):
+    """2-step entity expansion recall@K.
+
+    Faster and more effective than PPR for bridge queries.
+    Step 1: dense top-step1_k from KB (by embedding similarity)
+    Step 2: collect entities from step1 docs -> find KB neighbors sharing those entities
+    Ranking: step1 docs by embedding sim; step2 docs by entity overlap count
+    """
+    import numpy as _np
+    from collections import defaultdict
+    if not kb_ids:
+        return {k: 0.0 for k in k_list}
+
+    # Build doc_id -> title from title_to_idx + d2p
+    idx2did = {v: k for k, v in d2p.items()}
+    d2t = {}
+    for title, idx in title_to_idx.items():
+        did = idx2did.get(idx)
+        if did is not None:
+            d2t[did] = title
+
+    kb_list = sorted(kb_ids)
+    kb_idx = _np.array([d2p[d] for d in kb_list], dtype=_np.int64)
+
+    # Build entity -> set of KB doc_ids index
+    ent_to_kb = defaultdict(set)
+    for did in kb_ids:
+        for ent in pool_ents.get(did, []):
+            ent_to_kb[ent].add(did)
+
+    max_k = max(k_list)
+    recalls = {k: [] for k in k_list}
+    for q in queries:
+        gold = set(q.get('sf_titles', []))
+        if not gold:
+            continue
+        qe = query_embs[q['qidx']]
+        sims = doc_embs[kb_idx] @ qe
+
+        # Step 1: dense top step1_k
+        s1_n = min(step1_k, len(kb_list))
+        s1_idx = _np.argsort(-sims)[:s1_n]
+        s1_docs = [kb_list[i] for i in s1_idx]
+        s1_set = set(s1_docs)
+
+        # Step 2: entity expansion - score by overlap count
+        s1_ents = set()
+        for did in s1_docs:
+            s1_ents.update(pool_ents.get(did, []))
+
+        s2_overlap = defaultdict(int)
+        for ent in s1_ents:
+            for nb in ent_to_kb.get(ent, set()):
+                if nb not in s1_set:
+                    s2_overlap[nb] += 1
+
+        # Ranked list: step1 by embedding sim, then step2 by entity overlap count
+        step2_sorted = sorted(s2_overlap.items(), key=lambda x: -x[1])
+        all_ranked = s1_docs + [d for d, _ in step2_sorted]
+
+        seen, ranked_titles = set(), []
+        for did in all_ranked:
+            if did not in seen:
+                seen.add(did)
+                ranked_titles.append(d2t.get(did))
+            if len(ranked_titles) >= max_k:
+                break
+
+        for k in k_list:
+            r = len(gold & set(ranked_titles[:k])) / len(gold)
+            recalls[k].append(r)
+
+    return {k: float(_np.mean(v)) if v else 0.0 for k, v in recalls.items()}

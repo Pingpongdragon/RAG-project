@@ -8,7 +8,8 @@ described in the motivation section of our paper.
 import hashlib
 import numpy as np
 from collections import Counter
-from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log)
+from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log,
+                    BGE_QUERY_PREFIX)
 
 
 # ═══════════════════════════════════════════════════
@@ -18,16 +19,16 @@ from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log)
 def compute_embeddings(doc_pool, queries, tag):
     """Encode documents and queries with Sentence-BERT, with disk caching.
 
-    Uses all-MiniLM-L6-v2 (384-dim, L2-normalised).  Cache key is derived
+    Uses SentenceTransformers models (L2-normalised).  Cache key is derived
     from pool size + query count + tag to avoid stale reads.
 
     Returns:
-        doc_embs:   np.ndarray (N_docs, 384)  float32
-        query_embs: np.ndarray (N_queries, 384) float32
+        doc_embs:   np.ndarray (N_docs, dim)  float32
+        query_embs: np.ndarray (N_queries, dim) float32
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     key = hashlib.md5(
-        f"{len(doc_pool)}_{len(queries)}_{tag}_v11".encode()
+        f"{len(doc_pool)}_{len(queries)}_{tag}_{EMBED_MODEL}_v12".encode()
     ).hexdigest()[:12]
     dc = CACHE_DIR / f'de_{key}.npy'
     qc = CACHE_DIR / f'qe_{key}.npy'
@@ -35,14 +36,15 @@ def compute_embeddings(doc_pool, queries, tag):
         log.info("Loading cached embeddings")
         return np.load(dc).astype('f'), np.load(qc).astype('f')
     from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer(EMBED_MODEL, device='cpu')
+    model = SentenceTransformer(EMBED_MODEL, device=('cuda' if __import__('torch').cuda.is_available() else 'cpu'))
     log.info(f"Encoding {len(doc_pool)} docs...")
     de = model.encode(
         [f"{d['title']}: {d['text'][:256]}" for d in doc_pool],
         batch_size=256, show_progress_bar=True, normalize_embeddings=True)
     log.info(f"Encoding {len(queries)} queries...")
+    qprefix = BGE_QUERY_PREFIX if 'bge' in EMBED_MODEL.lower() else ''
     qe = model.encode(
-        [q['question'] for q in queries],
+        [qprefix + q['question'] for q in queries],
         batch_size=256, show_progress_bar=True, normalize_embeddings=True)
     np.save(dc, de)
     np.save(qc, qe)
@@ -75,6 +77,58 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
         centroids: KMeans cluster centres (n_clusters, 384)
         head_set:  set of cluster IDs treated as head topics
     """
+    # Temporal mode: queries carry a pre-set 'round' (1..R) from the loader.
+    # We build a NATURAL time-ordered stream: round_i occupies windows
+    #   [ i * n_windows / R  :  (i+1) * n_windows / R ).
+    # No artificial midpoint flip; the drift is whatever the data carries.
+    if drift_mode == 'temporal':
+        for i, q in enumerate(queries):
+            q['qidx'] = i
+            q.setdefault('cluster', q.get('round', 0))
+        nw = cfg['n_windows']
+        ws = cfg['window_size']
+        n_q = nw * ws
+        rng = np.random.default_rng(SEED + 10)
+        rounds = sorted({q.get('round', 0) for q in queries})
+        R = len(rounds)
+        # mark is_tail simply by "second half of the round list" — kept for
+        # backward-compatibility with consumers; storyline no longer relies
+        # on a binary head/tail split.
+        tail_cut = 1          # R1-only priming: only first era is 'head'
+        tail_round_set = set(rounds[tail_cut:])
+        for q in queries:
+            q['is_tail'] = q.get('round', 0) in tail_round_set
+        # round->window assignment
+        win_to_round = []
+        for wi in range(nw):
+            ri = min(R - 1, (wi * R) // nw)
+            win_to_round.append(rounds[ri])
+        stream = []
+        round_pools = {r: [q for q in queries if q.get('round', 0) == r]
+                       for r in rounds}
+        for wi in range(nw):
+            r = win_to_round[wi]
+            pool = round_pools.get(r) or queries
+            idx = rng.integers(0, len(pool), ws)
+            stream.extend([pool[i] for i in idx])
+        stream = stream[:n_q]
+        per_round_counts = {r: sum(1 for q in stream if q.get('round', 0) == r)
+                             for r in rounds}
+        log.info(f"[temporal] Natural stream: {len(stream)} queries, "
+                 f"{R} rounds, windows/round={nw//R}, per_round={per_round_counts}, "
+                 f"win_to_round[0,25,50,75,99]="
+                 f"{[win_to_round[i] for i in (0, min(25,nw-1), min(50,nw-1), min(75,nw-1), nw-1)]}")
+        # Centroids: per-round mean of query embeddings (used by KB init).
+        max_r = max(rounds) + 1
+        centroids = np.zeros((max_r, query_embs.shape[1]), dtype=query_embs.dtype)
+        for r in rounds:
+            qmask = np.array([q.get('round', 0) == r for q in queries])
+            if qmask.any():
+                centroids[r] = query_embs[qmask].mean(axis=0)
+        # head_set kept as the first half of rounds for any downstream consumer.
+        head_set = set(rounds[:tail_cut]) if tail_cut > 0 else set(rounds[:1])
+        return stream, centroids, head_set
+
     from sklearn.cluster import KMeans
     nc = cfg['n_clusters']
     th = cfg['top_head']
@@ -162,6 +216,50 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
         n_h2_windows = half // ws
         for _ in range(n_h2_windows):
             n_h_w = int(ws * 0.03)
+            n_t_w = ws - n_h_w
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
+            rng.shuffle(window)
+            stream.extend(window)
+    elif drift_mode == 'temporal':
+        # Real temporal drift: queries already carry pre-set 'round' and
+        # 'is_tail' fields (e.g. cord19 TREC rounds 1-5). Build the stream
+        # by replicating queries within each round to fill window quotas.
+        # Round 1+2 occupy H1 (head); rounds 3+4+5 occupy H2 (tail).
+        rounds = sorted({q.get('round', 0) for q in queries})
+        head_rounds = [r for r in rounds if r <= 2]
+        tail_rounds = [r for r in rounds if r >= 3]
+        n_h1_windows = half // ws
+        n_h2_windows = half // ws
+        stream = []
+        # H1: split evenly across head rounds
+        for wi in range(n_h1_windows):
+            r = head_rounds[(wi * len(head_rounds)) // max(1, n_h1_windows)]
+            pool = [q for q in queries if q.get('round', 0) == r]
+            if not pool:
+                pool = [q for q in queries if not q['is_tail']]
+            idx = rng.integers(0, len(pool), ws)
+            stream.extend([pool[i] for i in idx])
+        # H2: split evenly across tail rounds
+        for wi in range(n_h2_windows):
+            r = tail_rounds[(wi * len(tail_rounds)) // max(1, n_h2_windows)]
+            pool = [q for q in queries if q.get('round', 0) == r]
+            if not pool:
+                pool = [q for q in queries if q['is_tail']]
+            idx = rng.integers(0, len(pool), ws)
+            stream.extend([pool[i] for i in idx])
+    elif drift_mode == 'full_gradual':
+        # True gradual: linear ramp across ALL n_windows windows.
+        # head_pct: 0.97 at window 0 → 0.03 at window (n_windows-1)
+        # Window 50 crosses 50/50 so two-zone background at midpoint remains valid.
+        all_heads = [q for q in queries if not q['is_tail']]
+        all_tails = [q for q in queries if q['is_tail']]
+        n_all_windows = n_q // ws
+        stream = []
+        for wi in range(n_all_windows):
+            head_pct = 0.97 - wi * 0.94 / max(n_all_windows - 1, 1)
+            n_h_w = int(ws * head_pct)
             n_t_w = ws - n_h_w
             h_idx = rng.integers(0, len(all_heads), n_h_w)
             t_idx = rng.integers(0, len(all_tails), n_t_w)

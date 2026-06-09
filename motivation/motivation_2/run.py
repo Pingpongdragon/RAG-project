@@ -7,7 +7,7 @@ Usage:
   python run.py --n-windows 50 --window-size 50 --expanded
   python run.py --drift gradual
   python run.py --datasets hotpotqa musique
-  python run.py --strategies Static QueryDrivenCluster Oracle
+  python run.py --strategies Static QueryDriven Oracle
 
 Supports:
   - Configurable window count and size
@@ -29,11 +29,13 @@ from utils import (compute_embeddings, cluster_and_build_stream,
                    focus_pool, head_biased_init_kb, recall_at_k)
 from llm_expand import augment_with_llm, batch_decompose
 from graph_retrieval import (extract_pool_entities, extract_query_entities,
-                             LightGraphRAG, recall_at_k_graph)
+                             LightGraphRAG, recall_at_k_graph,
+                             recall_at_k_entity_expand)
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 loader_name=None, n_source=None, q_type=None, kb_budget_override=None,
+                n_stream_queries=None,
                 retrieval='dense', llm_expand=False):
     """Run one dataset experiment.
 
@@ -63,6 +65,13 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     else:
         doc_pool, queries, title_to_idx = loader()
 
+
+    # Optional: cap query count for stream (decouple from pool size)
+    if n_stream_queries and len(queries) > n_stream_queries:
+        import random as _r
+        _rng = _r.Random(42)
+        queries = _rng.sample(queries, n_stream_queries)
+        log.info(f'[{ds_name}] capped stream queries -> {len(queries)} (pool stays {len(doc_pool)})')
     # ── Embeddings ──
     tag = f'{ds_name}_{nw}w_{ws}s' + (f'_{q_type}' if q_type else '')
     doc_embs, query_embs = compute_embeddings(doc_pool, queries, tag=tag)
@@ -97,8 +106,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     # ── Optional graph-retrieval setup (no-LLM HippoRAG/LightRAG analogue) ──
     pool_ents = query_ents = None
     strategy_graphs = {}
-    if retrieval == 'graph':
+    if retrieval in ('graph', 'entity_expand'):
         pool_ents = extract_pool_entities(doc_pool, tag=tag)
+    if retrieval == 'graph':
         query_ents = extract_query_entities(queries, tag=tag)
         if llm_expand:
             import spacy
@@ -140,6 +150,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         if hasattr(st, '_stream'):
             st._stream = stream
             st._query_embs = query_embs
+        # Inject pool entities into entity-aware strategies (e.g. RoutedCache R3).
+        # Build lazily here if not already extracted for graph/entity_expand.
+        if hasattr(st, '_pool_ents'):
+            if pool_ents is None:
+                pool_ents = extract_pool_entities(doc_pool, tag=tag)
+            st._pool_ents = pool_ents
         strategies[name] = st
         if retrieval == 'graph':
             g = LightGraphRAG(pool_ents, query_ents,
@@ -181,6 +197,10 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 r = recall_at_k_graph(
                     strategy_graphs[name], wq, doc_pool, K_LIST,
                     sub_embs=sub_query_embs, sub_ents=sub_query_ents)
+            elif retrieval == 'entity_expand':
+                r = recall_at_k_entity_expand(
+                    pool_ents, effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs,
+                    step1_k=3, k_list=K_LIST)
             else:
                 r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
             for k in K_LIST:
@@ -311,13 +331,13 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDrivenCluster': ('#10B981', '-',  'D'),
+        'QueryDriven': ('#10B981', '-',  'D'),
         'Oracle':           ('#D62728', '-',  None),
     }
 
     fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
                              sharex=True, squeeze=False)
-    emphasis = {'Oracle', 'QueryDrivenCluster'}
+    emphasis = {'Oracle', 'QueryDriven'}
 
     for row, ds in enumerate(datasets):
         res = all_results[ds]
@@ -336,7 +356,7 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
                     continue
                 color, ls, marker = palette.get(name, ('gray', '-', None))
                 values = res['summary'][name][series_key]
-                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDrivenCluster' else 1.4)
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
                 alpha = 1.0 if name in emphasis else 0.85
                 zorder = 5 if name in emphasis else 3
                 mark_every = max(1, nw // 12)
@@ -387,12 +407,14 @@ def main():
     parser = argparse.ArgumentParser(description='Motivation experiment runner')
     parser.add_argument('--n-windows', type=int, default=None)
     parser.add_argument('--window-size', type=int, default=None)
-    parser.add_argument('--drift', choices=['sudden', 'gradual'], default='sudden')
+    parser.add_argument('--drift', choices=['sudden', 'gradual', 'full_gradual'], default='sudden')
     parser.add_argument('--expanded', action='store_true',
                         help='Use expanded loaders for 2Wiki and MuSiQue')
     parser.add_argument('--q-type', default=None,
                         help='Filter to question type (hotpot: bridge|comparison; 2wiki: compositional|comparison|bridge_comparison|inference)')
     parser.add_argument('--n-source', type=int, default=3500)
+    parser.add_argument('--n-stream-queries', type=int, default=None,
+                        help='Cap stream-query count (decouple from pool size). None=use all.')
     parser.add_argument('--llm-expand', action='store_true',
                         help='Use LLM sub-question decomposition to augment retrieval')
     parser.add_argument('--datasets', nargs='+',
@@ -403,7 +425,7 @@ def main():
                         help='Output JSON filename (auto-generated if omitted)')
     parser.add_argument('--kb-budget', type=int, default=None,
                         help='Force absolute KB budget (overrides kb_head_mult formula)')
-    parser.add_argument('--retrieval', choices=['dense', 'graph'], default='dense',
+    parser.add_argument('--retrieval', choices=['dense', 'graph', 'entity_expand'], default='dense',
                         help='Recall@K backend: dense cosine (default) or PPR over passage-entity graph')
     args = parser.parse_args()
 
@@ -436,6 +458,7 @@ def main():
             n_source=n_source,
             q_type=args.q_type,
             kb_budget_override=args.kb_budget,
+            n_stream_queries=args.n_stream_queries,
             retrieval=args.retrieval,
             llm_expand=args.llm_expand)
 

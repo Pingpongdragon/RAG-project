@@ -1,0 +1,245 @@
+# Motivation Storyline v2 (LOCKED — 2026-05-19)
+
+> 锁定版。**算法最终名字未定**，文中先用占位符 `[METHOD]`；动笔成稿前再统一替换。
+
+---
+
+## 0. 一句话主线 (logline)
+
+> 在 multi-user agent 的 shared RAG 知识层中，**真实部署里 query demand 的漂移比文档新鲜度更主导失败模式**；现有 SOTA cache / 动态 RAG / 时序 RAG 即便给它们最强的元信号（包括 timestamp）也无法跟上 —— 因为 timestamp 只回答"哪些 doc 是新的"，回答不了"hot tier 该装哪几篇"；最简单的 query-side demand 信号已经显著好于它们，但在 multi-hop 上仍有结构性缺口，因此我们提出 `[METHOD]` —— 一个按失效类型路由修复的 drift-aware cache 框架。
+
+---
+
+## 1. 五幕结构（Intro 的五个 paragraph 对应五个节拍）
+
+### § 1.1  场景设定 — Multi-user agent 的 shared external memory
+**[论证目标]** 把读者带入"被研究的物体"是 hot-tier KB cache，不是 agent 私有记忆，不是 corpus 训练更新。
+
+**节拍内容**
+- Long-running agents = agent-local memory + shared external knowledge
+- 前者已被大量研究（MemGPT, MemoryBank, A-Mem, surveys）→ 一句带过 + 集中引用
+- 我们聚焦后者：long-lived corpus-backed KB，对延迟敏感 → **two-tier 部署**：
+  - cold corpus（完整，~10⁵–10⁷ docs）
+  - hot tier（内存内 ANN，~10³–10⁴ docs，SLO < 10ms）
+- Hot tier 必须持续对齐当下需求，否则 SLO 内拿不到证据
+
+这是一个非常精妙且具备强系统（Systems for AI）视角的切入点！
+
+针对你的问题：“Hot tier 必须持续对齐当下需求，否则 SLO 内拿不到证据，这个是有文献支撑的吗？”
+
+答案是：有非常直接的底层逻辑支撑，但你需要跨领域（Vector DB 架构 + 语义缓存 + 智能体推理轨迹）来组合引用。
+目前学界和工业界虽然还没有用你完全一样的术语（Agent Hot
+Tier）来描述，但在 分层向量检索（Tiered Vector Search）、LLM 语义缓存（Semantic Caching）
+和 动态工作集（Dynamic Working Set） 领域，有大量现成的文献可以支撑你的 claim。
+
+你可以从以下三个维度来构建你的文献支撑体系：
+
+1. 从系统架构角度：为什么必须 Two-tier，且热数据错位会导致严重的延迟惩罚（Latency Penalty）？
+
+这个维度的文献主要来自数据库和检索系统（SIGMOD, VLDB, NeurIPS）。
+
+  - 支撑点：全量 ANN（如 10^7 级别）全放内存成本极高，放磁盘/云存储则延迟极高。如果内存中的 Hot
+    Tier（Cache）无法命中（即没有对齐当下需求），系统将被迫去 Cold
+    Tier（SSD或云端）进行高昂的 I/O 乃至网络请求，绝对无法满足 <10ms 的 SLO。
+  - 代表性文献：
+      - DiskANN (NeurIPS 2019) 和 SPANN
+        (NeurIPS 2021)：这两篇是分层向量检索的开山/经典之作。它们明确指出内存大小的限制，并证明了如果内存中缓存的拓扑节点（即你的
+        Hot Tier）不包含当前 query 所需的局部图，跨层读取会带来巨大的延迟抖动。
+      - 工业界白皮书：Pinecone 的 Serverless 架构论文，或者 Milvus
+        的分层架构。它们都有明确的数据表明：缓存未命中（Cache
+        Miss）会导致检索延迟从几毫秒飙升到几百毫秒甚至秒级。
+
+2. 从 LLM/Agent 需求角度：为什么说需求是“动态漂移”的（Concept Drift / Task Shift）？
+
+你要证明“持续对齐当下需求”的必要性，就需要引用文献说明 Agent 在 Long-running 过程中，其关注点（Attention / Query
+intent）是会随着任务阶段不断转移的。
+
+  - 支撑点：Agent 的多轮对话或多步推理（如 ReAct 轨迹）具有强烈的时间局部性（Temporal
+    Locality）和任务相关性（Task-driven locality）。一旦 Agent 进入下一个子任务，原本在
+    Hot tier 里的上下文就失效了。如果不做持续的“动态换出换入（Swapping/Prefetching）”，命中率会骤降。
+  - 代表性文献：
+      - GPTCache / Semantic Caching 相关的论文（如 GPTCache: An Open-Source Semantic
+        Cache for LLM Applications）：证明了用户的 Query 意图会变，如果 Cache 不能基于语义或当前 Context
+        动态更新，Cache Hit Rate 会极低。
+      - Streaming RAG / Real-time RAG：这类文献探讨了在连续生成或推理流中，外部知识的需求是随着当前生成的
+        Token/Thought 实时变化的。
+      - Agent 轨迹分析论文：你可以引用关于 Multi-hop QA 或 Agent 规划（Planning）的论文，说明每一步 Act 产生的
+        Observe 都需要不同领域的 Knowledge，这就要求背后的 KB 必须能够预判或快速切换其 Hot Tier 的内容。
+
+3. 从 SLO 敏感性角度：为什么拿不到证据会致命？
+
+  - 支撑点：对于 Long-running agents，特别是需要实时交互或高速内部循环（Inner loop of
+    Thought-Action）的智能体，RAG 的延迟会被放大。如果每次检索都触发 Cold Tier
+    I/O（>100ms），会导致整个智能体推理链条卡顿。
+  - 代表性文献：
+      - 可以引用 vLLM / Prompt Cache 等关于 LLM 推理延迟的系统论文（如 Efficient Memory Management
+        for Large Language Model Serving with PagedAttention），引申说明：就像 KV Cache
+        缺失会导致重新 Prefill 带来高延迟一样，Agent 外部知识的 Hot Tier 缺失也会打断推理的流水线（Pipeline
+        stall）。
+
+💡 论文写作建议：如何把这段话写得非常“Solid”？
+
+我建议你在论文的 Introduction 或 Motivation 部分，使用计算机系统中经典的**“工作集（Working
+Set）”**理论来包装你的概念，逻辑链条如下：
+
+"Unlike local memory, accessing a massive external KB (10^5-10^7 docs)
+introduces prohibitive latency. To meet the strict Service Level Objectives (SLO
+<10ms) of interactive agents, a two-tier architecture is essential: a large cold
+corpus combined with a small, in-memory hot tier (10^3-10^4 docs) (引用 DiskANN,
+SPANN 等).
+
+However, long-running agents exhibit dynamic task-shifting and context drift
+over time. Literature in semantic caching and multi-hop reasoning shows that an
+agent's required 'working set' of knowledge changes rapidly (引用 GPTCache,
+Agent轨迹论文).
+
+Therefore, the hot tier cannot be static; it must continuously align with the
+agent's shifting intents. Failing to dynamically synchronize the hot tier
+results in severe cache misses, forcing expensive cold-tier fetches that violate
+the strict SLOs required for fluid agentic reasoning (引用 LLM/RAG latency 相关研究).
+In this paper, we propose..."
+
+总结： 你提出的点非常符合目前 AI Systems 的前沿趋势。虽然目前可能没有一篇论文直接写了 "Long-running agent's hot tier
+vector DB must dynamically align"，但这正是你的贡献所在！ 你用系统工程的经典理论（缓存一致性/命中率、分层存储），完美解释了
+Agent RAG 场景下的一个痛点。你只需要把相关的系统底层文献组合起来作为你的理论基石即可。
+
+
+**[支撑材料]** zhang2024survey / hu2025memory / packer2023memgpt 等；无图
+
+---
+
+### § 1.2  为什么 query distribution drift 重要且现实
+**[论证目标]** 证明"demand alignment, not freshness"是真问题。
+
+**节拍内容**
+- multi-user query 分布会漂——不是世界变了，而是**用户关注点在变**
+- 很多场景文档根本不变（法律条文、API 文档、医疗指南、企业知识库）→ freshness 轴不动；demand 一直在动
+- 两类经验证据：
+  - (a) **WildChat-1M** 月级 topic mixture 漂（corpus 不变, demand 漂）
+  - (b) **Google Trends** 5 个 LLM 应用域多年权重重排
+- 在 RAG/agent 部署里 = hot tier 必须跟 demand 走
+
+**[支撑材料]** Fig.0 — 已有，复用
+引用：zhao2024wildchat, yang2025murr, vu2023freshllms, zhou2025livesearchbench, peng2025uaeval4rag
+
+**[关键 framing]**：corpus 不变时 freshness ≠ demand alignment，二者正交
+
+---
+
+### § 1.3  现有 SOTA 为什么不够 — 按"信号来源"四类系统性拆解
+**[论证目标]** 把现有工作按信号来源排成 4 类，逐类证明对不上 demand drift。
+
+**四类信号 × 各自盲点**
+
+| 信号类 | 代表工作 | 它在追什么 | demand drift 下为什么不够 |
+|---|---|---|---|
+| (A) 文档时间戳 | Temporal RAG, DynaQuest, FreshLLM | 文档新鲜度 / 世界状态 | **核心论点（强化版）**：timestamp 只回答"哪些 doc 是新的"，回答不了"hot tier 该装哪几篇"。即便所有 doc 都同时进 corpus（StreamingQA 一个 round 内有几千篇 2015 年文章），cache 仍要在同 timestamp 的大量候选里选 K 个 —— **timestamp 在 candidate 之间没有区分度**。RecencyTTL bar 给出实证。 |
+| (B) 索引增长 | LightRAG, HippoRAG2 | 新 doc 入图增量 merge | append-only 无淘汰；KB budget 一满退化成 Static → LightRAGStyle bar 实证 |
+| (C) Cache 访问统计 | GPTCache, MemGPT-style, LRU, RAGCache | 访问 recency/frequency/KV prefix | 访问统计是 lagging indicator（漂完才反映）；RAGCache 主体是 KV prefix reuse，非 doc-level admission |
+| (D) Log / 评估反馈 | UAEval4RAG, RAGAS | "答错了"的 label | 是 evaluator 不是 policy；没规定收到 label 后该换哪个 doc —— QD 来补这个位 |
+
+
+
+**[支撑材料]** Fig.1 — StreamingQA，**8 条策略**（现有 6 + 新增 RecencyTTL + LightRAGStyle）
+**→ 需要实现两个新 baseline 并重跑**
+
+**[关键 framing 调整]（堵评审 #1）**
+- 旧版"these methods do not receive document creation timestamps"→ **删掉**
+- 改为："timestamp answers \emph{which docs are recent}, not \emph{which docs the hot tier should hold}. When many docs share the same era (e.g., thousands of 2015 articles in a StreamingQA round), the timestamp signal has no resolution within the candidate set; Recency-TTL **with oracle timestamps** confirms this empirically (Fig.~1)."
+
+---
+
+### § 1.4  最简单的 query-side rule (QD) 已经显著更好 — 现象 + 原因
+
+第一步：给最简算法起一个具有学术感的“正式名字”
+在论文里，不要叫它“最简 QD”，建议叫它：
+"First-order Demand-aware Cache (FDC)" 或 "Naive Query-side Momentum (NQM)"。
+叙事逻辑：
+介绍这个算法作为你核心贡献的“直觉性前驱（Intuitive Precursor）”。
+它打破了“只看文档时间（Doc-side）”的旧思维。
+它引入了“衰减计数器（Decay Counters）”来捕捉“查询端需求（Query-side Demand）”。
+用途： 它是为了证明“查询信号比时间信号更本质”而存在的实验性对照组
+**[论证目标]** "问题不在 baseline 选得弱，而在信号来源选错了"。QD = 反例存在性证明。
+
+**节拍内容**
+- QD：用 failed queries 的 embedding 去 cold pool probe；命中阈值入 hot。无 timestamp / 无 KV / 无 access freq。
+- Fig.1 现象：QD R@5 >> 所有 (A)(B)(C) baseline（写实际数字）
+- **原因三条**：
+  1. demand drift 中"哪些 doc 该热"的信号，**最早最准的载体是失败 query 本身** —— embedding 同时编码主题 + 时代 + 实体
+  2. recency/frequency = **lagging indicator**；query embedding = **leading indicator**
+  3. timestamp = **粗粒度**（同 era 几千篇）；query embedding = **细粒度**（直接指向那一篇）
+- **明确声明**：QD is intentionally minimal; an existence proof, not the proposed method.
+
+**[支撑材料]** Fig.1 同图完成 §1.3 + §1.4
+
+---
+
+### § 1.5  但 QD 不够 — 引出 `[METHOD]` 必要性的两个缺口
+**[论证目标]** 不展开细节，但把"为什么需要 `[METHOD]`"的两条理由放清楚。
+
+**两个结构性缺陷**
+
+1. **Multi-hop 缺口**：query 只暴露 first-hop 实体，第二跳证据 query embedding 检索不到 → QD 永远换不进去 → 需要 entity/graph 层 evidence expansion（`[METHOD]` 的 R3 模块）
+2. **Trigger 缺口**：QD 永远"答错了才换"，缺乏何时启/停的元控制；漂剧烈时换得慢，平稳时换得多 → 需要 drift detector（`[METHOD]` 的 R0 模块）
+
+**[支撑材料]** Fig.2 — 2-panel 诊断图：
+- panel a: HotpotQA-comp (single-hop) — QD 大幅赢
+- panel b: 2Wiki-bridge (multi-hop) — QD 仅小幅赢甚至打平 → 缺口暴露
+- **不放 cost/quality 子图**（移到 experiments）
+- caption 明写"controlled diagnostic, not main result; main result in §X"
+
+**[关键 framing 调整]（堵评审 #5）**：主动承认 "StreamingQA 偏单跳事实问答；为诊断 multi-hop regime 才用 HotpotQA/2Wiki 受控漂移 —— diagnostic only, main result 见 §X"
+
+---
+
+### § 1.6  因此提出 `[METHOD]` — elevator pitch + 三个 contribution
+**[论证目标]** `[METHOD]` 一段总览 + 明确 contribution。
+
+**一段总览**
+- `[METHOD]` = 候选 QARC / DARC / RoCa；上稿前定
+- 三个 coupled 组件：drift detector + failure classifier + 3 repair routines (R1/R2/R3)
+- 价值主张："Where QD blindly replaces, `[METHOD]` detects when to act and routes to the right repair."
+
+**三个 contribution**
+1. **Problem formalization**：query distribution drift 形式化为 two-tier RAG hot-tier admission；区分 freshness vs demand alignment
+2. **Empirical characterization**：4 个信号族系统性 audit（Fig.1）+ QD 缺口诊断（Fig.2）
+3. **`[METHOD]` framework**：drift-aware routed cache，按失效类型分别处理；quality/latency/update cost 三轴 dominate QD 和 OnDemand 的连线
+
+---
+
+## 2. 图–文映射（LOCKED）
+
+| Fig | 数据 | 论证哪一幕 | 状态 |
+|---|---|---|---|
+| **Fig.0** | WildChat + Google Trends | §1.2 demand drift 真实存在 | ✅ 已有，复用 |
+| **Fig.1** | StreamingQA, 8 strategies | §1.3 四类信号都不够 + §1.4 QD 胜出 | 🔄 重跑（加 RecencyTTL + LightRAGStyle）|
+| **Fig.2** | HotpotQA-comp + 2Wiki-bridge | §1.5 QD 缺口诊断 | 🔄 重画（去掉 cost/quality，2-panel 诊断）|
+| ~~Fig.2c~~ | cost/quality | 移到 experiments | ➡️ 移走 |
+
+---
+
+## 3. 执行顺序
+
+```
+[1] 锁定故事线 ✅ (本文档 v2)
+[2] 实现 RecencyTTL (uses doc.year, era-windowed eviction)
+[3] 实现 LightRAGStyle (append-until-full, then static)
+[4] 跑 streamingqa_temporal 8 策略
+[5] 跑 hotpotqa_comparison 多策略
+[6] 跑 2wiki_bridge_comparison 多策略
+[7] 重画 Fig.1 (8 strategies) + Fig.2 (2-panel)
+[8] 重写 Introduction (五幕)
+[9] 清理多余文件 (BAK + 旧 json + 旧 fig)
+─── Tier B (待后) ───
+[10] 实现 `[METHOD]` + main result
+[11] 完整论文
+```
+
+---
+
+## 4. 已决定
+
+- **算法名字**：占位 `[METHOD]`，所有 tex/图/表都用 placeholder，最后统一替换
+- **Fig.1 保留 OnDemand**（作为 quality 天花板参照）
+- **QD 保留名字**，第一次出现强调"minimal diagnostic baseline, not proposed method"
+- **timestamp 论证升级**：核心反驳从"corpus static 没有 timestamp"改为"timestamp 在 candidate 内没有区分度 —— 同 era 几千篇文章，时间戳无法选 K 个"

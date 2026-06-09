@@ -30,7 +30,8 @@ from utils import (compute_embeddings, cluster_and_build_stream,
 
 
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
-                loader_name=None, n_source=None, kb_budget_override=None):
+                loader_name=None, n_source=None, kb_budget_override=None,
+                n_stream_queries=None):
     t0 = time.time()
     nw = cfg['n_windows']; ws = cfg['window_size']
     lname = loader_name or ds_name
@@ -40,6 +41,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     else:
         loader = LOADERS[lname]
         doc_pool, queries, title_to_idx = loader(n_source=n_source or cfg.get('n_source'))
+
+    if n_stream_queries and len(queries) > n_stream_queries:
+        import random as _r
+        _rng = _r.Random(42)
+        queries = _rng.sample(queries, n_stream_queries)
+        log.info(f'[{ds_name}] capped stream queries -> {len(queries)} (pool stays {len(doc_pool)})')
 
     tag = f'{ds_name}_{nw}w_{ws}s'
     doc_embs, query_embs = compute_embeddings(doc_pool, queries, tag=tag)
@@ -75,8 +82,11 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
 
     results = {n: {f'recall@{k}': [] for k in K_LIST} for n in strategies_to_run}
     cov_per_window = {n: [] for n in strategies_to_run}
-    step_latency  = {n: [] for n in strategies_to_run}   # seconds per window
-    step_overhead = {n: [] for n in strategies_to_run}   # KB replacements per window
+    prepare_latency = {n: [] for n in strategies_to_run}  # online pre-retrieval work
+    retrieval_latency = {n: [] for n in strategies_to_run}  # KB search / ranking work
+    query_latency = {n: [] for n in strategies_to_run}      # prepare + retrieval
+    step_latency  = {n: [] for n in strategies_to_run}      # background update seconds/window
+    step_overhead = {n: [] for n in strategies_to_run}      # KB replacements per window
 
     for w in range(nw):
         wq = stream[w * ws:(w + 1) * ws]
@@ -93,12 +103,19 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                     window_gold_did.add(doc_pool[title_to_idx[t]]['doc_id'])
         for name in strategies_to_run:
             s = strategies[name]
+            _t0_prepare = time.perf_counter()
             s.prepare_window(wq, wqe, w)
+            _prepare_dt = time.perf_counter() - _t0_prepare
+            prepare_latency[name].append(_prepare_dt)
             if name == 'Oracle':
                 s.step(wq, wqe, w)
             effective_kb = (s.get_effective_kb(wq, wqe)
                             if hasattr(s, 'get_effective_kb') else s.kb)
+            _t0_retrieval = time.perf_counter()
             r = recall_at_k(effective_kb, wq, d2p, doc_embs, title_to_idx, query_embs)
+            _retrieval_dt = time.perf_counter() - _t0_retrieval
+            retrieval_latency[name].append(_retrieval_dt)
+            query_latency[name].append(_prepare_dt + _retrieval_dt)
             for k in K_LIST:
                 results[name][f'recall@{k}'].append(r[k])
             cov = len(effective_kb & window_gold_did) / max(1, len(window_gold_did))
@@ -142,8 +159,20 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         s['serve_retrieval_cost']  = strategies[name].serve_retrieval_cost
         s['retrieval_cost']        = strategies[name].retrieval_cost
         s['cost']                  = strategies[name].cost
+        s['prepare_latency_mean_ms'] = round(float(np.mean(prepare_latency[name])) * 1000, 3) if prepare_latency[name] else 0.0
+        s['prepare_latency_per_window'] = [round(x * 1000, 3) for x in prepare_latency[name]]
+        s['retrieval_latency_mean_ms'] = round(float(np.mean(retrieval_latency[name])) * 1000, 3) if retrieval_latency[name] else 0.0
+        s['retrieval_latency_per_window'] = [round(x * 1000, 3) for x in retrieval_latency[name]]
+        # per-window total (prepare+retrieval for ws queries at once)
+        s['query_latency_mean_ms'] = round(float(np.mean(query_latency[name])) * 1000, 3) if query_latency[name] else 0.0
+        s['query_latency_per_window'] = [round(x * 1000, 3) for x in query_latency[name]]
+        # per-query: window total / ws (recall_at_k loops sequentially)
+        s['per_query_latency_mean_ms'] = round(s['query_latency_mean_ms'] / ws, 4) if ws else 0.0
+        s['per_query_latency_per_window'] = [round(x / ws, 4) for x in s['query_latency_per_window']]
         s['step_latency_mean_ms']  = round(float(np.mean(step_latency[name])) * 1000, 3) if step_latency[name] else 0.0
         s['step_latency_per_window'] = [round(x * 1000, 3) for x in step_latency[name]]
+        s['update_latency_mean_ms'] = s['step_latency_mean_ms']
+        s['update_latency_per_window'] = s['step_latency_per_window']
         s['step_overhead_mean']    = round(float(np.mean(step_overhead[name])), 2) if step_overhead[name] else 0.0
         s['step_overhead_per_window'] = step_overhead[name]
         summary[name] = s
@@ -173,7 +202,7 @@ def print_summary(all_results, strategies_to_run):
         hdr = (f"{'Strategy':>18s} |"
                f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
                f" {'R@5 H1':>6s} {'R@5 H2':>6s} |"
-               f" {'Writes':>6s} {'OvhW':>6s} {'Lat(ms)':>8s}")
+               f" {'Writes':>6s} {'OvhW':>6s} {'Qlat':>8s} {'Ulat':>8s}")
         print(hdr)
         print("-" * len(hdr))
         for name in strategies_to_run:
@@ -187,7 +216,8 @@ def print_summary(all_results, strategies_to_run):
                   f" {r1:>5.1f}% {r2:>5.1f}% |"
                   f" {s['update_cost']:>6d}"
                   f" {s.get('step_overhead_mean', 0):>6.1f}"
-                  f" {s.get('step_latency_mean_ms', 0):>8.1f}")
+                  f" {s.get('query_latency_mean_ms', 0):>8.1f}"
+                  f" {s.get('update_latency_mean_ms', 0):>8.1f}")
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
@@ -208,16 +238,17 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'RandomFIFO':       ('#9467BD', '-.', '^'),
         'DocArrival':       ('#8C564B', ':',  's'),
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
+        'TemporalAware':    ('#2563EB', '-.', 'o'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDrivenCluster': ('#10B981', '-',  'D'),
+        'QueryDriven': ('#10B981', '-',  'D'),
         'Oracle':           ('#D62728', '-',  None),
     }
     datasets = list(all_results.keys())
     n_ds = max(len(datasets), 1)
     fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
                              sharex=True, squeeze=False)
-    emphasis = {'Oracle', 'QueryDrivenCluster'}
+    emphasis = {'Oracle', 'QueryDriven'}
 
     for row, ds in enumerate(datasets):
         res = all_results[ds]; cfg = res['config']
@@ -233,7 +264,7 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
                     continue
                 color, ls, marker = palette.get(name, ('gray', '-', None))
                 values = res['summary'][name][series_key]
-                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDrivenCluster' else 1.4)
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
                 alpha = 1.0 if name in emphasis else 0.85
                 zorder = 5 if name in emphasis else 3
                 mark_every = max(1, nw // 12)
@@ -282,11 +313,13 @@ def main():
     parser = argparse.ArgumentParser(description='Motivation 1 (single-hop) runner')
     parser.add_argument('--n-windows', type=int, default=50)
     parser.add_argument('--window-size', type=int, default=50)
-    parser.add_argument('--drift', choices=['sudden', 'gradual', 'hybrid'], default='sudden')
+    parser.add_argument('--drift', choices=['sudden', 'gradual', 'hybrid', 'temporal', 'full_gradual'], default='sudden')
     parser.add_argument('--freeze-until', type=int, default=0,
                         help='Freeze non-Oracle updates for windows [0, freeze_until). '
                              'Use 50 with --n-windows 100 for freeze-before-drift ablation.')
     parser.add_argument('--n-source', type=int, default=None)
+    parser.add_argument('--n-stream-queries', type=int, default=None,
+                        help='Cap stream-query count (decouple from pool size). None=use all.')
     parser.add_argument('--datasets', nargs='+', default=['squad'])
     parser.add_argument('--strategies', nargs='+', default=None)
     parser.add_argument('--output', type=str, default=None)
@@ -305,7 +338,8 @@ def main():
             ds, base_cfg, strategies_to_run,
             drift_mode=args.drift,
             loader_name=ds, n_source=args.n_source,
-            kb_budget_override=args.kb_budget)
+            kb_budget_override=args.kb_budget,
+            n_stream_queries=args.n_stream_queries)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     freeze_tag = f'_freeze{args.freeze_until}' if args.freeze_until > 0 else ''

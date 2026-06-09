@@ -1,0 +1,382 @@
+{
+  "trec_covid": {
+    "dataset": "trec_covid",
+    "config": {
+      "kb_budget": 2050,
+      "pool_size": 25000,
+      "n_windows": 1,
+      "window_size": 50,
+      "n_queries_available": 50,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "Static": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 0,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 0,
+        "step_latency_mean_ms": 0.01,
+        "step_latency_per_window": [
+          0.01
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0
+        ]
+      },
+      "DocArrival": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 32,
+        "maint_retrieval_cost": 80,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 80,
+        "cost": 112,
+        "step_latency_mean_ms": 1574.154,
+        "step_latency_per_window": [
+          1574.154
+        ],
+        "step_overhead_mean": 32.0,
+        "step_overhead_per_window": [
+          32
+        ]
+      },
+      "KnowledgeEdit": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 200,
+        "maint_retrieval_cost": 200,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 200,
+        "cost": 400,
+        "step_latency_mean_ms": 3785.062,
+        "step_latency_per_window": [
+          3785.062
+        ],
+        "step_overhead_mean": 200.0,
+        "step_overhead_per_window": [
+          200
+        ]
+      },
+      "LRU": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 73,
+        "maint_retrieval_cost": 80,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 80,
+        "cost": 153,
+        "step_latency_mean_ms": 1784.539,
+        "step_latency_per_window": [
+          1784.539
+        ],
+        "step_overhead_mean": 73.0,
+        "step_overhead_per_window": [
+          73
+        ]
+      },
+      "GPTCacheStyle": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 69,
+        "maint_retrieval_cost": 80,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 80,
+        "cost": 149,
+        "step_latency_mean_ms": 1756.488,
+        "step_latency_per_window": [
+          1756.488
+        ],
+        "step_overhead_mean": 69.0,
+        "step_overhead_per_window": [
+          69
+        ]
+      },
+      "MemGPTStyle": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 74,
+        "maint_retrieval_cost": 80,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 80,
+        "cost": 154,
+        "step_latency_mean_ms": 1714.722,
+        "step_latency_per_window": [
+          1714.722
+        ],
+        "step_overhead_mean": 74.0,
+        "step_overhead_per_window": [
+          74
+        ]
+      },
+      "QueryDriven": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 0,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 0,
+        "step_latency_mean_ms": 75.707,
+        "step_latency_per_window": [
+          75.707
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0
+        ]
+      },
+      "QueryDrivenLoose": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.4,
+        "recall@1_per_window": [
+          0.36
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.4,
+        "recall@5_per_window": [
+          1.44
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.7,
+        "recall@10_per_window": [
+          2.67
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 4.4,
+        "recall@20_per_window": [
+          4.42
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 0,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 0,
+        "step_latency_mean_ms": 99.692,
+        "step_latency_per_window": [
+          99.692
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0
+        ]
+      },
+      "Oracle": {
+        "recall@1_h1": NaN,
+        "recall@1_h2": 0.3,
+        "recall@1_per_window": [
+          0.34
+        ],
+        "recall@5_h1": NaN,
+        "recall@5_h2": 1.3,
+        "recall@5_per_window": [
+          1.32
+        ],
+        "recall@10_h1": NaN,
+        "recall@10_h2": 2.3,
+        "recall@10_per_window": [
+          2.27
+        ],
+        "recall@20_h1": NaN,
+        "recall@20_h2": 3.7,
+        "recall@20_per_window": [
+          3.66
+        ],
+        "cov_h1": NaN,
+        "cov_h2": 17.8,
+        "cov_per_window": [
+          17.78
+        ],
+        "update_cost": 859,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 859,
+        "step_latency_mean_ms": 0.0,
+        "step_latency_per_window": [
+          0.0
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0
+        ]
+      }
+    },
+    "elapsed": 54.6
+  }
+}

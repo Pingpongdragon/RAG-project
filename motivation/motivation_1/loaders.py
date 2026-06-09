@@ -9,6 +9,8 @@ Each loader returns (doc_pool, queries, title_to_idx) where each query has
 {qidx, question, answer, sf_titles, ctx_titles, qtype}.
 """
 import json
+import os
+import random
 from pathlib import Path
 
 import numpy as np
@@ -168,6 +170,38 @@ def load_hotpotqa_comparison(n_source=4000):
         {'doc_id': f'hc{i:06d}', 'title': t, 'text': title_to_text[t]}
         for i, t in enumerate(titles)
     ]
+
+    # Optional POOL_TARGET injection: realistic hot-tier cache deployment
+    # ratio (cold tier is orders of magnitude larger than hot KB). When the
+    # POOL_TARGET env is set and exceeds the comparison-only pool, inject
+    # distractor passages drawn from non-comparison HotpotQA items.
+    pool_target = int(os.environ.get('POOL_TARGET', '0'))
+    if pool_target and pool_target > len(doc_pool):
+        need = pool_target - len(doc_pool)
+        distractor = {}
+        for it in items:
+            if it.get('type') == 'comparison':
+                continue
+            ctx = it.get('context', {})
+            for t, sents in zip(ctx.get('title', []),
+                                ctx.get('sentences', [])):
+                if t in title_to_idx or t in distractor:
+                    continue
+                distractor[t] = ' '.join(sents)
+            if len(distractor) >= int(need * 1.05):
+                break
+        keys = sorted(distractor.keys())
+        rng = random.Random(SEED + 7919)
+        rng.shuffle(keys)
+        keys = keys[:need]
+        for t in keys:
+            i = len(doc_pool)
+            title_to_idx[t] = i
+            doc_pool.append({'doc_id': f'hd{i:06d}', 'title': t,
+                             'text': distractor[t]})
+        log.info(f'[hotpot-comp] POOL_TARGET={pool_target}: injected '
+                 f'{len(keys):,} distractor docs (final pool={len(doc_pool):,})')
+
     log.info(f"[hotpot-comp] pool={len(doc_pool):,} queries={len(queries):,}")
     return doc_pool, queries, title_to_idx
 
@@ -388,6 +422,30 @@ def load_triviaqa_wikipedia(n_source=6000):
         {'doc_id': f'tq{i:06d}', 'title': t, 'text': title_to_text[t]}
         for i, t in enumerate(titles)
     ]
+    # Optional POOL_TARGET: inject BEIR Wikipedia distractors for hot-tier framing
+    _tq_pool_target = int(os.environ.get('POOL_TARGET', '0'))
+    if _tq_pool_target > len(doc_pool):
+        needed = _tq_pool_target - len(doc_pool)
+        log.info(f'[triviaqa-wiki] POOL_TARGET={_tq_pool_target}: loading BEIR, targeting {needed:,} distractors...')
+        try:
+            from datasets import load_dataset as _hf_load
+            _beir = _hf_load('BeIR/fever', 'corpus', split='corpus', trust_remote_code=True)
+            _existing_lower = {d['title'].lower().strip() for d in doc_pool}
+            _buf = []
+            for _ex in _beir:
+                if not _ex['text']: continue
+                _t = _ex['title'].strip()
+                if _t.lower().strip() not in _existing_lower:
+                    _buf.append({'doc_id': f'tqd{len(_buf):06d}', 'title': _t, 'text': _ex['text'][:2000]})
+                    if len(_buf) >= int(needed * 1.05): break
+            _rng = random.Random(SEED + 9173)
+            _rng.shuffle(_buf)
+            _distractors = _buf[:needed]
+            doc_pool = doc_pool + _distractors
+            title_to_idx = {d['title']: i for i, d in enumerate(doc_pool)}
+            log.info(f'[triviaqa-wiki] injected {len(_distractors):,} distractors (pool={len(doc_pool):,})')
+        except Exception as _e:
+            log.warning(f'[triviaqa-wiki] POOL_TARGET injection failed: {_e}')
     log.info(f"[triviaqa-wiki] pool={len(doc_pool):,} queries={len(queries):,}")
     return doc_pool, queries, title_to_idx
 
@@ -488,18 +546,26 @@ def load_fever(n_source=8000):
         if nk in norm2text:
             sf_docs.append({'title': t, 'text': norm2text[nk]})
 
-    n_distractor = len(sf_docs) * 4
+    # Optional POOL_TARGET: inject more BEIR distractors for hot-tier framing
+    _fv_pool_target = int(os.environ.get('POOL_TARGET', '0'))
+    if _fv_pool_target > 0 and _fv_pool_target > len(sf_docs):
+        n_distractor = _fv_pool_target - len(sf_docs)
+        log.info(f'[fever] POOL_TARGET={_fv_pool_target}: targeting {n_distractor:,} distractors')
+    else:
+        n_distractor = len(sf_docs) * 4
     sf_norms = {normalize_title(d['title']) for d in sf_docs}
     distractor_pool = []
     for ex in beir:
         nk = normalize_title(ex['title'])
         if nk not in sf_norms and ex['text']:
             distractor_pool.append({'title': ex['title'], 'text': ex['text'][:2000]})
-            if len(distractor_pool) >= n_distractor * 3:
+            if len(distractor_pool) >= int(n_distractor * 1.05):
                 break
     rng2 = np.random.default_rng(SEED + 30)
     d_order = np.arange(len(distractor_pool)); rng2.shuffle(d_order)
     distractor_docs = [distractor_pool[int(i)] for i in d_order[:n_distractor]]
+    if _fv_pool_target > 0:
+        log.info(f'[fever] injected {len(distractor_docs):,} distractors (final pool≈{len(sf_docs)+len(distractor_docs):,})')
 
     all_docs = sf_docs + distractor_docs
     rng3 = np.random.default_rng(SEED + 31)
