@@ -59,26 +59,32 @@ class AgentRAGCache(BaseStrategy):
         for did in self.kb:
             self.drf.setdefault(self.d2p[did], 0.0)
 
-    # ---- hubness over the cache's own candidate set (query-agnostic) ----
-    def _recompute_hubness(self, kb_idx, kb_emb):
+    # ---- hubness over cache (+ optional candidate) set, query-agnostic ----
+    def _refresh_hubness_for(self, kb_idx, extra_idx=None):
         if not self.use_hubness:
             return
-        n = len(kb_idx)
+        idx = list(int(p) for p in kb_idx)
+        if extra_idx:
+            idx = idx + [int(p) for p in extra_idx if int(p) not in set(idx)]
+        n = len(idx)
         self._hub_cache = {}
         if n <= 1:
-            for p in kb_idx:
-                self._hub_cache[int(p)] = 0.0
+            for p in idx:
+                self._hub_cache[p] = 0.0
             return
-        sim = kb_emb @ kb_emb.T
+        emb = self.doc_embs[np.array(idx)]
+        sim = emb @ emb.T
         np.fill_diagonal(sim, -np.inf)
         k = min(self.HUB_K, n - 1)
-        # for each row, indices of its top-k neighbours
         nn = np.argpartition(sim, -k, axis=1)[:, -k:]
         counts = np.zeros(n, dtype=np.float64)
         for row in nn:
             counts[row] += 1.0
-        for i, p in enumerate(kb_idx):
-            self._hub_cache[int(p)] = float(counts[i])
+        for i, p in enumerate(idx):
+            self._hub_cache[p] = float(counts[i])
+
+    def _recompute_hubness(self, kb_idx, kb_emb):
+        self._refresh_hubness_for(kb_idx)
 
     def _priority(self, pi, w=1.0):
         drf = self.drf.get(pi, 0.0)
@@ -92,14 +98,9 @@ class AgentRAGCache(BaseStrategy):
     def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
-        kb_list = sorted(self.kb)
-        kb_idx = np.array([self.d2p[d] for d in kb_list])
-        kb_emb = self.doc_embs[kb_idx]
+        budget = len(self.kb)   # fixed cache capacity (= init KB size)
         norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
         nqe = window_query_embs / np.clip(norms, 1e-10, None)
-
-        # hubness is query-agnostic over current cache contents
-        self._recompute_hubness(kb_idx, kb_emb)
 
         n_writes = 0
         for qi in range(nqe.shape[0]):
@@ -117,43 +118,44 @@ class AgentRAGCache(BaseStrategy):
             top = top[np.argsort(sims[top])[::-1]]
             mean_dist = float(np.mean(1.0 - sims[top]))
 
-            escalate = mean_dist > self.TAU
-            if escalate:
-                # escalate to full pool (one pool retrieval -> maintenance cost)
-                pool_sims = self.doc_embs @ q
-                self.maint_retrieval_cost += 1
-                kp = min(self.TOP_K, pool_sims.shape[0])
-                ptop = np.argpartition(pool_sims, -kp)[-kp:]
-                ptop = ptop[np.argsort(pool_sims[ptop])[::-1]]
-                ret_idx = ptop
-                ret_sims = pool_sims[ptop]
-            else:
-                ret_idx = kb_idx[top]
-                ret_sims = sims[top]
+            if mean_dist <= self.TAU:
+                # cache already serves this query well: only refresh DRF of the
+                # cache hits, no escalation, no churn.
+                for rank, (pi, s) in enumerate(zip(kb_idx[top], sims[top]), start=1):
+                    pi = int(pi)
+                    dist = max(1.0 - float(s), 1e-6)
+                    self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
+                continue
 
-            # --- 2. update DRF for retrieved items; insert new ones ---
-            for rank, (pi, s) in enumerate(zip(ret_idx, ret_sims), start=1):
+            # escalate to full pool (one pool retrieval -> maintenance cost)
+            pool_sims = self.doc_embs @ q
+            self.maint_retrieval_cost += 1
+            kp = min(self.TOP_K, pool_sims.shape[0])
+            ptop = np.argpartition(pool_sims, -kp)[-kp:]
+            ptop = ptop[np.argsort(pool_sims[ptop])[::-1]]
+
+            # --- 2. update DRF for all escalated results (accumulate demand) ---
+            for rank, pi in enumerate(ptop, start=1):
                 pi = int(pi)
-                dist = max(1.0 - float(s), 1e-6)
-                contrib = 1.0 / (rank * (dist ** self.ALPHA))
-                if pi in self.drf and self.p2d[pi] in self.kb:
-                    self.drf[pi] += contrib
-                else:
-                    self.drf[pi] = self.drf.get(pi, 0.0) + contrib
-                    if self.p2d[pi] not in self.kb:
-                        self.kb.add(self.p2d[pi])
-                        n_writes += 1
+                dist = max(1.0 - float(pool_sims[pi]), 1e-6)
+                self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
 
-            # --- 3. evict lowest-priority until within budget ---
-            budget = len(kb_list)  # cache capacity fixed at init size
-            if len(self.kb) > budget:
-                # refresh hubness over the enlarged set before eviction
-                ev_list = sorted(self.kb)
-                ev_idx = np.array([self.d2p[d] for d in ev_list])
-                self._recompute_hubness(ev_idx, self.doc_embs[ev_idx])
-                while len(self.kb) > budget:
-                    victim = min(self.kb, key=lambda d: self._priority(self.d2p[d]))
+            # --- 3. priority-gated admission (NO insert-all/evict-all churn) ---
+            # Refresh hubness over current cache + escalated candidates once.
+            cand_new = [int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb]
+            if not cand_new:
+                continue
+            self._refresh_hubness_for(kb_idx, cand_new)
+            # weakest resident
+            for pi in cand_new:
+                kb_list = sorted(self.kb)
+                if len(self.kb) < budget:
+                    self.kb.add(self.p2d[pi]); n_writes += 1
+                    continue
+                victim = min(self.kb, key=lambda d: self._priority(self.d2p[d]))
+                if self._priority(pi) > self._priority(self.d2p[victim]):
                     self.kb.discard(victim)
                     self.drf.pop(self.d2p[victim], None)
+                    self.kb.add(self.p2d[pi]); n_writes += 1
 
         self.update_cost += n_writes
