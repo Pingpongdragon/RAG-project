@@ -21,6 +21,7 @@ from algorithms.cache.recency.temporal import TemporalAware, RecencyTTL
 from algorithms.cache.frequency.miss_policies import MissLRU, MissTinyLFU
 from algorithms.cache.frequency.tinylfu import TinyLFU
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
+from algorithms.cache.semantic.proximity import Proximity
 from algorithms.cache.oracle.belady import Oracle
 from algorithms.cache.ours.query_driven import QueryDriven, QueryDrivenLoose
 from algorithms.cache.ours.routed_cache import RoutedCache
@@ -29,6 +30,7 @@ from algorithms.cache.paradigm_ref.supply_side import (
     Static, DocArrival, KnowledgeEdit, RandomFIFO)
 from algorithms.cache.paradigm_ref.reactive import (
     OnDemandFetch, LogDrivenArrival, MemGPTStyle)
+from algorithms.cache.paradigm_ref.agent_rag_cache import AgentRAGCache
 
 
 def _f(cls):
@@ -53,6 +55,13 @@ STRATEGY_FACTORIES = {
     'MissTinyLFU':      _f(MissTinyLFU),
     'TinyLFU':          _f(TinyLFU),
     'GPTCacheStyle':    _f(GPTCacheStyle),
+    # Proximity (Bergman 2025) — approximate cache keyed on past queries
+    'Proximity':        _f(Proximity),
+    # Agent-RAG ARC baseline (Lin et al. 2511.02919) — DRF + hubness, no drift
+    'AgentRAGCache':    _f(AgentRAGCache),
+    # ARC ablation: DRF only, no hubness centrality (paper's "ARC w/o hubness")
+    'AgentRAGCache_NoHub': lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
+        'AgentRAGCache_NoHub', doc_pool, doc_embs, title_to_idx, use_hubness=False),
     # ours
     'QueryDriven':      _f(QueryDriven),
     'QueryDrivenLoose': _f(QueryDrivenLoose),

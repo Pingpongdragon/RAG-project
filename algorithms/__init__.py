@@ -2,23 +2,12 @@
 algorithms — 所有 RAG KB 更新方法的统一包
 
 Sub-packages:
-  comrag/  — ComRAG: 动态记忆 + centroid 检测 + 路由更新
-  erase/   — ERASE:  可编辑知识库 + 三步一致性更新
   qarc/    — QARC:   对齐漂移检测 + Agent 决策 + 子模 KB 策展
+  cache/   — 窗口级缓存策略族 (replacement baselines + ours + AgentRAGCache)
+
+注: ComRAG / ERASE 已移除 —— 它们是知识更新 / 对话记忆范式, 不是固定预算下的
+    缓存换入换出方法, 与 cache 主战场指标不可比 (避免稻草人对比)。
 """
-
-# ── ComRAG ──
-from .comrag import (
-    QARecord, SearchResult, CentroidClusterStore, DynamicMemory,
-    ComRAGPipeline, compute_adaptive_temperature,
-    ComRAGUpdater,
-)
-
-# ── ERASE ──
-from .erase import (
-    ERASEKnowledgeBase, FactEntry, FactHistory, RetrievalResult,
-    ERASEUpdater,
-)
 
 # ── QARC (our method) ──
 from .qarc import (
