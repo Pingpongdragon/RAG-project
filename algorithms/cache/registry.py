@@ -6,7 +6,7 @@ All experiments (motivation_1 / motivation_2 / benchmark) import
 
 Strategy code lives in family submodules:
   recency/      LRU (access-history, time-aware)
-  frequency/    MissLRU, MissTinyLFU (miss + semantic signal), TinyLFU
+  frequency/    TinyLFU (miss-driven admission + LFU eviction)
   semantic/     GPTCacheStyle
   oracle/       Oracle (Belady upper bound)
   ours/         QueryDriven (SemFlow), RoutedCache, DRYAD
@@ -18,7 +18,6 @@ Experiment params (SF_HIT_THRESH etc.) are injected via
 """
 from algorithms.cache.recency.lru import LRU
 from algorithms.cache.recency.temporal import TemporalAware, RecencyTTL
-from algorithms.cache.frequency.miss_policies import MissLRU, MissTinyLFU
 from algorithms.cache.frequency.tinylfu import TinyLFU
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
 from algorithms.cache.semantic.proximity import Proximity
@@ -51,8 +50,6 @@ STRATEGY_FACTORIES = {
     'LRU':              _f(LRU),
     'TemporalAware':    _f(TemporalAware),
     'RecencyTTL':       _f(RecencyTTL),
-    'MissLRU':          _f(MissLRU),
-    'MissTinyLFU':      _f(MissTinyLFU),
     'TinyLFU':          _f(TinyLFU),
     'GPTCacheStyle':    _f(GPTCacheStyle),
     # Proximity (Bergman 2025) — approximate cache keyed on past queries
