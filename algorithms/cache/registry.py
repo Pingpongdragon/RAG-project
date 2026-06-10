@@ -17,6 +17,7 @@ Experiment params (SF_HIT_THRESH etc.) are injected via
 ``algorithms.cache.params.PARAMS.update(...)`` before running.
 """
 from algorithms.cache.recency.lru import LRU
+from algorithms.cache.recency.fifo import FIFO
 from algorithms.cache.recency.temporal import TemporalAware, RecencyTTL
 from algorithms.cache.frequency.tinylfu import TinyLFU
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
@@ -48,6 +49,7 @@ STRATEGY_FACTORIES = {
     'MemGPTStyle':      _f(MemGPTStyle),
     # cache replacement families
     'LRU':              _f(LRU),
+    'FIFO':             _f(FIFO),
     'TemporalAware':    _f(TemporalAware),
     'RecencyTTL':       _f(RecencyTTL),
     'TinyLFU':          _f(TinyLFU),

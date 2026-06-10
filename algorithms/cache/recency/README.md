@@ -7,14 +7,17 @@
 | 文件 | 类 | 是什么 | 论文用？ |
 |---|---|---|---|
 | `lru.py` | `LRU` | miss 驱动准入 + 最久未命中逐出（ARC 范式下的真 LRU） | ✅ **主 baseline**，必留 |
+| `fifo.py` | `FIFO` | miss 驱动准入 + 插入资历逐出（ARC 范式，盲目搬运工） | ✅ **主 baseline**（ARC 论文比的对象） |
 | `temporal.py` | `TemporalAware` | 时间衰减加权变体（随机到货流，未对齐 ARC 范式） | ⚪ 变体，可忽略 |
 | `temporal.py` | `RecencyTTL` | 带 TTL 过期（随机到货流） | ⚪ 变体，可忽略 |
 
-> 📝 原 `LRU`（随机到货流）已扶正为 miss 驱动；旧的 `MissLRU` 已删除（逻辑并入 LRU）。
+> 📝 LRU/FIFO 均为 ARC 范式 miss 驱动。旧 `MissLRU` 并入 LRU；`RandomFIFO`（随机到货流）
+> 保留为 motivation 范式参照，**不是**正文的 FIFO baseline。
 
-→ 正文留 **LRU** 一个。
+→ 正文留 **LRU + FIFO** 两个（ARC 论文都比了）。
 
-## 为什么会差（多跳）
-LRU 只看命中历史。bridge 文档从不被 query 直接检索 → 永远不会在 miss 时被取到 →
-进不了缓存。多跳设定下退化到接近 Static。
+## 为什么会差（多跳 + 漂移）
+- **LRU**：bridge 文档从不被 query 直接检索 → miss 时也取不到 → 进不了缓存，退化到接近 Static。
+- **FIFO**：盲目搬运工——只看插入资历不看功劳。核心高频文档只因"来得早"就被新 miss 挤出队列。
+  完全没利用语义局部性和查询偏差。
 
