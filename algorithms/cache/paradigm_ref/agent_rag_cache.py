@@ -141,21 +141,30 @@ class AgentRAGCache(BaseStrategy):
                 self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
 
             # --- 3. priority-gated admission (NO insert-all/evict-all churn) ---
-            # Refresh hubness over current cache + escalated candidates once.
             cand_new = [int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb]
             if not cand_new:
                 continue
             self._refresh_hubness_for(kb_idx, cand_new)
-            # weakest resident
+            # min-heap of resident priorities, built once per query
+            import heapq
+            heap = [(self._priority(self.d2p[d]), d) for d in self.kb]
+            heapq.heapify(heap)
             for pi in cand_new:
-                kb_list = sorted(self.kb)
                 if len(self.kb) < budget:
                     self.kb.add(self.p2d[pi]); n_writes += 1
+                    heapq.heappush(heap, (self._priority(pi), self.p2d[pi]))
                     continue
-                victim = min(self.kb, key=lambda d: self._priority(self.d2p[d]))
-                if self._priority(pi) > self._priority(self.d2p[victim]):
+                # pop the current weakest resident (skip stale heap entries)
+                while heap and heap[0][1] not in self.kb:
+                    heapq.heappop(heap)
+                if not heap:
+                    break
+                weak_pri, victim = heap[0]
+                if self._priority(pi) > weak_pri:
+                    heapq.heappop(heap)
                     self.kb.discard(victim)
                     self.drf.pop(self.d2p[victim], None)
                     self.kb.add(self.p2d[pi]); n_writes += 1
+                    heapq.heappush(heap, (self._priority(pi), self.p2d[pi]))
 
         self.update_cost += n_writes
