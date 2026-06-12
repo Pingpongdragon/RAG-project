@@ -101,7 +101,7 @@ LOG_LAG_WINDOWS = 5    # human review cycle: apply fix every N windows
 STRATEGY_ORDER = [
     'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
     'LRU', 'GPTCacheStyle', 'MemGPTStyle',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'QueryDrivenLoose', 'Oracle',
+    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'DRIP', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':           'Static (no update)',
@@ -109,12 +109,18 @@ STRATEGY_LABELS = {
     'DocArrival':       'Doc-Arrival (HippoRAG)',
     'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
     'LRU':              'LRU Cache',
+    'FIFO':             'FIFO Cache',
+    'TinyLFU':          'TinyLFU Cache',
     'GPTCacheStyle':    'Semantic Cache (GPTCache)',
     'MemGPTStyle':      'Importance-Weighted (MemGPT)',
     'OnDemandFetch':    'On-Demand Fetch (CRAG)',
     'LogDrivenArrival': 'Log-Driven (lagging)',
+    'AgentRAGCache':    'ARC (DRF+Hubness)',
+    'AgentRAGCache_NoHub': 'ARC w/o Hubness',
     'QueryDriven': 'Query-Driven Cluster (ours)',
     'QueryDrivenLoose':   'Query-Driven Loose (probe=50)',
+    'RoutedCache':      'Routed Cache (ours)',
+    'DRIP':             'DRIP (ours)',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -123,12 +129,18 @@ STRATEGY_STYLES = {
     'DocArrival':       {'color': '#059669', 'marker': '^', 'ls': '-'},
     'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
     'LRU':              {'color': '#F59E0B', 'marker': 'v', 'ls': '-.'},
+    'FIFO':             {'color': '#7C3AED', 'marker': '^', 'ls': '--'},
+    'TinyLFU':          {'color': '#0284C7', 'marker': 'p', 'ls': ':'},
     'GPTCacheStyle':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
     'MemGPTStyle':      {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
     'OnDemandFetch':    {'color': '#1E3A8A', 'marker': 'h', 'ls': ':'},
     'LogDrivenArrival': {'color': '#9D174D', 'marker': '*', 'ls': '-.'},
+    'AgentRAGCache':    {'color': '#111827', 'marker': 'o', 'ls': '-'},
+    'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o', 'ls': '--'},
     'QueryDriven': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
     'QueryDrivenLoose':   {'color': '#047857', 'marker': 'X', 'ls': '-'},
+    'RoutedCache':      {'color': '#2563EB', 'marker': 's', 'ls': '-'},
+    'DRIP':             {'color': '#0F766E', 'marker': '*', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

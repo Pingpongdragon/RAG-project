@@ -1,0 +1,348 @@
+"""DRIP-Core cache manager.
+
+Directory map:
+  - query_router.py: route r(q)
+  - embedding_index.py: dense/direct evidence
+  - graph_index.py: bridge evidence
+  - config.py: all knobs
+
+The two paper formulas live in this adapter:
+  - route-aware evidence credits demand D_t(d)
+  - support priority admits candidates over low-priority residents
+"""
+import numpy as np
+
+from algorithms.cache.base import BaseStrategy
+from algorithms.cache.params import PARAMS as _P
+
+from .config import SupportFlowConfig
+from .embedding_index import EmbeddingIndex
+from .graph_index import GraphIndex
+from .query_router import BRIDGE, MULTI_DIRECT, SINGLE, QueryRouter, RouteDecision
+
+
+class DRIPCore(BaseStrategy):
+    """Detector-free DRIP cache manager."""
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
+        super().__init__(name, doc_pool, doc_embs, title_to_idx)
+        self.config = config or SupportFlowConfig()
+        self.router = QueryRouter(self.config)
+        self.embedding_index = EmbeddingIndex(self.doc_embs)
+        self.graph_index = GraphIndex(self.config, self.d2p, self.doc_pool)
+        self.demand = {}
+        self.serve = {}
+        self.last_admission = {}
+        self.bridge_log = []
+        self.route_log = []
+
+    @property
+    def _pool_ents(self):
+        return self.graph_index.pool_ents
+
+    @_pool_ents.setter
+    def _pool_ents(self, pool_ents):
+        self.graph_index.set_pool_entities(pool_ents)
+
+    def set_kb(self, ids):
+        super().set_kb(ids)
+        for did in self.kb:
+            self.serve[self.d2p[did]] = self.config.serve_prior
+
+    def step(self, window_queries, window_query_embs, window_idx):
+        if not self.kb:
+            return
+
+        kb_idx, kb_emb, nqe, q_kb = self._observe(window_query_embs)
+        self._decay()
+        self._credit_serve(q_kb, kb_idx)
+
+        kb_pos = set(int(p) for p in kb_idx)
+        probe_k = max(self.config.direct_topk, self.config.bridge_step1_k)
+        n_under = 0
+        under_slots = []
+        route_counts = {SINGLE: 0, MULTI_DIRECT: 0, BRIDGE: 0}
+        direct_updates = bridge_updates = 0
+        direct_mass = bridge_mass = 0.0
+        bridge_direct_updates = 0
+        bridge_direct_mass = 0.0
+        direct_gold_updates = bridge_gold_updates = bridge_direct_gold_updates = 0
+        direct_gold_mass = bridge_gold_mass = bridge_direct_gold_mass = 0.0
+        route_labeled = route_match = 0
+
+        for qi, query in enumerate(window_queries):
+            dense = self.embedding_index.search_one(nqe[qi], probe_k)
+            first_hops = dense[: self.config.bridge_step1_k]
+            first_hop_entities = [
+                self.graph_index.doc_entities(pi)
+                for pi, sim in first_hops
+                if sim > 0.0
+            ]
+            route = self.router.route(query, q_kb[qi], first_hop_entities)
+            if not self.graph_index.has_metadata():
+                route = RouteDecision(
+                    SINGLE,
+                    self.config.singlehop_slots,
+                    "no_graph_metadata",
+                )
+            route_counts[route.route] = route_counts.get(route.route, 0) + 1
+            expected_route = self._expected_route(query)
+            if expected_route is not None:
+                route_labeled += 1
+                route_match += int(route.route == expected_route)
+
+            covered = int((q_kb[qi] >= _P.SF_HIT_THRESH).sum())
+            if covered >= route.target_slots:
+                continue
+            n_under += 1
+            under_slots.append(route.target_slots)
+            gold_pos = self._gold_positions(query)
+
+            if route.route == BRIDGE and self.graph_index.has_metadata():
+                candidates = self.graph_index.graph_evidence(
+                    first_hops, kb_pos, kb_emb, self.doc_embs)
+                updates, mass, gold_updates, gold_mass = self._credit_graph(
+                    candidates, gold_pos)
+                bridge_updates += updates
+                bridge_mass += mass
+                bridge_gold_updates += gold_updates
+                bridge_gold_mass += gold_mass
+                updates, mass, gold_updates, gold_mass = self._credit_dense(
+                    first_hops,
+                    kb_pos,
+                    gamma=self.config.bridge_direct_gamma,
+                    gold_pos=gold_pos,
+                    top1_bonus=0.0,
+                )
+                bridge_direct_updates += updates
+                bridge_direct_mass += mass
+                bridge_direct_gold_updates += gold_updates
+                bridge_direct_gold_mass += gold_mass
+            else:
+                updates, mass, gold_updates, gold_mass = self._credit_dense(
+                    dense[: self.config.direct_topk],
+                    kb_pos,
+                    gold_pos=gold_pos,
+                    top1_bonus=self.config.direct_top1_bonus,
+                )
+                direct_updates += updates
+                direct_mass += mass
+                direct_gold_updates += gold_updates
+                direct_gold_mass += gold_mass
+
+        self.maint_retrieval_cost += n_under * probe_k
+        self._prune_demand()
+        budget = min(_P.WRITE_CAP, sum(under_slots))
+        writes = self._write(kb_idx, kb_emb, budget)
+        self.update_cost += writes
+
+        self.bridge_log.append({
+            "w": window_idx,
+            "under_covered": int(n_under),
+            "bridge_updates": int(bridge_updates),
+            "bridge_mass": round(bridge_mass, 4),
+            "bridge_gold_updates": int(bridge_gold_updates),
+            "bridge_gold_mass": round(bridge_gold_mass, 4),
+            "bridge_direct_updates": int(bridge_direct_updates),
+            "bridge_direct_mass": round(bridge_direct_mass, 4),
+            "bridge_direct_gold_updates": int(bridge_direct_gold_updates),
+            "bridge_direct_gold_mass": round(bridge_direct_gold_mass, 4),
+            "direct_updates": int(direct_updates),
+            "direct_mass": round(direct_mass, 4),
+            "direct_gold_updates": int(direct_gold_updates),
+            "direct_gold_mass": round(direct_gold_mass, 4),
+        })
+        self.route_log.append({
+            "w": window_idx,
+            "routes": route_counts,
+            "route_labeled": int(route_labeled),
+            "route_match": int(route_match),
+            "under_covered": int(n_under),
+            "target_slots": int(sum(under_slots)),
+        })
+        self.last_admission = {
+            "w": window_idx,
+            "target_slots": int(sum(under_slots)),
+            "under_covered": int(n_under),
+            "write_budget": int(budget),
+            "writes": int(writes),
+        }
+
+    def _observe(self, window_query_embs):
+        kb_idx = np.array([self.d2p[d] for d in sorted(self.kb)], dtype=np.int64)
+        kb_emb = self.doc_embs[kb_idx]
+        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+        nqe = window_query_embs / np.clip(norms, 1e-10, None)
+        q_kb = nqe @ kb_emb.T
+        return kb_idx, kb_emb, nqe, q_kb
+
+    def _expected_route(self, query):
+        if not isinstance(query, dict):
+            return None
+        qtype = str(query.get("qtype") or query.get("type") or "").lower()
+        if not qtype:
+            return None
+        if "bridge" in qtype or "compositional" in qtype or "inference" in qtype:
+            return BRIDGE
+        if "comparison" in qtype:
+            return MULTI_DIRECT
+        if "single" in qtype or "temporal" in qtype:
+            return SINGLE
+        return None
+
+    def _gold_positions(self, query):
+        """Gold is used only for diagnostics in experiment logs."""
+        if not isinstance(query, dict):
+            return set()
+        out = set()
+        for title in query.get("sf_titles", ()):
+            pi = self.title_to_idx.get(title)
+            if pi is not None:
+                out.add(int(pi))
+        return out
+
+    def _decay(self):
+        d = self.config.demand_decay
+        s = self.config.serve_decay
+        m = self.config.min_stat
+        self.demand = {p: v * d for p, v in self.demand.items() if v * d >= m}
+        self.serve = {p: v * s for p, v in self.serve.items() if v * s >= m}
+        self._prune_demand()
+
+    def _prune_demand(self):
+        cap = int(getattr(self.config, "demand_ledger_cap", 0))
+        if cap <= 0 or len(self.demand) <= cap:
+            return
+        keep = sorted(self.demand.items(), key=lambda item: -item[1])[:cap]
+        self.demand = dict(keep)
+
+    def _credit_serve(self, q_kb, kb_idx):
+        hit = np.max(q_kb, axis=1) >= _P.SF_HIT_THRESH
+        if not hit.any():
+            return
+        k = min(max(1, self.config.serve_topk), q_kb.shape[1])
+        for row in q_kb[hit]:
+            pos = np.argpartition(row, -k)[-k:]
+            pos = [int(p) for p in pos if row[p] >= _P.SF_HIT_THRESH]
+            if not pos:
+                continue
+            credit = 1.0 / len(pos)
+            for p in pos:
+                pi = int(kb_idx[p])
+                self.serve[pi] = self.serve.get(pi, 0.0) + credit
+
+    def _credit_dense(self, candidates, kb_pos, gamma=None, gold_pos=None, top1_bonus=None):
+        """Formula 1 dense branch: E_dense(q,d) = top1_bonus + max(0, sim(q,d))."""
+        updates = 0
+        mass = 0.0
+        gold_updates = 0
+        gold_mass = 0.0
+        gamma = self.config.direct_gamma if gamma is None else gamma
+        gold_pos = gold_pos or set()
+        top1_bonus = self.config.direct_top1_bonus if top1_bonus is None else top1_bonus
+        for rank, (pi, sim) in enumerate(candidates):
+            pi = int(pi)
+            if pi in kb_pos:
+                continue
+            score = gamma * max(0.0, float(sim))
+            if rank == 0:
+                score += float(top1_bonus)
+            if score <= 0.0:
+                continue
+            self.demand[pi] = self.demand.get(pi, 0.0) + score
+            updates += 1
+            mass += score
+            if pi in gold_pos:
+                gold_updates += 1
+                gold_mass += score
+        return updates, mass, gold_updates, gold_mass
+
+    def _credit_graph(self, candidates, gold_pos=None):
+        """Formula 1 graph branch: GraphIndex already computes E_graph(q,d)."""
+        updates = 0
+        mass = 0.0
+        gold_updates = 0
+        gold_mass = 0.0
+        gold_pos = gold_pos or set()
+        for pi, score in candidates:
+            pi = int(pi)
+            score = float(score)
+            if score <= 0.0:
+                continue
+            self.demand[pi] = self.demand.get(pi, 0.0) + score
+            updates += 1
+            mass += score
+            if pi in gold_pos:
+                gold_updates += 1
+                gold_mass += score
+        return updates, mass, gold_updates, gold_mass
+
+    def _resident_priority(self, kb_idx, kb_emb):
+        kb_self = kb_emb @ kb_emb.T
+        np.fill_diagonal(kb_self, -1.0)
+        red = kb_self.max(axis=1)
+        red_map = {int(p): float(red[i]) for i, p in enumerate(kb_idx)}
+
+        def priority(p):
+            base = self.serve.get(p, 0.0) + self.demand.get(p, 0.0)
+            penalty = self.config.redundancy_penalty * max(
+                0.0,
+                red_map.get(p, 0.0) - self.config.redundancy_threshold,
+            )
+            return base - penalty
+
+        return {int(p): priority(int(p)) for p in kb_idx}
+
+    def _write(self, kb_idx, kb_emb, budget):
+        """Formula 2 admission: admit c iff D_t(c) > P_t(v)."""
+        if budget <= 0:
+            return 0
+        kb_pos = set(int(p) for p in kb_idx)
+        candidates = sorted(
+            ((v, p) for p, v in self.demand.items() if p not in kb_pos),
+            reverse=True,
+        )
+        if not candidates:
+            return 0
+
+        priority = self._resident_priority(kb_idx, kb_emb)
+        victims = sorted(kb_pos, key=lambda p: priority[p])
+        current_kb_emb = self.doc_embs[np.array(sorted(kb_pos), dtype=np.int64)]
+        writes = 0
+        victim_i = 0
+
+        for cand_value, cp in candidates:
+            if writes >= budget or victim_i >= len(victims):
+                break
+            victim = victims[victim_i]
+            gain = cand_value - self.config.gain_margin * priority[victim]
+            if gain <= 0.0:
+                break
+            duplicate = float((self.doc_embs[cp] @ current_kb_emb.T).max())
+            if duplicate > self.config.tau_duplicate:
+                continue
+            self.kb.discard(self.p2d[victim])
+            self.kb.add(self.p2d[cp])
+            self.serve.pop(victim, None)
+            victim_i += 1
+            writes += 1
+        return writes
+
+
+__all__ = [
+    "DRIPCore",
+    "SupportFlow",
+    "SupportFlowConfig",
+    "QueryRouter",
+    "EmbeddingIndex",
+    "GraphIndex",
+    "RouteDecision",
+    "SINGLE",
+    "MULTI_DIRECT",
+    "BRIDGE",
+]
+
+
+# Backward-compatible name for older experiment scripts. The paper/system name
+# should be DRIP / DRIP-Core, not SupportFlow as a separate algorithm.
+SupportFlow = DRIPCore

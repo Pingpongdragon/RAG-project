@@ -2,7 +2,7 @@
 
 These exist so the ablation "what does alignment-feature FID buy us?" has real
 comparators rather than only the FID detector. All three are drop-in: the
-QARC/DRYAD pipeline can swap DriftLensDetector for any of these without other
+DRIP/DRIP pipeline can swap DriftLensDetector for any of these without other
 changes (same set_baseline / calibrate_threshold / detect -> DriftResult API).
 
 Family coverage (one representative per family, newest/most-standard):
@@ -20,7 +20,7 @@ Family coverage (one representative per family, newest/most-standard):
 from typing import Optional, List, Dict, Any
 import numpy as np
 
-from algorithms.qarc.interfaces import BaseDriftDetector, DriftResult
+from algorithms.drip.interfaces import BaseDriftDetector, DriftResult
 
 
 # ════════════════════════════════════════════════════════════

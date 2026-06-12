@@ -9,7 +9,8 @@ Strategy code lives in family submodules:
   frequency/    TinyLFU (miss-driven admission + LFU eviction)
   semantic/     GPTCacheStyle
   oracle/       Oracle (Belady upper bound)
-  ours/         QueryDriven (SemFlow), RoutedCache, DRYAD
+  ours/         QueryDriven (minimal SemFlow / motivation baseline)
+  drip/         DRIPCore / SupportFlow
   paradigm_ref/ Static, DocArrival, KnowledgeEdit, RandomFIFO,
                 OnDemandFetch, LogDrivenArrival, MemGPTStyle
 
@@ -24,8 +25,7 @@ from algorithms.cache.semantic.gptcache import GPTCacheStyle
 from algorithms.cache.semantic.proximity import Proximity
 from algorithms.cache.oracle.belady import Oracle
 from algorithms.cache.ours.query_driven import QueryDriven, QueryDrivenLoose
-from algorithms.cache.ours.routed_cache import RoutedCache
-from algorithms.cache.ours.dryad import DRYAD
+from algorithms.drip.support_flow import DRIPCore, SupportFlow
 from algorithms.cache.paradigm_ref.supply_side import (
     Static, DocArrival, KnowledgeEdit, RandomFIFO)
 from algorithms.cache.paradigm_ref.reactive import (
@@ -61,11 +61,13 @@ STRATEGY_FACTORIES = {
     # ARC ablation: DRF only, no hubness centrality (paper's "ARC w/o hubness")
     'AgentRAGCache_NoHub': lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
         'AgentRAGCache_NoHub', doc_pool, doc_embs, title_to_idx, use_hubness=False),
-    # ours
+    # minimal SemFlow / motivation baseline
     'QueryDriven':      _f(QueryDriven),
     'QueryDrivenLoose': _f(QueryDrivenLoose),
-    'RoutedCache':      _f(RoutedCache),
-    'DRYAD':            _f(DRYAD),
+    # DRIP core
+    'SupportFlow':      _f(SupportFlow),
+    'DRIPCore':         _f(DRIPCore),
+    'DRIP':             _f(DRIPCore),
     # oracle
     'Oracle':           _f(Oracle),
 }

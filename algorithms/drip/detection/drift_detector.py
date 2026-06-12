@@ -1,6 +1,6 @@
 
 """
-QARC Part 1: 对齐漂移检测 — 基于 Query-KB 对齐特征的 FID
+DRIP Part 1: 对齐漂移检测 — 基于 Query-KB 对齐特征的 FID
 
 === 核心思想 ===
 检测的不是 "query 分布是否偏移", 也不是 "document 分布是否偏移",
@@ -36,12 +36,12 @@ import numpy as np
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from scipy import linalg
-from algorithms.qarc.interfaces import BaseDriftDetector
+from algorithms.drip.interfaces import BaseDriftDetector
 
 logger = logging.getLogger(__name__)
 
 
-from algorithms.qarc.interfaces import DriftResult  # 从接口层导入
+from algorithms.drip.interfaces import DriftResult  # 从接口层导入
 
 
 class DriftLensDetector(BaseDriftDetector):
