@@ -6,7 +6,6 @@ identical but avoids dense per-query transition matrices so it can run inside
 the Mo2 stream runner.
 """
 from collections import defaultdict
-import re
 
 import numpy as np
 
@@ -18,14 +17,6 @@ from . import DRIPCore
 class LocalPPRBridgeEvidence:
     """Query-local PPR over GraphIndex's document/entity postings."""
 
-    _ROLE_SYNONYMS = {
-        "director": ("director", "filmmaker"),
-        "producer": ("producer",),
-        "writer": ("writer", "screenwriter", "author"),
-        "actor": ("actor", "actress", "performer"),
-        "composer": ("composer", "musician"),
-    }
-
     def __init__(
         self,
         graph_index,
@@ -35,9 +26,6 @@ class LocalPPRBridgeEvidence:
         R=1,
         K0=5,
         d_cap=30,
-        role_boost=2.0,
-        person_boost=0.8,
-        work_penalty=0.35,
     ):
         self.gi = graph_index
         self.doc_embs = doc_embs
@@ -46,9 +34,6 @@ class LocalPPRBridgeEvidence:
         self.R = int(R)
         self.K0 = int(K0)
         self.d_cap = int(d_cap)
-        self.role_boost = float(role_boost)
-        self.person_boost = float(person_boost)
-        self.work_penalty = float(work_penalty)
         self._neighbor_cache = {}
 
     def _doc_neighbors(self, pi, idf_max, degree_power):
@@ -144,14 +129,11 @@ class LocalPPRBridgeEvidence:
                             nxt[dst] += walk_weight * src_mass * trans
             mass = dict(nxt)
 
-        role = self._expected_role(query)
         candidates = []
         for pi, score in mass.items():
             if pi in seed_pos or pi in kb_pos or score <= 0.0:
                 continue
-            reranked = float(score) * self._continuation_multiplier(int(pi), role)
-            if reranked > 0.0:
-                candidates.append((int(pi), reranked))
+            candidates.append((int(pi), float(score)))
         candidates.sort(key=lambda item: -item[1])
         stats = {
             "ppr_seed_count": len(seed_pos),
@@ -159,47 +141,6 @@ class LocalPPRBridgeEvidence:
             "ppr_candidate_count": len(candidates),
         }
         return candidates, stats
-
-    def _expected_role(self, query):
-        if not isinstance(query, dict):
-            text = str(query or "")
-        else:
-            text = query.get("question", "")
-        low = str(text).lower()
-        for role, words in self._ROLE_SYNONYMS.items():
-            if any(re.search(rf"\b{re.escape(w)}s?\b", low) for w in words):
-                return role
-        return None
-
-    def _continuation_multiplier(self, pi, role):
-        if role is None:
-            return 1.0
-        title = self.gi.pi_to_title.get(int(pi), "")
-        text = self.gi.pi_to_text.get(int(pi), "")
-        intro = str(text[:320]).lower()
-        title_l = str(title).lower()
-
-        work_like = (
-            "(film" in title_l
-            or "(album" in title_l
-            or "(song" in title_l
-            or bool(re.search(r"\bis (a|an|the) [^.]{0,90}\b(film|movie|documentary)\b", intro))
-        )
-        person_like = (
-            "(born" in intro
-            or " was born " in intro
-            or bool(re.search(r"\b(was|is) (a|an) [^.]{0,90}\b(actor|actress|director|filmmaker|producer|writer|screenwriter|composer|musician|comedian|politician)\b", intro))
-        )
-        role_like = any(word in intro for word in self._ROLE_SYNONYMS.get(role, ()))
-
-        mult = 1.0
-        if person_like:
-            mult += self.person_boost
-        if role_like:
-            mult += self.role_boost
-        if work_like and not role_like:
-            mult *= self.work_penalty
-        return max(0.05, mult)
 
 
 class PPRDRIPCore(DRIPCore):
