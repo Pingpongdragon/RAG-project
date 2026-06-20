@@ -30,7 +30,7 @@ from loaders import LOADERS
 from loaders_temporal import TEMPORAL_LOADERS
 # Strategies now live in the shared algorithms.cache package (single source).
 # Inject motivation_1's hyper-params (StreamingQA / MiniLM: SF_HIT_THRESH=0.55,
-# EDIT_BATCH=8). QueryDriven uses the unified mo2 implementation.
+# EDIT_BATCH=8). DRIP uses the unified implementation.
 from algorithms.cache.params import PARAMS as _P
 _P.update(
     SEED=_mo1cfg.SEED, SF_HIT_THRESH=_mo1cfg.SF_HIT_THRESH,
@@ -251,17 +251,23 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'RandomFIFO':       ('#9467BD', '-.', '^'),
         'DocArrival':       ('#8C564B', ':',  's'),
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
+        'LRU':              ('#D97706', '-.', 'v'),
+        'FIFO':             ('#7C3AED', '--', '^'),
+        'TinyLFU':          ('#0284C7', ':',  'p'),
         'TemporalAware':    ('#2563EB', '-.', 'o'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDriven': ('#10B981', '-',  'D'),
+        'AgentRAGCache':    ('#111827', '-',  'o'),
+        'AgentRAGCache_NoHub': ('#6B7280', '--', 'o'),
+        'RoutedCache':      ('#2563EB', '-',  's'),
+        'DRIP':             ('#0F766E', '-',  '*'),
         'Oracle':           ('#D62728', '-',  None),
     }
     datasets = list(all_results.keys())
     n_ds = max(len(datasets), 1)
     fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
                              sharex=True, squeeze=False)
-    emphasis = {'Oracle', 'QueryDriven'}
+    emphasis = {'Oracle', 'DRIP'}
 
     for row, ds in enumerate(datasets):
         res = all_results[ds]; cfg = res['config']
@@ -277,7 +283,7 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
                     continue
                 color, ls, marker = palette.get(name, ('gray', '-', None))
                 values = res['summary'][name][series_key]
-                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'DRIP' else 1.4)
                 alpha = 1.0 if name in emphasis else 0.85
                 zorder = 5 if name in emphasis else 3
                 mark_every = max(1, nw // 12)
@@ -326,7 +332,7 @@ def main():
     parser = argparse.ArgumentParser(description='Motivation 1 (single-hop) runner')
     parser.add_argument('--n-windows', type=int, default=50)
     parser.add_argument('--window-size', type=int, default=50)
-    parser.add_argument('--drift', choices=['sudden', 'gradual', 'hybrid', 'temporal', 'full_gradual'], default='sudden')
+    parser.add_argument('--drift', choices=['sudden', 'gradual', 'hybrid', 'temporal', 'full_gradual', 'stationary'], default='sudden')
     parser.add_argument('--freeze-until', type=int, default=0,
                         help='Freeze non-Oracle updates for windows [0, freeze_until). '
                              'Use 50 with --n-windows 100 for freeze-before-drift ablation.')

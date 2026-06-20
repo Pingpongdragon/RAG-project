@@ -7,7 +7,7 @@ described in the motivation section of our paper.
 """
 import hashlib
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 from config import (SEED, EMBED_MODEL, CACHE_DIR, SF_HIT_THRESH, K_LIST, log, BGE_QUERY_PREFIX)
 
 
@@ -177,6 +177,176 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
     nt = sum(1 for q in stream if q['is_tail'])
     log.info(f"Stream: {len(stream)} (head={nh} tail={nt})")
     return stream, km.cluster_centers_, head_set
+
+
+def build_query_stream(queries, query_embs, cfg, workload='cluster_shift',
+                       drift_mode='sudden'):
+    """Build a query stream for a named benchmark workload.
+
+    `cluster_shift` is the original motivation-2 stream. The reuse workloads
+    preserve each query's original `qidx` while copying query dicts into a
+    temporal order, so repeated support demand can be measured without
+    recomputing embeddings.
+    """
+    workload = workload or 'cluster_shift'
+    if workload == 'cluster_shift':
+        return cluster_and_build_stream(queries, query_embs, cfg, drift_mode)
+
+    centroids, head_set = _assign_query_clusters(queries, query_embs, cfg)
+    if workload == 'random_static':
+        stream = _build_random_static_stream(queries, cfg)
+    elif workload == 'temporal_bridge_reuse':
+        stream = _build_bridge_reuse_stream(queries, cfg, burst=False)
+    elif workload == 'burst_bridge_reuse':
+        stream = _build_bridge_reuse_stream(queries, cfg, burst=True)
+    else:
+        raise ValueError(f"Unknown workload: {workload}")
+
+    nh = sum(1 for q in stream if not q.get('is_tail', True))
+    nt = sum(1 for q in stream if q.get('is_tail', True))
+    reuse = sum(1 for q in stream if q.get('reuse_role') == 'reuse')
+    log.info(
+        f"Workload {workload}: {len(stream)} queries "
+        f"(head={nh} tail={nt} reuse={reuse})"
+    )
+    return stream, centroids, head_set
+
+
+def _assign_query_clusters(queries, query_embs, cfg):
+    from sklearn.cluster import KMeans
+    nc = cfg['n_clusters']
+    th = cfg['top_head']
+    km = KMeans(nc, n_init=5, random_state=SEED).fit(query_embs)
+    labels = km.labels_
+    sizes = Counter(labels)
+    ranked = sorted(sizes, key=lambda c: -sizes[c])
+    head_set = set(ranked[:th])
+    for i, q in enumerate(queries):
+        q['cluster'] = int(labels[i])
+        q['is_tail'] = labels[i] not in head_set
+        q['qidx'] = i
+    log.info(f"Clusters (query_emb): {[sizes[c] for c in ranked]}, "
+             f"head_clusters={sorted(head_set)}")
+    return km.cluster_centers_, head_set
+
+
+def _query_copy(q, *, role=None, group=None, support_title=None,
+                is_tail=None, seq=None):
+    out = dict(q)
+    if role is not None:
+        out['reuse_role'] = role
+    if group is not None:
+        out['reuse_group'] = group
+    if support_title is not None:
+        out['reuse_support_title'] = support_title
+    if is_tail is not None:
+        out['is_tail'] = bool(is_tail)
+    if seq is not None:
+        out['reuse_seq'] = int(seq)
+    return out
+
+
+def _build_random_static_stream(queries, cfg):
+    rng = np.random.default_rng(SEED + 410)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    idx = rng.integers(0, len(queries), size=n_q)
+    return [_query_copy(queries[int(i)], role='background', seq=j)
+            for j, i in enumerate(idx)]
+
+
+def _support_groups(queries):
+    by_title = defaultdict(list)
+    for q in queries:
+        for title in sorted(set(q.get('sf_titles', []))):
+            by_title[title].append(q)
+    groups = []
+    for title, qs in by_title.items():
+        seen = {}
+        for q in qs:
+            seen.setdefault(q.get('qidx'), q)
+        unique = list(seen.values())
+        if len(unique) >= 2:
+            groups.append((title, unique))
+    groups.sort(key=lambda item: (-len(item[1]), item[0]))
+    return groups
+
+
+def _build_bridge_reuse_stream(queries, cfg, burst=False):
+    """Construct a reuse stream from queries sharing support titles.
+
+    The chosen support title is the proxy for hidden reusable evidence B. Every
+    group contributes one exposure query and later reuse queries. We mark these
+    queries as tail so head-biased KB initialization does not pre-load the
+    exact evidence that the workload is meant to test.
+    """
+    rng = np.random.default_rng(SEED + (611 if burst else 510))
+    n_q = cfg['n_windows'] * cfg['window_size']
+    ws = cfg['window_size']
+    groups = _support_groups(queries)
+    if not groups:
+        log.warning("No support-title reuse groups found; falling back to random_static")
+        return _build_random_static_stream(queries, cfg)
+
+    rng.shuffle(groups)
+    selected = groups[:max(1, min(len(groups), n_q // 2))]
+    stream = []
+
+    if burst:
+        gi = 0
+        while len(stream) < n_q:
+            title, qs = selected[gi % len(selected)]
+            rng.shuffle(qs)
+            group_id = f"{title}::{gi % len(selected)}"
+            burst_len = min(ws, n_q - len(stream))
+            for j in range(burst_len):
+                role = 'exposure' if j == 0 else 'reuse'
+                q = qs[j % len(qs)]
+                stream.append(_query_copy(
+                    q, role=role, group=group_id,
+                    support_title=title, is_tail=True, seq=len(stream)))
+            gi += 1
+        return stream[:n_q]
+
+    half = n_q // 2
+    exposures = []
+    reuses = []
+    for gi, (title, qs) in enumerate(selected):
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        exposures.append(_query_copy(
+            qs[0], role='exposure', group=group_id,
+            support_title=title, is_tail=True, seq=len(exposures)))
+        for j, q in enumerate(qs[1:], start=1):
+            reuses.append(_query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j))
+
+    rng.shuffle(exposures)
+    rng.shuffle(reuses)
+    bg_size = min(len(queries), n_q)
+    bg_idx = rng.choice(len(queries), size=bg_size, replace=False)
+    background = [
+        _query_copy(queries[int(idx)], role='background', is_tail=True, seq=i)
+        for i, idx in enumerate(bg_idx)
+    ]
+
+    front = []
+    front.extend(exposures[:half])
+    if len(front) < half:
+        front.extend(background[:half - len(front)])
+    back = []
+    back.extend(reuses[:n_q - half])
+    if len(back) < n_q - half:
+        start = max(0, half - len(front))
+        back.extend(background[start:start + (n_q - half - len(back))])
+
+    stream = (front[:half] + back[:n_q - half])[:n_q]
+    if len(stream) < n_q:
+        extra_idx = rng.integers(0, len(queries), size=n_q - len(stream))
+        stream.extend(_query_copy(queries[int(i)], role='background',
+                                  is_tail=True, seq=len(stream) + j)
+                      for j, i in enumerate(extra_idx))
+    return stream[:n_q]
 
 
 

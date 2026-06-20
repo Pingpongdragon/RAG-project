@@ -81,7 +81,8 @@ def load_hotpotqa():
             continue
         ctx = [t for t in item['context']['title'] if t in title_to_idx]
         queries.append({'question': item['question'], 'answer': item['answer'],
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f"[hotpotqa] pool={len(doc_pool)}, queries={len(queries)}")
     return doc_pool, queries, title_to_idx
 
@@ -114,7 +115,8 @@ def load_2wikimultihopqa():
             continue
         ctx = list({c[0] for c in item['context'] if c[0] in title_to_idx})
         queries.append({'question': item['question'], 'answer': item['answer'],
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f"[2wikimultihopqa] pool={len(doc_pool)}, queries={len(queries)}")
     return doc_pool, queries, title_to_idx
 
@@ -148,7 +150,8 @@ def load_musique():
                      if p['title'] in title_to_idx})
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f"[musique] pool={len(doc_pool)}, queries={len(queries)}")
     return doc_pool, queries, title_to_idx
 
@@ -205,7 +208,8 @@ def load_hotpotqa_expanded(n_source=None, q_type=None):
         ctx = [t for t in item['context']['title'] if t in title_to_idx]
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f'[hotpotqa_expanded] pool={len(doc_pool)}, queries={len(queries)}')
     return doc_pool, queries, title_to_idx
 
@@ -261,7 +265,8 @@ def load_musique_expanded(n_source=None):
                      if p['title'] in title_to_idx})
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f'[musique_expanded] pool={len(doc_pool)}, queries={len(queries)}')
     return doc_pool, queries, title_to_idx
 
@@ -318,7 +323,8 @@ def load_2wiki_expanded(n_source=None, q_type=None):
                      if c[0] in title_to_idx})
         queries.append({'question': item['question'],
                        'answer': item.get('answer', ''),
-                       'sf_titles': sfs, 'ctx_titles': ctx})
+                       'sf_titles': sfs, 'ctx_titles': ctx,
+                       'qtype': item.get('type')})
     log.info(f'[2wiki_expanded] pool={len(doc_pool)}, queries={len(queries)}')
     return doc_pool, queries, title_to_idx
 

@@ -11,7 +11,7 @@ Key changes from v1:
 Provides:
   1. EmbeddingHelper           — wraps SentenceTransformer / random fallback
   2. Per-window metrics        — Recall@k, Topic Alignment, Gold-in-KB, Avg Sim
-  3. Method adapters           — QARC / StaticKB / RandomKB common interface
+  3. Method adapters           — DRIP / StaticKB / RandomKB common interface
   4. run_experiment()          — stream queries, collect per-window metrics
   5. run_comparison()          — run all methods on one dataset, produce tables
 """
@@ -241,7 +241,7 @@ def topic_alignment_score(
 class MethodAdapter(ABC):
     """所有 KB 更新方法的实验适配器接口。
 
-    每个方法 (QARC/ComRAG/ERASE/Static/Random) 实现此接口,
+    每个方法 (DRIP/ComRAG/ERASE/Static/Random) 实现此接口,
     由 ExperimentRunner 统一调度。"""
 
     name: str = "base"
@@ -282,11 +282,11 @@ class MethodAdapter(ABC):
 
 
 # ============================================================
-# QARC Adapter
+# DRIP Adapter
 # ============================================================
 
-class QARCAdapter(MethodAdapter):
-    name = "QARC"
+class DRIPAdapter(MethodAdapter):
+    name = "DRIP"
 
     def __init__(self, kb_budget: int = 50, window_size: int = 20, **kw):
         self.kb_budget = kb_budget
@@ -296,8 +296,8 @@ class QARCAdapter(MethodAdapter):
         self._doc_embeddings: Dict[str, np.ndarray] = {}
 
     def initialize(self, pool_docs, embedder, doc_embeddings, shared_bootstrap=None):
-        from algorithms.qarc.curation.kb_curator import Document, DocumentPool, QARCKBCurator
-        from algorithms.qarc.pipeline import QARCPipeline, QARCPhase
+        from algorithms.drip.curation.kb_curator import Document, DocumentPool, DRIPKBCurator
+        from algorithms.drip.pipeline import DRIPPipeline, DRIPPhase
 
         self._doc_embeddings = doc_embeddings
         pool = DocumentPool()
@@ -308,7 +308,7 @@ class QARCAdapter(MethodAdapter):
                 metadata={"topic": pd.topic, "title": pd.title},
             ))
 
-        curator = QARCKBCurator(
+        curator = DRIPKBCurator(
             document_pool=pool, kb_budget=self.kb_budget,
             lambda_max=self.extra_kw.get("exploit_lambda_max", 0.2),
             candidate_top_k=self.extra_kw.get("candidate_top_k", 100),
@@ -319,16 +319,16 @@ class QARCAdapter(MethodAdapter):
             for did in shared_bootstrap:
                 if did in curator.pool.documents:
                     curator.kb_docs[did] = curator.pool.documents[did]
-            logger.info(f"QARC: random bootstrap ({len(curator.kb_docs)} docs)")
+            logger.info(f"DRIP: random bootstrap ({len(curator.kb_docs)} docs)")
 
-        from algorithms.qarc.config import QARCConfig
+        from algorithms.drip.config import DRIPConfig
         cfg_overrides = {k: v for k, v in self.extra_kw.items()
                          if k not in ("candidate_top_k", "exploit_lambda_max")}
         cfg_overrides["window_size"] = self.window_size
-        cfg = QARCConfig.from_dict(cfg_overrides)
-        self.pipeline = QARCPipeline(curator=curator, cfg=cfg)
-        self.pipeline.phase = QARCPhase.ONLINE
-        logger.info("QARC: enter ONLINE phase (drift detection active)")
+        cfg = DRIPConfig.from_dict(cfg_overrides)
+        self.pipeline = DRIPPipeline(curator=curator, cfg=cfg)
+        self.pipeline.phase = DRIPPhase.ONLINE
+        logger.info("DRIP: enter ONLINE phase (drift detection active)")
 
     def process_query(self, query_text, query_embedding):
         r = self.pipeline.process_query(query_text, query_embedding=query_embedding)

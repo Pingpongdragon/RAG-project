@@ -278,7 +278,7 @@ def update_efficiency(
     - 10 次更新和 100 次更新只有 ≈3× 的惩罚 (而非 10×)
     - UE 越高说明方法用更少更新达到了更高 recall
 
-    优势展示: QARC 用精准的漂移检测避免无效更新,
+    优势展示: DRIP 用精准的漂移检测避免无效更新,
               同等 recall 下 UE 应该最高
     """
     if total_updates < 0:
@@ -302,7 +302,7 @@ def cost_adjusted_recall(
       但 turnover=0.05 扣 10%
     - CAR 越高说明方法在保持 KB 稳定的同时获得了高 recall
 
-    QARC 优势: 窗口级批量更新比 ERASE 逐条更新更稳定
+    DRIP 优势: 窗口级批量更新比 ERASE 逐条更新更稳定
     """
     penalty = max(0.0, 1.0 - alpha * kb_turnover)
     return avg_recall * penalty
@@ -321,7 +321,7 @@ def update_precision(
 
     公式: precision = Σ max(0, Δrecall_after_update) / total_updates
 
-    QARC 优势: 只在检测到漂移时更新, 每次更新都应带来 recall 提升
+    DRIP 优势: 只在检测到漂移时更新, 每次更新都应带来 recall 提升
     ERASE 劣势: 基于简单阈值更新, 可能有很多无效更新
     """
     if total_updates <= 0 or len(recalls) < window_size * 2:
@@ -370,7 +370,7 @@ def comprehensive_score(
     - 不只看谁 recall 最高, 而是看谁能以最低代价维持高 recall
     - 这反映了实际部署中的核心需求: 高性能 + 低维护成本
 
-    QARC 论文主张:
+    DRIP 论文主张:
     "Query-aligned curation achieves comparable accuracy with
      significantly fewer, more targeted KB updates"
 

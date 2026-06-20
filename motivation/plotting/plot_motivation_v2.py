@@ -27,35 +27,43 @@ plt.rcParams.update({
 
 COLOR = {
     'Static':        '#9CA3AF',
-    'DocArrival':    '#059669',
+    'DocArrival':    '#7C3AED',
     'KnowledgeEdit': '#7C3AED',
+    'LRU':           '#B45309',
     'TinyLFU':       '#D97706',
-    'LRU':           '#D97706',
+    'FIFO':          '#7C3AED',
+    'Proximity':     '#6366F1',
     'MissLRU':       '#F472B6',
     'MissTinyLFU':   '#A78BFA',
     'GPTCacheStyle': '#0891B2',
     'MemGPTStyle':   '#BE185D',
+    'AgentRAGCache': '#111827',
+    'AgentRAGCache_NoHub': '#6B7280',
     'TemporalAware': '#2563EB',
     'RecencyTTL':    '#1E40AF',
     'OnDemandFetch': '#0F766E',
     'QueryDriven':   '#10B981',
+    'DRIP':          '#2563EB',
     'Oracle':        '#DC2626',
 }
 LABEL = {
     'Static':        'Static',
-        'TinyLFU':       'TinyLFU',
-        'LRU':           'LRU',
-    'DocArrival':    'IndexGrowth\n(bounded)',
-    'TinyLFU':       'TinyLFU',
+    'TinyLFU':       'LFU',
     'LRU':           'LRU',
+    'FIFO':          'FIFO',
+    'DocArrival':    'IndexGrowth\n(bounded)',
     'MissLRU':       'LRU',
     'MissTinyLFU':   'TinyLFU',
     'GPTCacheStyle': 'GPTCache',
+    'Proximity':     'Proximity',
     'MemGPTStyle':   'MemGPT',
+    'AgentRAGCache': 'ARC',
+    'AgentRAGCache_NoHub': 'ARC w/o hub',
     'TemporalAware': 'Temporal-Aware\n(decay)',
     'RecencyTTL':    'Recency-TTL\n(oracle ts)',
     'OnDemandFetch': 'On-Demand Fetch',
-    'QueryDriven':   'SemFlow\n(ours)',
+    'QueryDriven':   'SemFlow',
+    'DRIP':          'DRIP\n(final)',
     'Oracle':        'Oracle',
 }
 SIGNAL_FAMILY = {
@@ -64,13 +72,17 @@ SIGNAL_FAMILY = {
     'KnowledgeEdit': 'idx',
     'TinyLFU':       'cache',
     'LRU':           'cache',
+    'FIFO':          'cache',
+    'Proximity':     'cache',
     'MissLRU':       'query',
     'MissTinyLFU':   'query',
     'GPTCacheStyle': 'cache',
     'MemGPTStyle':   'cache',
+    'AgentRAGCache': 'cache',
     'TemporalAware': 'time',
     'RecencyTTL':    'time',
     'QueryDriven':   'query',
+    'DRIP':          'query',
     'OnDemandFetch': 'oracle',
     'Oracle':        'oracle',
 }
@@ -81,6 +93,26 @@ def load(name):
     k = list(d.keys())[0]
     return d[k]
 
+SMOOTH_W = 7
+
+def smooth_causal(values, w=SMOOTH_W):
+    y = np.array(values, dtype=float)
+    if len(y) < 2:
+        return y
+    k = min(w, len(y))
+    kern = np.ones(k) / k
+    return np.convolve(np.concatenate([np.full(k - 1, y[0]), y]),
+                       kern, mode='valid')[:len(y)]
+
+def smooth_centered(values, w=SMOOTH_W):
+    a = np.array(values, dtype=float)
+    if len(a) < w:
+        return a
+    c = np.convolve(a, np.ones(w) / w, mode='valid')
+    pad_l = (len(a) - len(c)) // 2
+    pad_r = len(a) - len(c) - pad_l
+    return np.pad(c, (pad_l, pad_r), mode='edge')
+
 # ── Fig.1 — Integrated: per-window R@5 (top) + 2-panel cost audit (bottom) ──
 def fig1():
     """Three panels: (a) per-window R@5, (b) online query lat / cache-hit SLO,
@@ -89,26 +121,30 @@ def fig1():
     """
     from matplotlib.transforms import blended_transform_factory
 
-    d = load('streamingqa_temporal')
+    d = load('streamingqa_temporal_final_clean')
     s = d['summary']
     cfg = d['config']
     nw = cfg['n_windows']
 
-    ORDER = ['Static', 'DocArrival', 'RecencyTTL',
-             'MissTinyLFU', 'MissLRU',
-             'QueryDriven', 'OnDemandFetch', 'Oracle']
+    ORDER = ['LRU', 'TinyLFU', 'Proximity', 'GPTCacheStyle', 'DocArrival',
+             'AgentRAGCache', 'QueryDriven', 'DRIP', 'OnDemandFetch', 'Oracle']
     ORDER = [n for n in ORDER if n in s]
     cols  = [COLOR[n] for n in ORDER]
 
     XLBL = {
         'Static':        'Static',
-        'TinyLFU':       'TinyLFU',
+        'TinyLFU':       'LFU',
         'LRU':           'LRU',
+        'FIFO':          'FIFO',
         'MissLRU':       'LRU',
         'MissTinyLFU':   'TinyLFU',
         'DocArrival':    'IndexGrowth\n(bounded)',
+        'GPTCacheStyle': 'GPTCache',
+        'Proximity':     'Proximity',
+        'AgentRAGCache': 'ARC',
         'RecencyTTL':    'RecencyTTL',
         'QueryDriven':   'SemFlow',
+        'DRIP':          'DRIP',
         'OnDemandFetch': 'OnDemand',
         'Oracle':        'Oracle (dense)',
         'OracleEntityExpand': 'Oracle+EntityExpand',
@@ -119,8 +155,12 @@ def fig1():
         'Oracle':        (2.8, '-'),
         'OnDemandFetch': (2.4, '-'),
         'QueryDriven':   (2.4, '-'),
+        'DRIP':          (2.5, '-'),
         'RecencyTTL':    (1.6, ':'),
         'DocArrival':    (1.4, '--'),
+        'GPTCacheStyle': (1.5, ':'),
+        'Proximity':     (1.4, '-.'),
+        'AgentRAGCache': (2.2, '-.'),
         'Static':        (1.6, '-'),
         'TinyLFU':       (1.4, ':'),
         'LRU':           (1.4, ':'),
@@ -141,10 +181,7 @@ def fig1():
         if not pw:
             continue
         y = np.array(pw)
-        k = min(5, len(y))
-        kern = np.ones(k) / k
-        # Causal MA: pad only at front so window-0 shows the true starting value
-        ys = np.convolve(np.concatenate([np.full(k - 1, y[0]), y]), kern, mode='valid')[:len(y)]
+        ys = smooth_causal(y)
         lw, ls = LW.get(name, (1.3, '-'))
         axL.plot(np.arange(len(ys)), ys, color=COLOR[name], lw=lw, ls=ls,
                  label=LABEL[name].replace('\n', ' '))
@@ -170,8 +207,8 @@ def fig1():
         '(a) L1 temporal-locality audit on the natural StreamingQA stream  '
         f'(pool = {cfg["pool_size"]:,},  hot KB = {cfg["kb_budget"]:,})',
         fontsize=11)
-    axL.legend(ncol=4, fontsize=8.4, framealpha=0.92,
-               loc='upper center', bbox_to_anchor=(0.5, -0.22))
+    axL.legend(ncol=5, fontsize=8.2, framealpha=0.92,
+               loc='upper center', bbox_to_anchor=(0.5, -0.20))
     axL.grid(alpha=0.28)
     axL.set_xlim(0, nw - 1)
     axL.set_ylim(0, 100)
@@ -235,43 +272,46 @@ def fig1():
 # ── Fig.2 — Absolute Recall@5 curves on multi-hop datasets ─────────────────
 def fig2():
     DATA2 = ROOT / 'motivation_2' / 'data'
-    HOTPOT_FILE = DATA2 / 'results_hotpotqa_comp_full_gradual_q2k.json'
-    WIKI_FILE   = DATA2 / 'results_2wiki_bc_entity_expand_gradual_q2k.json'
+    HOTPOT_FILE = DATA2 / 'results_hotpotqa_comp_full_gradual_q2k_final_clean.json'
+    WIKI_FILE   = DATA2 / 'results_2wiki_bc_entity_expand_gradual_q2k_final_clean.json'
     d_hot  = json.load(open(HOTPOT_FILE))['hotpotqa']
     d_wiki = json.load(open(WIKI_FILE))['2wikimultihopqa']
 
     COLOR2 = {**COLOR}
     LABEL2 = {
         'Static':        'Static (frozen)',
-        'TinyLFU':       'TinyLFU',
+        'TinyLFU':       'LFU',
         'LRU':           'LRU',
+        'FIFO':          'FIFO',
         'MissLRU':       'LRU',
         'MissTinyLFU':   'TinyLFU',
         'DocArrival':    'IndexGrowth (bounded)',
+        'GPTCacheStyle': 'GPTCache',
+        'Proximity':     'Proximity',
+        'AgentRAGCache': 'ARC',
         'QueryDriven':   'SemFlow (ours)',
+        'DRIP':          'DRIP (final)',
         'OnDemandFetch': 'On-Demand Fetch',
         'Oracle':        'Oracle',
     }
     LW2 = {
         'Static': 1.3, 'TinyLFU': 1.4, 'LRU': 1.4, 'DocArrival': 1.5,
+        'Proximity': 1.4,
+        'GPTCacheStyle': 1.5, 'AgentRAGCache': 2.2,
+        'DRIP': 2.5,
         'MissLRU': 2.2, 'MissTinyLFU': 1.6,
         'QueryDriven': 2.8, 'OnDemandFetch': 2.0, 'Oracle': 2.2,
     }
     LS2 = {
         'Static': '--', 'TinyLFU': ':', 'LRU': ':', 'DocArrival': '--',
+        'Proximity': '-.',
+        'GPTCacheStyle': ':', 'AgentRAGCache': '-.',
+        'DRIP': '-',
         'MissLRU': '-.', 'MissTinyLFU': ':',
         'QueryDriven': '-', 'OnDemandFetch': '--', 'Oracle': '-',
     }
-    ORDER_LINE = ['Static', 'DocArrival', 'MissTinyLFU', 'MissLRU', 'QueryDriven', 'OnDemandFetch', 'Oracle']
-
-    def ma(arr, w=5):
-        a = np.array(arr, dtype=float)
-        if len(a) < w:
-            return a
-        c = np.convolve(a, np.ones(w)/w, mode='valid')
-        pad_l = (len(a) - len(c)) // 2
-        pad_r = len(a) - len(c) - pad_l
-        return np.pad(c, (pad_l, pad_r), mode='edge')
+    ORDER_LINE = ['LRU', 'TinyLFU', 'Proximity', 'GPTCacheStyle', 'DocArrival',
+                  'AgentRAGCache', 'QueryDriven', 'DRIP', 'OnDemandFetch', 'Oracle']
 
     def add_gradual_bg(ax, n_w, y_max):
         left  = np.array([219, 234, 254], dtype=float) / 255.0
@@ -309,9 +349,9 @@ def fig2():
 
         for n in names:
             pw = np.array(summ[n].get('recall@5_per_window', []), dtype=float)
-            alpha  = 0.95 if n in ('QueryDriven', 'Oracle', 'OnDemandFetch') else 0.65
-            zorder = 3 if n == 'QueryDriven' else 2
-            ax.plot(wx, ma(pw),
+            alpha  = 0.95 if n in ('QueryDriven', 'DRIP', 'Oracle', 'OnDemandFetch', 'AgentRAGCache') else 0.7
+            zorder = 4 if n in ('QueryDriven', 'DRIP', 'AgentRAGCache') else 3
+            ax.plot(wx, smooth_centered(pw),
                     color=COLOR2.get(n, '#888'),
                     lw=LW2.get(n, 1.3),
                     ls=LS2.get(n, '-'),
@@ -333,18 +373,27 @@ def fig2():
             fontsize=10.5)
         ax.grid(alpha=0.22, zorder=1)
 
-    draw_recall_ax(ax_a, d_hot,
-               panel_lbl='a', ds_title='L2 direct multi-hop: HotpotQA-comp  (both entities in query)',
-               annot_text='SemFlow +9.2 pp over LRU  (H2: 54.3%  vs  45.1%)\nQuery-embedding neighborhood reaches both hops',
-               annot_color='#065F46', annot_bg='#D1FAE5')
+    hot = d_hot['summary']
+    wiki = d_wiki['summary']
+    draw_recall_ax(
+        ax_a, d_hot,
+        panel_lbl='a', ds_title='L2 direct multi-hop: HotpotQA-comp  (both entities in query)',
+        annot_text=(f'ARC is strong when query-document locality is direct '
+                    f'(H2 {hot["AgentRAGCache"]["recall@5_h2"]:.1f}%)\n'
+                    f'SemFlow H2 {hot["QueryDriven"]["recall@5_h2"]:.1f}%  '
+                    f'DRIP {hot["DRIP"]["recall@5_h2"]:.1f}%  '
+                    f'vs. LRU {hot["LRU"]["recall@5_h2"]:.1f}%'),
+        annot_color='#065F46', annot_bg='#D1FAE5')
 
-    draw_recall_ax(ax_b, d_wiki,
-               panel_lbl='b', ds_title='L3 bridge access: 2WikiMultihopQA  (2nd-hop entity hidden)',
-               annot_text=('SemFlow +7.0 pp over LRU  (H2: 36.0%  vs  29.0%)\n'
-                           'BUT 21 pp gap to Oracle: 2nd-hop docs are not\n'
-                           'reachable from query embedding alone\n'
-                           '→ motivates entity-chained prefetch'),
-               annot_color='#92400E', annot_bg='#FEF3C7')
+    draw_recall_ax(
+        ax_b, d_wiki,
+        panel_lbl='b', ds_title='L3 bridge access: 2WikiMultihopQA  (2nd-hop entity hidden)',
+        annot_text=(f'Bridge evidence leaves a gap to Oracle '
+                    f'(Oracle H2 {wiki["Oracle"]["recall@5_h2"]:.1f}%)\n'
+                    f'ARC {wiki["AgentRAGCache"]["recall@5_h2"]:.1f}%, '
+                    f'SemFlow {wiki["QueryDriven"]["recall@5_h2"]:.1f}%, '
+                    f'DRIP {wiki["DRIP"]["recall@5_h2"]:.1f}%'),
+        annot_color='#92400E', annot_bg='#FEF3C7')
 
     handles_a, labels_a = ax_a.get_legend_handles_labels()
     handles_b, labels_b = ax_b.get_legend_handles_labels()

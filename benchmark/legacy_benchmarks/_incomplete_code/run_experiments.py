@@ -36,7 +36,7 @@ from benchmarks.builders import (
 )
 from benchmarks.experiment_framework import (
     EmbeddingHelper,
-    QARCAdapter,
+    DRIPAdapter,
     ComRAGAdapter,
     ERASEAdapter,
     StaticKBAdapter,
@@ -51,7 +51,7 @@ def _make_methods(kb_budget: int, window_size: int):
     """Instantiate all methods to compare."""
     candidate_top_k = 200  # 每个兴趣簇从pool取200候选，总候选≈200*m
     return [
-        QARCAdapter(kb_budget=kb_budget, window_size=window_size,
+        DRIPAdapter(kb_budget=kb_budget, window_size=window_size,
                     candidate_top_k=candidate_top_k,
                     agent_warmup_windows=1,
                     agent_lambda_aggressive=0.5),

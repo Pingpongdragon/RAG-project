@@ -31,6 +31,27 @@ models/.locks/
 *.log
 results/
 
+# LaTeX build artifacts
+*.aux
+*.nav
+*.out
+*.snm
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Generated experiment outputs
+motivation/**/data/*.json
+motivation/**/figures/*.pdf
+motivation/**/figures/*.png
+motivation/paper_figs/**/*.pdf
+motivation/paper_figs/**/*.png
+
+# Generated talk decks
+DRIP_TALK_BEAMER*.pdf
+docs/design/DRIP_TALK_BEAMER*.pdf
+
 # Temporary files
 *.tmp
 *.bak

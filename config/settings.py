@@ -240,34 +240,34 @@ ERASE_INFERENCE_TOP_K = 10
 
 
 # -------------------------
-# QARC Hyperparameters (Query-Aligned Retrieval-augmented Knowledge Curation)
+# DRIP Hyperparameters (Query-Aligned Retrieval-augmented Knowledge Curation)
 # Our proposed framework — three-phase adaptive KB curation
 # -------------------------
 
 # Window parameters
-QARC_WINDOW_SIZE = 50           # Queries per window (W_size)
+DRIP_WINDOW_SIZE = 50           # Queries per window (W_size)
 
 # Phase 1 (Explore) parameters
-QARC_N_WARMUP_MIN = 5           # Minimum windows before Phase 1→2 transition
-QARC_EPSILON_SIGMA = 0.3        # Convergence threshold for Gap variance ratio
-QARC_EXPLORE_LAMBDA_MAX = 0.5   # Replacement ratio in Phase 1 (aggressive)
-QARC_EXPLORE_ETA = 0.0          # Diversity term in Phase 1 (pure interest)
+DRIP_N_WARMUP_MIN = 5           # Minimum windows before Phase 1→2 transition
+DRIP_EPSILON_SIGMA = 0.3        # Convergence threshold for Gap variance ratio
+DRIP_EXPLORE_LAMBDA_MAX = 0.5   # Replacement ratio in Phase 1 (aggressive)
+DRIP_EXPLORE_ETA = 0.0          # Diversity term in Phase 1 (pure interest)
 
 # Phase 2 (Exploit) parameters
-QARC_EXPLOIT_LAMBDA_MAX = 0.2   # Replacement ratio in Phase 2 (conservative)
-QARC_EXPLOIT_ETA = 0.1          # Diversity regularization in Phase 2
-QARC_COOLDOWN_WINDOWS = 3       # Cooldown windows after re-curation
+DRIP_EXPLOIT_LAMBDA_MAX = 0.2   # Replacement ratio in Phase 2 (conservative)
+DRIP_EXPLOIT_ETA = 0.1          # Diversity regularization in Phase 2
+DRIP_COOLDOWN_WINDOWS = 3       # Cooldown windows after re-curation
 
 # Adaptive threshold (EMA + k·MAD)
-QARC_THRESHOLD_BETA = 0.9       # EMA smoothing factor
-QARC_THRESHOLD_K = 2.0          # MAD multiplier (sensitivity)
+DRIP_THRESHOLD_BETA = 0.9       # EMA smoothing factor
+DRIP_THRESHOLD_K = 2.0          # MAD multiplier (sensitivity)
 
 # Re-explore trigger
-QARC_RE_EXPLORE_TRIGGER = 3     # Consecutive Phase 2 triggers before re-explore
+DRIP_RE_EXPLORE_TRIGGER = 3     # Consecutive Phase 2 triggers before re-explore
 
 # KB parameters
-QARC_KB_BUDGET = 50             # Maximum KB documents
-QARC_CANDIDATE_TOP_K = 100      # Candidates per interest centroid from pool
+DRIP_KB_BUDGET = 50             # Maximum KB documents
+DRIP_CANDIDATE_TOP_K = 100      # Candidates per interest centroid from pool
 
 # Retrieval parameters
-QARC_RETRIEVE_TOP_K = 5         # Docs retrieved per query for RAG
+DRIP_RETRIEVE_TOP_K = 5         # Docs retrieved per query for RAG

@@ -7,7 +7,7 @@ Usage:
   python run.py --n-windows 50 --window-size 50 --expanded
   python run.py --drift gradual
   python run.py --datasets hotpotqa musique
-  python run.py --strategies Static QueryDriven Oracle
+  python run.py --strategies Static DRIP Oracle
 
 Supports:
   - Configurable window count and size
@@ -39,7 +39,7 @@ _P.update(
     LOG_FIX_CAP=_mo2cfg.LOG_FIX_CAP, LOG_LAG_WINDOWS=_mo2cfg.LOG_LAG_WINDOWS,
 )
 from algorithms.cache.registry import STRATEGY_FACTORIES
-from utils import (compute_embeddings, cluster_and_build_stream,
+from utils import (compute_embeddings, build_query_stream,
                    focus_pool, head_biased_init_kb, recall_at_k)
 from llm_expand import augment_with_llm, batch_decompose
 from graph_retrieval import (extract_pool_entities, extract_query_entities,
@@ -50,7 +50,8 @@ from graph_retrieval import (extract_pool_entities, extract_query_entities,
 def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 loader_name=None, n_source=None, q_type=None, kb_budget_override=None,
                 n_stream_queries=None,
-                retrieval='dense', llm_expand=False):
+                retrieval='dense', llm_expand=False, workload='cluster_shift',
+                mask_stream_gold=True, init_stream_gold=False):
     """Run one dataset experiment.
 
     Args:
@@ -71,7 +72,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     # ── Load data ──
     lname = loader_name or ds_name
     loader = LOADERS[lname]
-    if n_source and lname in ('musique_expanded', '2wiki_expanded', 'hotpotqa_expanded'):
+    if n_source is not None and lname in ('musique_expanded', '2wiki_expanded', 'hotpotqa_expanded'):
         if q_type and lname in ('hotpotqa_expanded', '2wiki_expanded'):
             doc_pool, queries, title_to_idx = loader(n_source=n_source, q_type=q_type)
         else:
@@ -91,8 +92,8 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     doc_embs, query_embs = compute_embeddings(doc_pool, queries, tag=tag)
 
     # ── Stream ──
-    stream, centroids, head_set = cluster_and_build_stream(
-        queries, query_embs, cfg, drift_mode=drift_mode)
+    stream, centroids, head_set = build_query_stream(
+        queries, query_embs, cfg, workload=workload, drift_mode=drift_mode)
 
     # ── KB init ──
     # KB budget = head_context_docs * kb_head_mult.
@@ -115,6 +116,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         kb_budget = kb_budget_override
     init_kb = head_biased_init_kb(
         doc_pool, doc_embs, centroids, head_set, kb_budget, stream)
+    if init_stream_gold:
+        init_kb = _init_kb_with_stream_gold(
+            init_kb, doc_pool, doc_embs, title_to_idx, stream, centroids, kb_budget)
+    elif mask_stream_gold and workload in ('temporal_bridge_reuse', 'burst_bridge_reuse'):
+        init_kb = _mask_stream_gold_from_init_kb(
+            init_kb, doc_pool, doc_embs, title_to_idx, stream, centroids, kb_budget)
     d2p = {d['doc_id']: i for i, d in enumerate(doc_pool)}
 
     # ── Optional graph-retrieval setup (no-LLM HippoRAG/LightRAG analogue) ──
@@ -131,28 +138,28 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
                 queries, query_embs, query_ents, _nlp,
                 tag=tag + '_llmexp')
             log.info(f'[{ds_name}] LLM query expansion applied.')
-        # Build per-query sub-question embedding lists for union retrieval in graph mode
-        _sub_lists = batch_decompose(queries, tag=tag + '_llmexp')
-        from sentence_transformers import SentenceTransformer as _ST
-        from config import EMBED_MODEL as _EM, BGE_QUERY_PREFIX as _BP
-        _sbert = _ST(_EM, device='cuda')
-        _qpref = _BP if 'bge' in _EM.lower() else ''
-        _flat = [sq for sqs in _sub_lists for sq in sqs]
-        _flat_embs = _sbert.encode([_qpref + q for q in _flat], batch_size=256, show_progress_bar=False,
-                                   normalize_embeddings=True)
-        import spacy as _spacy
-        _nlp2 = _spacy.load('en_core_web_sm')
-        sub_query_embs, sub_query_ents = [], []
-        _ptr = 0
-        for _sqs in _sub_lists:
-            _n = len(_sqs)
-            sub_query_embs.append(_flat_embs[_ptr:_ptr + _n])
-            sub_query_ents.append([[e.text for e in _nlp2(sq).ents] for sq in _sqs])
-            _ptr += _n
+            # Build per-query sub-question embedding lists for union retrieval
+            # only when explicit LLM expansion is enabled.
+            _sub_lists = batch_decompose(queries, tag=tag + '_llmexp')
+            from sentence_transformers import SentenceTransformer as _ST
+            from config import EMBED_MODEL as _EM, BGE_QUERY_PREFIX as _BP
+            _sbert = _ST(_EM, device='cuda')
+            _qpref = _BP if 'bge' in _EM.lower() else ''
+            _flat = [sq for sqs in _sub_lists for sq in sqs]
+            _flat_embs = _sbert.encode([_qpref + q for q in _flat], batch_size=256, show_progress_bar=False,
+                                       normalize_embeddings=True)
+            import spacy as _spacy
+            _nlp2 = _spacy.load('en_core_web_sm')
+            sub_query_embs, sub_query_ents = [], []
+            _ptr = 0
+            for _sqs in _sub_lists:
+                _n = len(_sqs)
+                sub_query_embs.append(_flat_embs[_ptr:_ptr + _n])
+                sub_query_ents.append([[e.text for e in _nlp2(sq).ents] for sq in _sqs])
+                _ptr += _n
+        else:
+            sub_query_embs = sub_query_ents = None
     else:
-        sub_query_embs = sub_query_ents = None
-
-    if retrieval != 'graph' or not llm_expand:
         sub_query_embs = sub_query_ents = None
     # ── Strategies ──
     strategies = {}
@@ -184,6 +191,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     kb_coverage = {n: [] for n in strategies_to_run}  # L1: fraction of window's gold SFs that sit in KB
     kb_coverage_cum = {n: [] for n in strategies_to_run}  # cumulative gold so far
     seen_gold = {n: set() for n in strategies_to_run}
+    residency_metrics = {n: _new_residency_metrics() for n in strategies_to_run}
     for w in range(nw):
         wq = stream[w * ws:(w + 1) * ws]
         if len(wq) == 0:
@@ -205,6 +213,8 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             # the per-window upper bound for the queries we are about to score.
             if name == 'Oracle':
                 st_i.step(wq, wqe, w)
+            _record_residency_metrics(
+                residency_metrics[name], st_i.kb, wq, doc_pool, title_to_idx)
             effective_kb = st_i.get_effective_kb(wq, wqe) if hasattr(st_i, 'get_effective_kb') else st_i.kb
             if retrieval == 'graph':
                 strategy_graphs[name].sync_to(effective_kb)
@@ -264,6 +274,15 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         s['serve_retrieval_cost'] = strategies[name].serve_retrieval_cost
         s['retrieval_cost'] = strategies[name].retrieval_cost
         s['cost'] = strategies[name].cost
+        if hasattr(strategies[name], 'last_admission'):
+            s['last_admission'] = strategies[name].last_admission
+        if hasattr(strategies[name], 'bridge_log'):
+            s['bridge_log'] = strategies[name].bridge_log
+        if hasattr(strategies[name], 'route_log'):
+            s['route_log'] = strategies[name].route_log
+        if hasattr(strategies[name], 'drift_log'):
+            s['drift_log'] = strategies[name].drift_log
+        s.update(_summarise_residency_metrics(residency_metrics[name]))
         summary[name] = s
     return {
         'dataset': ds_name,
@@ -271,9 +290,160 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             'kb_budget': kb_budget, 'pool_size': len(doc_pool),
             'n_windows': actual_nw, 'window_size': ws,
             'n_queries_available': len(queries),
-            'drift': drift_mode, 'k_list': K_LIST,
+            'drift': drift_mode, 'workload': workload, 'k_list': K_LIST,
+            'mask_stream_gold': bool(mask_stream_gold and not init_stream_gold),
+            'init_stream_gold': bool(init_stream_gold),
         },
         'summary': summary, 'elapsed': round(elapsed, 1),
+    }
+
+
+def _new_residency_metrics():
+    return {
+        'cold_fetches': [],
+        'reuse_hits': 0,
+        'reuse_queries': 0,
+        'exposure_cold_fetches': [],
+        'reuse_cold_fetches': [],
+    }
+
+
+def _mask_stream_gold_from_init_kb(init_kb, doc_pool, doc_embs, title_to_idx,
+                                   stream, centroids, kb_budget):
+    """Prevent reuse workloads from starting with the answers already warm."""
+    forbidden = set()
+    for q in stream:
+        for title in q.get('sf_titles', []):
+            pi = title_to_idx.get(title)
+            if pi is not None:
+                forbidden.add(doc_pool[pi]['doc_id'])
+
+    masked = set(init_kb) - forbidden
+    removed = len(set(init_kb) & forbidden)
+    if len(masked) >= kb_budget:
+        log.info(
+            f"Reuse workload init mask: removed {removed} stream-gold docs; "
+            f"KB={len(masked)}"
+        )
+        return set(sorted(masked)[:kb_budget])
+
+    forbidden_or_resident = forbidden | masked
+    rest = [
+        i for i, d in enumerate(doc_pool)
+        if d['doc_id'] not in forbidden_or_resident
+    ]
+    need = kb_budget - len(masked)
+    if rest and need > 0:
+        norm_c = centroids / np.clip(
+            np.linalg.norm(centroids, axis=1, keepdims=True), 1e-10, None)
+        scores = (doc_embs[rest] @ norm_c.T).max(axis=1)
+        top = np.argsort(scores)[-min(need, len(rest)):]
+        masked.update(doc_pool[rest[int(i)]]['doc_id'] for i in top)
+
+    log.info(
+        f"Reuse workload init mask: removed {removed} stream-gold docs; "
+        f"forbidden={len(forbidden)} KB={len(masked)}/{kb_budget}"
+    )
+    return masked
+
+
+def _init_kb_with_stream_gold(init_kb, doc_pool, doc_embs, title_to_idx,
+                              stream, centroids, kb_budget):
+    """Capacity sanity check: seed KB with stream support docs, then fill slack."""
+    gold_doc_ids = []
+    seen = set()
+    for q in stream:
+        for title in q.get('sf_titles', []):
+            pi = title_to_idx.get(title)
+            if pi is None:
+                continue
+            did = doc_pool[pi]['doc_id']
+            if did not in seen:
+                seen.add(did)
+                gold_doc_ids.append(did)
+
+    selected = set(gold_doc_ids[:kb_budget])
+    if len(gold_doc_ids) > kb_budget:
+        log.warning(
+            f"Stream-gold init truncated: gold={len(gold_doc_ids)} "
+            f"KB={kb_budget}"
+        )
+        return selected
+
+    for did in sorted(init_kb):
+        if len(selected) >= kb_budget:
+            break
+        selected.add(did)
+
+    if len(selected) < kb_budget:
+        selected_or_gold = set(selected)
+        rest = [
+            i for i, d in enumerate(doc_pool)
+            if d['doc_id'] not in selected_or_gold
+        ]
+        need = kb_budget - len(selected)
+        if rest and need > 0:
+            norm_c = centroids / np.clip(
+                np.linalg.norm(centroids, axis=1, keepdims=True), 1e-10, None)
+            scores = (doc_embs[rest] @ norm_c.T).max(axis=1)
+            top = np.argsort(scores)[-min(need, len(rest)):]
+            selected.update(doc_pool[rest[int(i)]]['doc_id'] for i in top)
+
+    log.info(
+        f"Stream-gold init: gold={len(gold_doc_ids)} "
+        f"resident_gold={len(set(gold_doc_ids) & selected)} "
+        f"KB={len(selected)}/{kb_budget}"
+    )
+    return selected
+
+
+def _missing_gold_count(kb_doc_ids, query, doc_pool, title_to_idx):
+    missing = 0
+    total = 0
+    for title in query.get('sf_titles', []):
+        pi = title_to_idx.get(title)
+        if pi is None:
+            continue
+        total += 1
+        if doc_pool[pi]['doc_id'] not in kb_doc_ids:
+            missing += 1
+    return missing, total
+
+
+def _record_residency_metrics(metrics, kb_doc_ids, window_queries,
+                              doc_pool, title_to_idx):
+    for q in window_queries:
+        missing, total = _missing_gold_count(kb_doc_ids, q, doc_pool, title_to_idx)
+        if total <= 0:
+            continue
+        metrics['cold_fetches'].append(float(missing))
+        role = q.get('reuse_role')
+        if role == 'exposure':
+            metrics['exposure_cold_fetches'].append(float(missing))
+        elif role == 'reuse':
+            metrics['reuse_cold_fetches'].append(float(missing))
+            support_title = q.get('reuse_support_title')
+            pi = title_to_idx.get(support_title) if support_title else None
+            if pi is not None:
+                metrics['reuse_queries'] += 1
+                did = doc_pool[pi]['doc_id']
+                metrics['reuse_hits'] += int(did in kb_doc_ids)
+
+
+def _mean_or_zero(values):
+    return float(np.mean(values)) if values else 0.0
+
+
+def _summarise_residency_metrics(metrics):
+    reuse_q = int(metrics['reuse_queries'])
+    reuse_hits = int(metrics['reuse_hits'])
+    return {
+        'cold_fetches_per_query': round(_mean_or_zero(metrics['cold_fetches']), 3),
+        'reuse_hit_rate': round((reuse_hits / reuse_q) * 100, 1) if reuse_q else 0.0,
+        'reuse_queries': reuse_q,
+        'reuse_hits': reuse_hits,
+        'first_exposure_cost': round(_mean_or_zero(metrics['exposure_cold_fetches']), 3),
+        'amortized_cold_cost': round(_mean_or_zero(metrics['reuse_cold_fetches']), 3),
     }
 
 
@@ -295,6 +465,7 @@ def print_summary(all_results, strategies_to_run):
         hdr = (f"{'Strategy':>18s} |"
                f" {'R@5 H1':>6s} {'R@5 H2':>6s} {'D':>5s} |"
                f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
+               f" {'ColdQ':>6s} {'Reuse':>6s} |"
                f" {'Writes':>6s} {'MaintR':>7s} {'ServeR':>7s}")
         print(hdr)
         print("-" * len(hdr))
@@ -307,6 +478,8 @@ def print_summary(all_results, strategies_to_run):
             line = (f"{name:>18s} |"
                     f" {h1:>5.1f}% {h2:>5.1f}% {h2-h1:>+5.1f} |"
                     f" {c1:>5.1f}% {c2:>5.1f}% {c2-c1:>+5.1f} |"
+                    f" {s.get('cold_fetches_per_query', 0.0):>6.2f}"
+                    f" {s.get('reuse_hit_rate', 0.0):>5.1f}% |"
                     f" {s['update_cost']:>6d}"
                     f" {s['maint_retrieval_cost']:>7d}"
                     f" {s['serve_retrieval_cost']:>7d}")
@@ -343,15 +516,21 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'RandomFIFO':       ('#9467BD', '-.', '^'),
         'DocArrival':       ('#8C564B', ':',  's'),
         'KnowledgeEdit':    ('#E377C2', '-.', 'D'),
+        'LRU':              ('#F59E0B', '-.', 'v'),
+        'FIFO':             ('#7C3AED', '--', '^'),
+        'TinyLFU':          ('#0284C7', ':',  'p'),
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
-        'QueryDriven': ('#10B981', '-',  'D'),
+        'AgentRAGCache':    ('#111827', '-',  'o'),
+        'AgentRAGCache_NoHub': ('#6B7280', '--', 'o'),
+        'RoutedCache':      ('#2563EB', '-',  's'),
+        'DRIP':             ('#0F766E', '-',  '*'),
         'Oracle':           ('#D62728', '-',  None),
     }
 
     fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
                              sharex=True, squeeze=False)
-    emphasis = {'Oracle', 'QueryDriven'}
+    emphasis = {'Oracle', 'DRIP'}
 
     for row, ds in enumerate(datasets):
         res = all_results[ds]
@@ -370,7 +549,7 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
                     continue
                 color, ls, marker = palette.get(name, ('gray', '-', None))
                 values = res['summary'][name][series_key]
-                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'QueryDriven' else 1.4)
+                lw = 2.4 if name == 'Oracle' else (2.0 if name == 'DRIP' else 1.4)
                 alpha = 1.0 if name in emphasis else 0.85
                 zorder = 5 if name in emphasis else 3
                 mark_every = max(1, nw // 12)
@@ -422,6 +601,12 @@ def main():
     parser.add_argument('--n-windows', type=int, default=None)
     parser.add_argument('--window-size', type=int, default=None)
     parser.add_argument('--drift', choices=['sudden', 'gradual', 'full_gradual'], default='sudden')
+    parser.add_argument('--workload',
+                        choices=['cluster_shift', 'random_static',
+                                 'temporal_bridge_reuse',
+                                 'burst_bridge_reuse'],
+                        default='cluster_shift',
+                        help='Query stream constructor. cluster_shift preserves historical behavior.')
     parser.add_argument('--expanded', action='store_true',
                         help='Use expanded loaders for 2Wiki and MuSiQue')
     parser.add_argument('--q-type', default=None,
@@ -439,6 +624,12 @@ def main():
                         help='Output JSON filename (auto-generated if omitted)')
     parser.add_argument('--kb-budget', type=int, default=None,
                         help='Force absolute KB budget (overrides kb_head_mult formula)')
+    parser.add_argument('--no-mask-stream-gold', action='store_true',
+                        help='Do not remove stream support docs from the initial KB. '
+                             'Use for capacity/coverage upper-bound experiments.')
+    parser.add_argument('--init-stream-gold', action='store_true',
+                        help='Seed the initial KB with stream support docs before filling slack. '
+                             'This is an oracle capacity sanity check, not a causal benchmark.')
     parser.add_argument('--retrieval', choices=['dense', 'graph', 'entity_expand'], default='dense',
                         help='Recall@K backend: dense cosine (default) or PPR over passage-entity graph')
     args = parser.parse_args()
@@ -474,16 +665,23 @@ def main():
             kb_budget_override=args.kb_budget,
             n_stream_queries=args.n_stream_queries,
             retrieval=args.retrieval,
-            llm_expand=args.llm_expand)
+            llm_expand=args.llm_expand,
+            workload=args.workload,
+            mask_stream_gold=not args.no_mask_stream_gold,
+            init_stream_gold=args.init_stream_gold)
 
     # ── Save ──
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    actual_nw_for_name = (
+        args.n_windows or
+        next(iter(all_results.values()))['config']['n_windows']
+    )
     if args.output:
         out_name = args.output
     else:
-        nw = args.n_windows or 20
         ret_suf = '' if args.retrieval == 'dense' else f'_{args.retrieval}'
-        out_name = f'results_{nw}w_{args.drift}{ret_suf}.json'
+        workload_suf = '' if args.workload == 'cluster_shift' else f'_{args.workload}'
+        out_name = f'results_{actual_nw_for_name}w_{args.drift}{workload_suf}{ret_suf}.json'
     out_path = DATA_DIR / out_name
     with open(out_path, 'w') as f:
         json.dump(all_results, f, indent=2)
@@ -491,7 +689,8 @@ def main():
 
     print_summary(all_results, strategies_to_run)
 
-    suffix = f'_{args.n_windows or 20}w_{args.drift}{"" if args.retrieval == "dense" else "_" + args.retrieval}'
+    workload_suf = '' if args.workload == 'cluster_shift' else f'_{args.workload}'
+    suffix = f'_{actual_nw_for_name}w_{args.drift}{workload_suf}{"" if args.retrieval == "dense" else "_" + args.retrieval}'
     generate_figures(all_results, strategies_to_run, suffix=suffix)
 
 

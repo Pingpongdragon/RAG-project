@@ -266,6 +266,22 @@ def cluster_and_build_stream(queries, query_embs, cfg, drift_mode='sudden'):
             window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
             rng.shuffle(window)
             stream.extend(window)
+    elif drift_mode == 'stationary':
+        # ARC's paper setting assumes queries are drawn from a fixed P(q|Theta).
+        # Keep the empirical head/tail mixture constant across all windows.
+        all_heads = [q for q in queries if not q['is_tail']]
+        all_tails = [q for q in queries if q['is_tail']]
+        n_all_windows = n_q // ws
+        head_pct = len(all_heads) / max(1, len(all_heads) + len(all_tails))
+        stream = []
+        for _ in range(n_all_windows):
+            n_h_w = int(ws * head_pct)
+            n_t_w = ws - n_h_w
+            h_idx = rng.integers(0, len(all_heads), n_h_w)
+            t_idx = rng.integers(0, len(all_tails), n_t_w)
+            window = [all_heads[i] for i in h_idx] + [all_tails[i] for i in t_idx]
+            rng.shuffle(window)
+            stream.extend(window)
     else:
         raise ValueError(f"Unknown drift_mode: {drift_mode}")
 

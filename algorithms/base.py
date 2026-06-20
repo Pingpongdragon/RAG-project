@@ -2,7 +2,7 @@
 algorithms/base.py — 所有 KB 更新策略的抽象基类
 
 设计思想:
-  - 统一接口让 QARC / ComRAG / ERASE 可以公平对比
+  - 统一接口让 DRIP / ComRAG / ERASE 可以公平对比
   - 与 core/ RAG 引擎解耦: base 只定义"决策"，执行由 pipeline 负责
   - 支持流式实验: process_query() 逐条处理，内部维护状态
 
@@ -14,7 +14,7 @@ algorithms/base.py — 所有 KB 更新策略的抽象基类
                       └───────┬───────┘
                 ┌─────────────┼──────────────┐
            ┌────┴────┐  ┌────┴────┐  ┌──────┴──────┐
-           │  QARC   │  │ ComRAG  │  │   ERASE     │
+           │  DRIP   │  │ ComRAG  │  │   ERASE     │
            │Adapter  │  │Adapter  │  │  Adapter    │
            └─────────┘  └─────────┘  └─────────────┘
 """
@@ -42,7 +42,7 @@ class ProcessResult:
     # 更新后的 KB 大小
     kb_size: int = 0
 
-    # 方法特有的额外指标 (如: QARC 的 alignment_gap, ComRAG 的 routing 类型)
+    # 方法特有的额外指标 (如: DRIP 的 alignment_gap, ComRAG 的 routing 类型)
     extra_metrics: Dict[str, Any] = field(default_factory=dict)
 
 

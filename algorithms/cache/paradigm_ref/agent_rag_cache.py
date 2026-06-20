@@ -5,17 +5,18 @@ the *Agent RAG Cache Mechanism* that scores cached passages by a Distance-Rank
 Frequency (DRF) term plus an embedding-space hubness centrality term, with a
 memory-footprint penalty, and evicts the lowest-priority item.
 
-Faithful to the paper's Algorithm 1 (query-driven escalation), adapted to this
-repo's window-level BaseStrategy so it is directly comparable to QueryDriven /
-DRYAD / LRU under the same cost accounting:
+Faithful to the paper's Algorithm 1 priority model, adapted to this repo's
+window-level BaseStrategy so it is directly comparable to DRIP / LRU under the
+same cost accounting:
 
   Per window, for each query q:
-    1. Retrieve top-k from the cache (KB). If the mean query-cache distance
-       exceeds tau, "escalate" to the full pool (a maint_retrieval_cost) and
-       retrieve top-k from there instead.
+    1. Retrieve top-k from the cache (KB). If top-1 misses the experiment's
+       shared hit threshold, "escalate" to the full pool (a maint_retrieval_cost)
+       and retrieve top-k from there.
     2. Update DRF for every retrieved item:  DRF(p) += 1 / (rank * dist^alpha).
-       New items are inserted into the cache; existing items accumulate.
-    3. Evict lowest Priority(p) until the cache is within budget.
+       Escalated non-residents become admission candidates.
+    3. At the end of the window, admit up to WRITE_CAP candidates by ARC
+       priority, evicting the lowest-priority resident for each admitted item.
 
   Priority(p) = 1/log(w(p)+1) * [ beta * log(h_k(p)+1) + (1-beta) * DRF(p) ]
 
@@ -27,13 +28,14 @@ DRYAD / LRU under the same cost accounting:
 Paper hyper-parameters: alpha=0.4, beta in {0.7, 0.15, 0.2} per dataset,
 tau=0.2, top-K=50. We expose them as class attributes.
 
-Key contrast with DRYAD (ours): ARC uses *cumulative* DRF + *static* geometric
+Key contrast with DRIP (ours): ARC uses *cumulative* DRF + *static* geometric
 hubness with no drift detection and assumes a fixed query distribution P(q|Theta).
-It has no per-window write budget (evicts item-by-item to fit capacity) and no
+It has no drift-triggered write budget (evicts item-by-item to fit capacity) and no
 bridge / entity-chain admission — its geometric scoring can only cache items
 similar to past queries, so multi-hop bridge documents (never directly retrieved)
 stay out of the cache.
 """
+import os
 import numpy as np
 from algorithms.cache.params import PARAMS as _P
 from algorithms.cache.base import BaseStrategy
@@ -42,11 +44,11 @@ log = logging.getLogger("motivation")
 
 
 class AgentRAGCache(BaseStrategy):
-    ALPHA      = 0.4    # distance sensitivity in DRF
-    BETA       = 0.3    # centrality (hubness) vs query-frequency (DRF) balance
-    TAU        = 0.2    # escalation threshold on mean query-cache *distance*
-    HUB_K      = 10     # k for hubness kNN over the cache candidate set
-    TOP_K      = 50     # retrieval width (paper uses K=50)
+    ALPHA      = float(os.environ.get('ARC_ALPHA', '0.4'))  # distance sensitivity in DRF
+    BETA       = float(os.environ.get('ARC_BETA', '0.3'))   # hubness vs query-frequency balance
+    TAU        = float(os.environ.get('ARC_TAU', '0.2'))    # paper escalation distance threshold
+    HUB_K      = int(os.environ.get('ARC_HUB_K', '10'))     # k for hubness kNN
+    TOP_K      = int(os.environ.get('ARC_TOP_K', '50'))     # retrieval width (paper uses K=50)
 
     def __init__(self, name, doc_pool, doc_embs, title_to_idx, use_hubness=True):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
@@ -102,11 +104,11 @@ class AgentRAGCache(BaseStrategy):
         norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
         nqe = window_query_embs / np.clip(norms, 1e-10, None)
 
-        n_writes = 0
+        admission_candidates = set()
         for qi in range(nqe.shape[0]):
             q = nqe[qi]
 
-            # --- 1. retrieve top-k from cache; escalate if mean distance > tau ---
+            # --- 1. retrieve top-k from cache; escalate only on a shared miss ---
             kb_list = sorted(self.kb)
             if not kb_list:
                 break
@@ -116,9 +118,9 @@ class AgentRAGCache(BaseStrategy):
             k = min(self.TOP_K, len(kb_idx))
             top = np.argpartition(sims, -k)[-k:]
             top = top[np.argsort(sims[top])[::-1]]
-            mean_dist = float(np.mean(1.0 - sims[top]))
+            top1_sim = float(sims[top[0]]) if len(top) else -1.0
 
-            if mean_dist <= self.TAU:
+            if top1_sim >= _P.SF_HIT_THRESH:
                 # cache already serves this query well: only refresh DRF of the
                 # cache hits, no escalation, no churn.
                 for rank, (pi, s) in enumerate(zip(kb_idx[top], sims[top]), start=1):
@@ -140,31 +142,47 @@ class AgentRAGCache(BaseStrategy):
                 dist = max(1.0 - float(pool_sims[pi]), 1e-6)
                 self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
 
-            # --- 3. priority-gated admission (NO insert-all/evict-all churn) ---
-            cand_new = [int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb]
-            if not cand_new:
+            admission_candidates.update(
+                int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb)
+
+        # --- 3. window-level priority-gated admission (bounded writes) ---
+        if not admission_candidates:
+            return
+        import heapq
+        current_idx = [self.d2p[d] for d in self.kb]
+        self._refresh_hubness_for(current_idx, admission_candidates)
+        ranked_candidates = sorted(
+            admission_candidates,
+            key=self._priority,
+            reverse=True,
+        )
+        heap = [(self._priority(self.d2p[d]), d) for d in self.kb]
+        heapq.heapify(heap)
+
+        n_writes = 0
+        for pi in ranked_candidates:
+            if n_writes >= _P.WRITE_CAP:
+                break
+            did = self.p2d[pi]
+            if did in self.kb:
                 continue
-            self._refresh_hubness_for(kb_idx, cand_new)
-            # min-heap of resident priorities, built once per query
-            import heapq
-            heap = [(self._priority(self.d2p[d]), d) for d in self.kb]
-            heapq.heapify(heap)
-            for pi in cand_new:
-                if len(self.kb) < budget:
-                    self.kb.add(self.p2d[pi]); n_writes += 1
-                    heapq.heappush(heap, (self._priority(pi), self.p2d[pi]))
-                    continue
-                # pop the current weakest resident (skip stale heap entries)
-                while heap and heap[0][1] not in self.kb:
-                    heapq.heappop(heap)
-                if not heap:
-                    break
-                weak_pri, victim = heap[0]
-                if self._priority(pi) > weak_pri:
-                    heapq.heappop(heap)
-                    self.kb.discard(victim)
-                    self.drf.pop(self.d2p[victim], None)
-                    self.kb.add(self.p2d[pi]); n_writes += 1
-                    heapq.heappush(heap, (self._priority(pi), self.p2d[pi]))
+            if len(self.kb) < budget:
+                self.kb.add(did)
+                n_writes += 1
+                heapq.heappush(heap, (self._priority(pi), did))
+                continue
+            while heap and heap[0][1] not in self.kb:
+                heapq.heappop(heap)
+            if not heap:
+                break
+            weak_pri, victim = heap[0]
+            if self._priority(pi) <= weak_pri:
+                continue
+            heapq.heappop(heap)
+            self.kb.discard(victim)
+            self.drf.pop(self.d2p[victim], None)
+            self.kb.add(did)
+            n_writes += 1
+            heapq.heappush(heap, (self._priority(pi), did))
 
         self.update_cost += n_writes

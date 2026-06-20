@@ -1,5 +1,5 @@
 """
-QARC Experiment Results Visualization
+DRIP Experiment Results Visualization
 Generates publication-quality figures from experiment JSON results.
 
 Usage:
@@ -26,16 +26,16 @@ SCENARIO_LABELS = {
     'cyclic_return': 'Cyclic Return',
     'hotpotqa_walk': 'HotpotQA Walk',
 }
-METHODS = ['QARC', 'ERASE', 'ComRAG', 'Static', 'Random']
+METHODS = ['DRIP', 'ERASE', 'ComRAG', 'Static', 'Random']
 METHOD_COLORS = {
-    'QARC':   '#E74C3C',
+    'DRIP':   '#E74C3C',
     'ERASE':  '#3498DB',
     'ComRAG': '#2ECC71',
     'Static': '#95A5A6',
     'Random': '#F39C12',
 }
 METHOD_MARKERS = {
-    'QARC': 'o', 'ERASE': 's', 'ComRAG': '^', 'Static': 'D', 'Random': 'v'
+    'DRIP': 'o', 'ERASE': 's', 'ComRAG': '^', 'Static': 'D', 'Random': 'v'
 }
 
 
@@ -140,7 +140,7 @@ def fig3_updates_efficiency(data):
 def fig4_radar(data):
     """Radar chart: multi-metric comparison (averaged)."""
     metrics = ['Recall@10', 'Token F1', 'MRR', 'Gold_KB', '1-Turnover']
-    active_methods = ['QARC', 'ERASE', 'ComRAG']
+    active_methods = ['DRIP', 'ERASE', 'ComRAG']
 
     metric_vals = {}
     for method in active_methods:
@@ -190,7 +190,7 @@ def fig5_sliding_recall(data):
 
     for idx, sc in enumerate(SCENARIOS):
         ax = axes[idx]
-        for method in ['QARC', 'ERASE', 'ComRAG']:
+        for method in ['DRIP', 'ERASE', 'ComRAG']:
             recalls = data[sc][method]['recalls']
             window = 10
             if len(recalls) >= window:
@@ -295,7 +295,7 @@ def fig8_turnover_bar(data):
     """KB Turnover comparison per scenario (adaptive methods only)."""
     fig, ax = plt.subplots(figsize=(10, 5))
     x = np.arange(len(SCENARIOS))
-    active = ['QARC', 'ERASE', 'ComRAG']
+    active = ['DRIP', 'ERASE', 'ComRAG']
     offsets = np.arange(len(active)) - (len(active) - 1) / 2
     width = 0.22
 

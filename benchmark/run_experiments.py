@@ -33,7 +33,7 @@ sys.path.insert(0, str(ROOT))
 
 from benchmark.rag_pipeline import RAGPipeline
 from benchmark.adapters import (
-    QARCStrategyAdapter,
+    DRIPStrategyAdapter,
 )
 from algorithms.base import (
     KBUpdateStrategy,
@@ -133,14 +133,14 @@ def load_hotpotqa_walk(total_queries: int = 400, pool_size: int = 50000) -> Dict
 # ============================================================
 
 def make_methods(kb_budget: int, window_size: int) -> List[KBUpdateStrategy]:
-    """创建所有待对比的方法 (QARC + 2 baseline)
+    """创建所有待对比的方法 (DRIP + 2 baseline)
 
     注: ComRAG / ERASE 已移除 (跨范式, 非固定预算缓存换入换出, 不可比)。
     cache replacement 主 baseline (LRU/TinyLFU/GPTCacheStyle/AgentRAGCache) 见
     algorithms/cache/registry.py, 由 motivation_2 测试台运行。
     """
     return [
-        QARCStrategyAdapter(kb_budget=kb_budget, window_size=window_size),
+        DRIPStrategyAdapter(kb_budget=kb_budget, window_size=window_size),
         StaticKBStrategy(),
         RandomKBStrategy(seed=42, update_interval=50),
     ]
