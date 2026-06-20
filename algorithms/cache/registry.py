@@ -61,9 +61,9 @@ STRATEGY_FACTORIES = {
     # ARC ablation: DRF only, no hubness centrality (paper's "ARC w/o hubness")
     'AgentRAGCache_NoHub': lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
         'AgentRAGCache_NoHub', doc_pool, doc_embs, title_to_idx, use_hubness=False),
-    # DRIP final method: local-PPR bridge evidence + route-aware admission
-    # + BridgeEcho residency. Old PPR/DRF ablations were removed from the
-    # registry so new runs use one paper-facing DRIP configuration.
+    # DRIP final method: local-PPR bridge evidence + support-debt admission.
+    # Old PPR/DRF ablations are intentionally absent from the registry so new
+    # runs use one paper-facing DRIP configuration.
     'DRIP':             _f(DRIP),
     # oracle
     'Oracle':           _f(Oracle),
