@@ -4,13 +4,13 @@ Cache baselines live under ``algorithms.cache``. Canonical DRIP components live
 under ``algorithms.drip``.
 """
 
-from .cache.ours.query_driven import QueryDriven, QueryDrivenLoose
 from .drip import (
     BRIDGE,
     BaseDriftDetector,
     DriftResult,
     DriftLensDetector,
     DRIPCore,
+    DRIP,
     EmbeddingIndex,
     GraphIndex,
     MULTI_DIRECT,
@@ -18,21 +18,13 @@ from .drip import (
     QueryRouter,
     RouteDecision,
     SINGLE,
-    SupportFlow,
-    SupportFlowConfig,
     ADWINDetector,
     MMDDetector,
 )
 
-DRIP = DRIPCore
-
 __all__ = [
-    "QueryDriven",
-    "QueryDrivenLoose",
     "DRIPCore",
     "DRIP",
-    "SupportFlow",
-    "SupportFlowConfig",
     "QueryRouter",
     "EmbeddingIndex",
     "GraphIndex",

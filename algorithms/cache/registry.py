@@ -9,8 +9,7 @@ Strategy code lives in family submodules:
   frequency/    TinyLFU (miss-driven admission + LFU eviction)
   semantic/     GPTCacheStyle
   oracle/       Oracle (Belady upper bound)
-  ours/         QueryDriven (minimal SemFlow / motivation baseline)
-  drip/         DRIPCore / SupportFlow
+  drip/         DRIP final policy and internal cache manager components
   paradigm_ref/ Static, DocArrival, KnowledgeEdit, RandomFIFO,
                 OnDemandFetch, LogDrivenArrival, MemGPTStyle
 
@@ -24,8 +23,7 @@ from algorithms.cache.frequency.tinylfu import TinyLFU
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
 from algorithms.cache.semantic.proximity import Proximity
 from algorithms.cache.oracle.belady import Oracle
-from algorithms.cache.ours.query_driven import QueryDriven, QueryDrivenLoose
-from algorithms.drip.support_flow import DRIPCore, SupportFlow
+from algorithms.drip import DRIP
 from algorithms.cache.paradigm_ref.supply_side import (
     Static, DocArrival, KnowledgeEdit, RandomFIFO)
 from algorithms.cache.paradigm_ref.reactive import (
@@ -58,16 +56,15 @@ STRATEGY_FACTORIES = {
     'Proximity':        _f(Proximity),
     # Agent-RAG ARC baseline (Lin et al. 2511.02919) — DRF + hubness, no drift
     'AgentRAGCache':    _f(AgentRAGCache),
+    'ARC':              lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
+        'ARC', doc_pool, doc_embs, title_to_idx),
     # ARC ablation: DRF only, no hubness centrality (paper's "ARC w/o hubness")
     'AgentRAGCache_NoHub': lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
         'AgentRAGCache_NoHub', doc_pool, doc_embs, title_to_idx, use_hubness=False),
-    # minimal SemFlow / motivation baseline
-    'QueryDriven':      _f(QueryDriven),
-    'QueryDrivenLoose': _f(QueryDrivenLoose),
-    # DRIP core
-    'SupportFlow':      _f(SupportFlow),
-    'DRIPCore':         _f(DRIPCore),
-    'DRIP':             _f(DRIPCore),
+    # DRIP final method: local-PPR bridge evidence + route-aware admission
+    # + BridgeEcho residency. Old PPR/DRF ablations were removed from the
+    # registry so new runs use one paper-facing DRIP configuration.
+    'DRIP':             _f(DRIP),
     # oracle
     'Oracle':           _f(Oracle),
 }

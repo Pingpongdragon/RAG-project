@@ -2,7 +2,7 @@
 Motivation 1 — Single-hop sanity experiment.
 
 Same framework as Motivation 2 (multi-hop, motivation_4), but with single-hop
-queries to validate that QueryDrivenLive (dense alignment + same-window
+queries to validate that DRIP's direct-demand path (dense alignment + same-window
 write-through) really does help when the retrieval task is single-hop. This
 produces the baseline evidence that demand-side query signal is real, and that
 the remaining multi-hop gap comes from bridge retrieval rather than from the
@@ -91,7 +91,7 @@ STRATEGY_ORDER = [
     'Static', 'DocArrival', 'KnowledgeEdit',
     'LRU', 'GPTCacheStyle', 'MemGPTStyle', 'TemporalAware', 'RecencyTTL',
     'OnDemandFetch',
-    'QueryDriven', 'DRIP', 'Oracle',
+    'DRIP', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':             'Static (no update)',
@@ -107,8 +107,6 @@ STRATEGY_LABELS = {
     'OnDemandFetch':      'On-Demand Fetch (per-query)',
     'AgentRAGCache':      'ARC (DRF+Hubness)',
     'AgentRAGCache_NoHub': 'ARC w/o Hubness',
-    'QueryDriven': 'Query-Driven (ours)',
-    'QueryDrivenLoose':   'Query-Driven Loose (probe=50)',
     'RoutedCache':        'Routed Cache (ours)',
     'DRIP':               'DRIP (ours)',
     'Oracle':             'Oracle (upper bound)',
@@ -126,8 +124,6 @@ STRATEGY_STYLES = {
     'RecencyTTL':         {'color': '#1E40AF', 'marker': 'h',  'ls': ':'},
     'AgentRAGCache':      {'color': '#111827', 'marker': 'o',  'ls': '-'},
     'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o',  'ls': '--'},
-    'QueryDriven': {'color': '#10B981', 'marker': 'D',  'ls': '-'},
-    'QueryDrivenLoose':   {'color': '#047857', 'marker': 'X',  'ls': '-'},
     'RoutedCache':        {'color': '#2563EB', 'marker': 's',  'ls': '-'},
     'DRIP':               {'color': '#0F766E', 'marker': '*',  'ls': '-'},
     'Oracle':             {'color': '#DC2626', 'marker': '*',  'ls': '--'},

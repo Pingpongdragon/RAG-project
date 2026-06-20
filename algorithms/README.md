@@ -6,11 +6,11 @@ This directory now has one canonical DRIP implementation.
 
 The paper method is the DRIP-Core support-cache policy:
 
-- `algorithms/drip/support_flow/__init__.py` - DRIPCore cache manager.
-- `algorithms/drip/support_flow/query_router.py` - route decisions.
-- `algorithms/drip/support_flow/embedding_index.py` - dense/direct evidence.
-- `algorithms/drip/support_flow/graph_index.py` - graph bridge evidence.
-- `algorithms/drip/support_flow/config.py` - support-flow hyperparameters.
+- `algorithms/drip/cache_manager/__init__.py` - DRIPCore cache manager.
+- `algorithms/drip/cache_manager/query_router.py` - route decisions.
+- `algorithms/drip/cache_manager/embedding_index.py` - dense/direct evidence.
+- `algorithms/drip/cache_manager/graph_index.py` - graph bridge evidence.
+- `algorithms/drip/cache_manager/config.py` - DRIP cache-manager hyperparameters.
 
 Experiments should instantiate DRIP through:
 
@@ -21,10 +21,10 @@ strategy = STRATEGY_FACTORIES["DRIP"](doc_pool, doc_embs, title_to_idx)
 
 ## Retired Cache/Ours Implementations
 
-`algorithms/cache/ours/query_driven.py` remains as the minimal SemFlow /
-QueryDriven motivation baseline. The old bridge and detector-wrapped variants
-were removed to avoid confusing them with the current GraphIndex scoring path.
-Do not import `RoutedCache` or `DRIPDetector` as current method modules.
+The standalone direct-demand baseline has been folded into DRIP's direct path.
+Old bridge, direct-only, and detector-wrapped variants were removed to avoid
+confusing them with the current DRIP path. Use `STRATEGY_FACTORIES["DRIP"]` for
+the paper method.
 
 ## Detector Library
 

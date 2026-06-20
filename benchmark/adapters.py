@@ -5,7 +5,7 @@ benchmark/adapters.py — algorithms/ 方法的 KBUpdateStrategy 适配器
 使得 run_experiments.py 可以公平对比 DRIP / Static / Random。
 
 适配策略:
-  - DRIP:   包装 algorithms.drip.support_flow.DRIPCore，即论文主 cache 策略
+  - DRIP:   包装 algorithms.drip.cache_manager.DRIPCore，即论文主 cache 策略
 
 注: ComRAG / ERASE 适配器已移除 (跨范式, 非固定预算缓存换入换出, 指标不可比)。
     cache replacement 主 baseline 见 algorithms/cache/registry.py。
@@ -57,8 +57,8 @@ class DRIPStrategyAdapter(KBUpdateStrategy):
     Adapter for the canonical cache-family DRIP policy.
 
     The old DRIPPipeline/KBUpdateAgent/DRIPKBCurator path and the simplified
-    algorithms.cache.ours cache policies were retired. This adapter keeps the
-    benchmark CLI usable by feeding single-query windows into DRIPCore.
+    old cache policies were retired. This adapter keeps the benchmark CLI
+    usable by feeding single-query windows into final DRIP.
     """
 
     def __init__(
@@ -92,12 +92,12 @@ class DRIPStrategyAdapter(KBUpdateStrategy):
         self._kb_budget = kb_budget
         self._pool_id_to_idx = {d["doc_id"]: i for i, d in enumerate(doc_pool)}
 
-        from algorithms.drip.support_flow import DRIPCore
+        from algorithms.drip import DRIP
 
         title_to_idx = {
             d.get("title", d["doc_id"]): i for i, d in enumerate(doc_pool)
         }
-        self._strategy = DRIPCore("DRIP", doc_pool, doc_embeddings, title_to_idx)
+        self._strategy = DRIP("DRIP", doc_pool, doc_embeddings, title_to_idx)
         self._kb_doc_ids = select_diverse_initial_kb(
             doc_pool, doc_embeddings, kb_budget
         )

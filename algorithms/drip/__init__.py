@@ -7,8 +7,9 @@ optional epoch-controller utilities for a future detector-wrapped DRIP.
 
 from .interfaces import BaseDriftDetector, DriftResult
 from .detection.baseline_detectors import ADWINDetector, MMDDetector, NoDetector
-from .support_flow import (
+from .cache_manager import (
     BRIDGE,
+    DRIP,
     EmbeddingIndex,
     GraphIndex,
     MULTI_DIRECT,
@@ -16,16 +17,13 @@ from .support_flow import (
     RouteDecision,
     SINGLE,
     DRIPCore,
-    SupportFlow,
-    SupportFlowConfig,
+    DRIPCoreConfig,
 )
 
 try:
     from .detection.drift_detector import DriftLensDetector
 except Exception:
     DriftLensDetector = None
-
-DRIP = DRIPCore
 
 __all__ = [
     "BaseDriftDetector",
@@ -35,9 +33,8 @@ __all__ = [
     "ADWINDetector",
     "MMDDetector",
     "DRIPCore",
+    "DRIPCoreConfig",
     "DRIP",
-    "SupportFlow",
-    "SupportFlowConfig",
     "QueryRouter",
     "EmbeddingIndex",
     "GraphIndex",

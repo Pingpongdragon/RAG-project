@@ -27,10 +27,6 @@ class _Params:
     # ── KnowledgeEdit (RECIPE) ──
     EDIT_BATCH  = 200       # = WRITE_CAP
 
-    # ── QueryDriven / SemFlow (demand-side) ──
-    QD_TOP_K       = 50     # = PROBE_TOPK
-    QD_REPLACE_CAP = 200    # = WRITE_CAP
-
     # ── RandomFIFO ──
     FIFO_BATCH = 40
 

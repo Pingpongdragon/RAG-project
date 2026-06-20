@@ -81,7 +81,7 @@ DOC_ADD_CAP  = WRITE_CAP
 # KnowledgeEdit  (models RECIPE knowledge-edit pipeline)
 EDIT_BATCH   = WRITE_CAP   # KB docs selected for edit each window
 
-# QueryDriven / QueryDrivenLive  (demand-side writers)
+# DRIP direct-demand path
 QD_TOP_K       = PROBE_TOPK  # per-failing-query candidate retrieval width
 QD_REPLACE_CAP = WRITE_CAP
 
@@ -101,7 +101,7 @@ LOG_LAG_WINDOWS = 5    # human review cycle: apply fix every N windows
 STRATEGY_ORDER = [
     'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
     'LRU', 'GPTCacheStyle', 'MemGPTStyle',
-    'OnDemandFetch', 'LogDrivenArrival', 'QueryDriven', 'DRIP', 'Oracle',
+    'OnDemandFetch', 'LogDrivenArrival', 'DRIP', 'Oracle',
 ]
 STRATEGY_LABELS = {
     'Static':           'Static (no update)',
@@ -116,9 +116,8 @@ STRATEGY_LABELS = {
     'OnDemandFetch':    'On-Demand Fetch (CRAG)',
     'LogDrivenArrival': 'Log-Driven (lagging)',
     'AgentRAGCache':    'ARC (DRF+Hubness)',
+    'ARC':              'ARC (DRF+Hubness)',
     'AgentRAGCache_NoHub': 'ARC w/o Hubness',
-    'QueryDriven': 'Query-Driven Cluster (ours)',
-    'QueryDrivenLoose':   'Query-Driven Loose (probe=50)',
     'RoutedCache':      'Routed Cache (ours)',
     'DRIP':             'DRIP (ours)',
     'Oracle':           'Oracle (upper bound)',
@@ -136,9 +135,8 @@ STRATEGY_STYLES = {
     'OnDemandFetch':    {'color': '#1E3A8A', 'marker': 'h', 'ls': ':'},
     'LogDrivenArrival': {'color': '#9D174D', 'marker': '*', 'ls': '-.'},
     'AgentRAGCache':    {'color': '#111827', 'marker': 'o', 'ls': '-'},
+    'ARC':              {'color': '#111827', 'marker': 'o', 'ls': '-'},
     'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o', 'ls': '--'},
-    'QueryDriven': {'color': '#10B981', 'marker': 'D', 'ls': '-'},
-    'QueryDrivenLoose':   {'color': '#047857', 'marker': 'X', 'ls': '-'},
     'RoutedCache':      {'color': '#2563EB', 'marker': 's', 'ls': '-'},
     'DRIP':             {'color': '#0F766E', 'marker': '*', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},

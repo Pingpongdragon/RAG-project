@@ -10,12 +10,14 @@ The two paper formulas live in this adapter:
   - route-aware evidence credits demand D_t(d)
   - support priority admits candidates over low-priority residents
 """
+from collections import Counter, defaultdict
+
 import numpy as np
 
 from algorithms.cache.base import BaseStrategy
 from algorithms.cache.params import PARAMS as _P
 
-from .config import SupportFlowConfig
+from .config import DRIPCoreConfig
 from .embedding_index import EmbeddingIndex
 from .graph_index import GraphIndex
 from .query_router import BRIDGE, MULTI_DIRECT, SINGLE, QueryRouter, RouteDecision
@@ -26,7 +28,7 @@ class DRIPCore(BaseStrategy):
 
     def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        self.config = config or SupportFlowConfig()
+        self.config = config or DRIPCoreConfig()
         self.router = QueryRouter(self.config)
         self.embedding_index = EmbeddingIndex(self.doc_embs)
         self.graph_index = GraphIndex(self.config, self.d2p, self.doc_pool)
@@ -68,7 +70,10 @@ class DRIPCore(BaseStrategy):
         bridge_direct_mass = 0.0
         direct_gold_updates = bridge_gold_updates = bridge_direct_gold_updates = 0
         direct_gold_mass = bridge_gold_mass = bridge_direct_gold_mass = 0.0
+        window_gold_pos = set()
         route_labeled = route_match = 0
+        graph_stats = defaultdict(int)
+        graph_entities = Counter()
 
         for qi, query in enumerate(window_queries):
             dense = self.embedding_index.search_one(nqe[qi], probe_k)
@@ -97,10 +102,16 @@ class DRIPCore(BaseStrategy):
             n_under += 1
             under_slots.append(route.target_slots)
             gold_pos = self._gold_positions(query)
+            window_gold_pos.update(gold_pos)
 
             if route.route == BRIDGE and self.graph_index.has_metadata():
                 candidates = self.graph_index.graph_evidence(
-                    first_hops, kb_pos, kb_emb, self.doc_embs)
+                    query, first_hops, kb_pos, kb_emb, self.doc_embs)
+                for key, value in self.graph_index.last_stats.items():
+                    if key == "bridge_top_entities":
+                        graph_entities.update(dict(value))
+                    elif isinstance(value, (int, float)):
+                        graph_stats[key] += value
                 updates, mass, gold_updates, gold_mass = self._credit_graph(
                     candidates, gold_pos)
                 bridge_updates += updates
@@ -133,7 +144,8 @@ class DRIPCore(BaseStrategy):
         self.maint_retrieval_cost += n_under * probe_k
         self._prune_demand()
         budget = min(_P.WRITE_CAP, sum(under_slots))
-        writes = self._write(kb_idx, kb_emb, budget)
+        write_stats = self._write(kb_idx, kb_emb, budget, window_gold_pos)
+        writes = int(write_stats["writes"])
         self.update_cost += writes
 
         self.bridge_log.append({
@@ -151,6 +163,20 @@ class DRIPCore(BaseStrategy):
             "direct_mass": round(direct_mass, 4),
             "direct_gold_updates": int(direct_gold_updates),
             "direct_gold_mass": round(direct_gold_mass, 4),
+            "graph_raw_paths": int(graph_stats["bridge_raw_paths"]),
+            "graph_after_degree_gate": int(graph_stats["bridge_after_degree_gate"]),
+            "graph_after_relation_gate": int(graph_stats["bridge_after_relation_gate"]),
+            "graph_after_novelty_gate": int(graph_stats["bridge_after_novelty_gate"]),
+            "graph_after_threshold": int(graph_stats["bridge_after_threshold"]),
+            "graph_selected": int(graph_stats["bridge_selected"]),
+            "graph_mmr_stopped": int(graph_stats["bridge_mmr_stopped"]),
+            "graph_no_path": int(graph_stats["bridge_no_path"]),
+            "graph_top_entities": graph_entities.most_common(5),
+            "writes": int(writes),
+            "write_candidates": int(write_stats["candidates"]),
+            "write_gold_candidates": int(write_stats["gold_candidates"]),
+            "write_gold": int(write_stats["gold_writes"]),
+            "write_gold_rate": round(float(write_stats["gold_rate"]), 4),
         })
         self.route_log.append({
             "w": window_idx,
@@ -166,6 +192,8 @@ class DRIPCore(BaseStrategy):
             "under_covered": int(n_under),
             "write_budget": int(budget),
             "writes": int(writes),
+            "write_gold": int(write_stats["gold_writes"]),
+            "write_gold_candidates": int(write_stats["gold_candidates"]),
         }
 
     def _observe(self, window_query_embs):
@@ -264,9 +292,10 @@ class DRIPCore(BaseStrategy):
         gold_updates = 0
         gold_mass = 0.0
         gold_pos = gold_pos or set()
+        gain = float(getattr(self.config, "bridge_demand_gain", 1.0))
         for pi, score in candidates:
             pi = int(pi)
-            score = float(score)
+            score = gain * float(score)
             if score <= 0.0:
                 continue
             self.demand[pi] = self.demand.get(pi, 0.0) + score
@@ -293,22 +322,36 @@ class DRIPCore(BaseStrategy):
 
         return {int(p): priority(int(p)) for p in kb_idx}
 
-    def _write(self, kb_idx, kb_emb, budget):
+    def _write(self, kb_idx, kb_emb, budget, gold_pos=None):
         """Formula 2 admission: admit c iff D_t(c) > P_t(v)."""
+        gold_pos = gold_pos or set()
         if budget <= 0:
-            return 0
+            return {
+                "writes": 0,
+                "candidates": 0,
+                "gold_candidates": 0,
+                "gold_writes": 0,
+                "gold_rate": 0.0,
+            }
         kb_pos = set(int(p) for p in kb_idx)
         candidates = sorted(
             ((v, p) for p, v in self.demand.items() if p not in kb_pos),
             reverse=True,
         )
         if not candidates:
-            return 0
+            return {
+                "writes": 0,
+                "candidates": 0,
+                "gold_candidates": 0,
+                "gold_writes": 0,
+                "gold_rate": 0.0,
+            }
 
         priority = self._resident_priority(kb_idx, kb_emb)
         victims = sorted(kb_pos, key=lambda p: priority[p])
         current_kb_emb = self.doc_embs[np.array(sorted(kb_pos), dtype=np.int64)]
         writes = 0
+        gold_writes = 0
         victim_i = 0
 
         for cand_value, cp in candidates:
@@ -326,13 +369,21 @@ class DRIPCore(BaseStrategy):
             self.serve.pop(victim, None)
             victim_i += 1
             writes += 1
-        return writes
+            gold_writes += int(int(cp) in gold_pos)
+        gold_candidates = sum(1 for _, p in candidates if int(p) in gold_pos)
+        return {
+            "writes": int(writes),
+            "candidates": int(len(candidates)),
+            "gold_candidates": int(gold_candidates),
+            "gold_writes": int(gold_writes),
+            "gold_rate": float(gold_writes / writes) if writes else 0.0,
+        }
 
 
 __all__ = [
+    "DRIP",
     "DRIPCore",
-    "SupportFlow",
-    "SupportFlowConfig",
+    "DRIPCoreConfig",
     "QueryRouter",
     "EmbeddingIndex",
     "GraphIndex",
@@ -343,6 +394,4 @@ __all__ = [
 ]
 
 
-# Backward-compatible name for older experiment scripts. The paper/system name
-# should be DRIP / DRIP-Core, not SupportFlow as a separate algorithm.
-SupportFlow = DRIPCore
+from .drip import DRIP
