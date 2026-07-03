@@ -95,6 +95,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
 
     results = {n: {f'recall@{k}': [] for k in K_LIST} for n in strategies_to_run}
     cov_per_window = {n: [] for n in strategies_to_run}
+    residency_metrics = {n: _new_residency_metrics() for n in strategies_to_run}
     prepare_latency = {n: [] for n in strategies_to_run}  # online pre-retrieval work
     retrieval_latency = {n: [] for n in strategies_to_run}  # KB search / ranking work
     query_latency = {n: [] for n in strategies_to_run}      # prepare + retrieval
@@ -122,6 +123,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             prepare_latency[name].append(_prepare_dt)
             if name == 'Oracle':
                 s.step(wq, wqe, w)
+            # Cache-residency metrics must use the persistent hot KB only.
+            # OnDemandFetch may expand the effective retrieval set by querying
+            # the full corpus at serve time; that improves R@K but is not a
+            # cache hit under ARC-style has-answer evaluation.
+            _record_residency_metrics(
+                residency_metrics[name], s.kb, wq, doc_pool, title_to_idx)
             effective_kb = (s.get_effective_kb(wq, wqe)
                             if hasattr(s, 'get_effective_kb') else s.kb)
             _t0_retrieval = time.perf_counter()
@@ -188,6 +195,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         s['update_latency_per_window'] = s['step_latency_per_window']
         s['step_overhead_mean']    = round(float(np.mean(step_overhead[name])), 2) if step_overhead[name] else 0.0
         s['step_overhead_per_window'] = step_overhead[name]
+        s.update(_summarise_residency_metrics(residency_metrics[name]))
         summary[name] = s
     return {
         'dataset': ds_name,
@@ -215,6 +223,7 @@ def print_summary(all_results, strategies_to_run):
         hdr = (f"{'Strategy':>18s} |"
                f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
                f" {'R@5 H1':>6s} {'R@5 H2':>6s} |"
+               f" {'HasAns':>6s} {'ColdQ':>6s} |"
                f" {'Writes':>6s} {'OvhW':>6s} {'Qlat':>8s} {'Ulat':>8s}")
         print(hdr)
         print("-" * len(hdr))
@@ -227,10 +236,91 @@ def print_summary(all_results, strategies_to_run):
             print(f"{name:>18s} |"
                   f" {c1:>5.1f}% {c2:>5.1f}% {c2-c1:>+5.1f} |"
                   f" {r1:>5.1f}% {r2:>5.1f}% |"
+                  f" {s.get('has_answer_rate', 0.0):>5.1f}%"
+                  f" {s.get('cold_fetches_per_query', 0.0):>6.2f} |"
                   f" {s['update_cost']:>6d}"
                   f" {s.get('step_overhead_mean', 0):>6.1f}"
                   f" {s.get('query_latency_mean_ms', 0):>8.1f}"
                   f" {s.get('update_latency_mean_ms', 0):>8.1f}")
+
+
+def _new_residency_metrics():
+    return {
+        'cold_fetches': [],
+        'support_coverage': [],
+        'has_answer': [],
+        'cold_fetches_per_window': [],
+        'support_coverage_per_window': [],
+        'has_answer_per_window': [],
+    }
+
+
+def _missing_gold_count(kb_doc_ids, query, doc_pool, title_to_idx):
+    missing = 0
+    total = 0
+    for title in query.get('sf_titles', []):
+        pi = title_to_idx.get(title)
+        if pi is None:
+            continue
+        total += 1
+        if doc_pool[pi]['doc_id'] not in kb_doc_ids:
+            missing += 1
+    return missing, total
+
+
+def _record_residency_metrics(metrics, kb_doc_ids, window_queries,
+                              doc_pool, title_to_idx):
+    window_cold = []
+    window_support = []
+    window_has_answer = []
+    for q in window_queries:
+        missing, total = _missing_gold_count(kb_doc_ids, q, doc_pool, title_to_idx)
+        if total <= 0:
+            continue
+        cold = float(missing)
+        support = float(total - missing) / float(total)
+        has_answer = float(missing == 0)
+        metrics['cold_fetches'].append(cold)
+        metrics['support_coverage'].append(support)
+        metrics['has_answer'].append(has_answer)
+        window_cold.append(cold)
+        window_support.append(support)
+        window_has_answer.append(has_answer)
+    metrics['cold_fetches_per_window'].append(round(_mean_or_zero(window_cold), 3))
+    metrics['support_coverage_per_window'].append(
+        round(_mean_or_zero(window_support) * 100, 2))
+    metrics['has_answer_per_window'].append(
+        round(_mean_or_zero(window_has_answer) * 100, 2))
+
+
+def _mean_or_zero(values):
+    return float(np.mean(values)) if values else 0.0
+
+
+def _summarise_residency_metrics(metrics):
+    has_q = len(metrics['has_answer'])
+    has_hits = int(sum(metrics['has_answer']))
+    half = len(metrics['has_answer_per_window']) // 2
+    has_windows = metrics['has_answer_per_window']
+    support_windows = metrics['support_coverage_per_window']
+    cold_windows = metrics['cold_fetches_per_window']
+    return {
+        'cold_fetches_per_query': round(_mean_or_zero(metrics['cold_fetches']), 3),
+        'support_coverage_rate': round(
+            _mean_or_zero(metrics['support_coverage']) * 100, 1),
+        'has_answer_rate': round((has_hits / has_q) * 100, 1) if has_q else 0.0,
+        'has_answer_queries': has_q,
+        'has_answer_hits': has_hits,
+        'has_answer_h1': round(_mean_or_zero(has_windows[:half]), 1),
+        'has_answer_h2': round(_mean_or_zero(has_windows[half:]), 1),
+        'has_answer_per_window': has_windows,
+        'support_coverage_h1': round(_mean_or_zero(support_windows[:half]), 1),
+        'support_coverage_h2': round(_mean_or_zero(support_windows[half:]), 1),
+        'support_coverage_per_window': support_windows,
+        'cold_fetches_h1': round(_mean_or_zero(cold_windows[:half]), 3),
+        'cold_fetches_h2': round(_mean_or_zero(cold_windows[half:]), 3),
+        'cold_fetches_per_window': cold_windows,
+    }
 
 
 def generate_figures(all_results, strategies_to_run, suffix=''):
@@ -258,8 +348,11 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'OnDemandFetch':    ('#17BECF', '--', 'v'),
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
         'AgentRAGCache':    ('#111827', '-',  'o'),
+        'ARC':              ('#111827', '-',  'o'),
         'AgentRAGCache_NoHub': ('#6B7280', '--', 'o'),
         'RoutedCache':      ('#2563EB', '-',  's'),
+        'DRIP-QueryVisible': ('#0F766E', '-',  '*'),
+        'DRIP-QueryHidden': ('#0D9488', '-.', 'X'),
         'DRIP':             ('#0F766E', '-',  '*'),
         'Oracle':           ('#D62728', '-',  None),
     }
@@ -267,7 +360,7 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
     n_ds = max(len(datasets), 1)
     fig, axes = plt.subplots(n_ds, 2, figsize=(13, 3.4 * n_ds),
                              sharex=True, squeeze=False)
-    emphasis = {'Oracle', 'DRIP'}
+    emphasis = {'Oracle', 'DRIP', 'DRIP-QueryVisible', 'DRIP-QueryHidden'}
 
     for row, ds in enumerate(datasets):
         res = all_results[ds]; cfg = res['config']

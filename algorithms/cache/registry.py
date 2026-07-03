@@ -9,7 +9,7 @@ Strategy code lives in family submodules:
   frequency/    TinyLFU (miss-driven admission + LFU eviction)
   semantic/     GPTCacheStyle
   oracle/       Oracle (Belady upper bound)
-  drip/         DRIP final policy and internal cache manager components
+  drip/         DRIP current policy and internal cache manager components
   paradigm_ref/ Static, DocArrival, KnowledgeEdit, RandomFIFO,
                 OnDemandFetch, LogDrivenArrival, MemGPTStyle
 
@@ -23,7 +23,14 @@ from algorithms.cache.frequency.tinylfu import TinyLFU
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
 from algorithms.cache.semantic.proximity import Proximity
 from algorithms.cache.oracle.belady import Oracle
-from algorithms.drip import DRIP
+from algorithms.drip import (
+    DRIP,
+    DRIPDense,
+    DRIPESC,
+    DRIPESCLease,
+    DRIPQueryHidden,
+    DRIPQueryVisible,
+)
 from algorithms.cache.paradigm_ref.supply_side import (
     Static, DocArrival, KnowledgeEdit, RandomFIFO)
 from algorithms.cache.paradigm_ref.reactive import (
@@ -61,10 +68,23 @@ STRATEGY_FACTORIES = {
     # ARC ablation: DRF only, no hubness centrality (paper's "ARC w/o hubness")
     'AgentRAGCache_NoHub': lambda doc_pool, doc_embs, title_to_idx: AgentRAGCache(
         'AgentRAGCache_NoHub', doc_pool, doc_embs, title_to_idx, use_hubness=False),
-    # DRIP final method: local-PPR bridge evidence + support-debt admission.
-    # Old PPR/DRF ablations are intentionally absent from the registry so new
-    # runs use one paper-facing DRIP configuration.
+    # DRIP current method: query-hidden support completion + pair lease.
+    # Retired graph-walk/rerank/decomposition prototypes are intentionally
+    # absent from the registry so new runs use one paper-facing DRIP config.
     'DRIP':             _f(DRIP),
+    'DRIP-Dense':       lambda doc_pool, doc_embs, title_to_idx: DRIPDense(
+        'DRIP-Dense', doc_pool, doc_embs, title_to_idx),
+    'DRIP-ESC':         lambda doc_pool, doc_embs, title_to_idx: DRIPESC(
+        'DRIP-ESC', doc_pool, doc_embs, title_to_idx),
+    'DRIP-ESC-Lease':   lambda doc_pool, doc_embs, title_to_idx: DRIPESCLease(
+        'DRIP-ESC-Lease', doc_pool, doc_embs, title_to_idx),
+    # Paper-facing DRIP ablations:
+    #   DRIP-QueryVisible = dense/direct evidence channel only.
+    #   DRIP-QueryHidden  = query-visible A + hidden-support completion B.
+    'DRIP-QueryVisible': lambda doc_pool, doc_embs, title_to_idx: DRIPQueryVisible(
+        'DRIP-QueryVisible', doc_pool, doc_embs, title_to_idx),
+    'DRIP-QueryHidden':  lambda doc_pool, doc_embs, title_to_idx: DRIPQueryHidden(
+        'DRIP-QueryHidden', doc_pool, doc_embs, title_to_idx),
     # oracle
     'Oracle':           _f(Oracle),
 }

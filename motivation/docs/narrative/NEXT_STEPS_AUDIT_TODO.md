@@ -1,7 +1,7 @@
 # Next-Round Audit TODO （评审意见落地未尽事项）
 
 > 来源：[评审意见.md](评审意见.md) + [会议记录_05.txt](会议记录_05.txt)
-> 本轮（2026-05-26）已经完成：故事线 framing 升级到 L1/L2/L3、节标题改 "Why existing policies fail"、加 §Agentic shared-RAG access patterns、加 §Why this is a shared-cache problem（占位无假数字）、SemFlow 段加承上启下句、bridge 段补 ~60% 覆盖率量化、与 per-user memory 互补表态、contributions 对齐。详见 [STORYLINE_v1.md](STORYLINE_v1.md) v4。
+> 本轮（2026-05-26）已经完成：故事线 framing 升级到 L1/L2/L3、节标题改 "Why existing policies fail"、加 §Agentic shared-RAG access patterns、加 §Why this is a shared-cache problem（占位无假数字）、DRIP-Dense 段加承上启下句、bridge 段补 ~60% 覆盖率量化、与 per-user memory 互补表态、contributions 对齐。详见 [STORYLINE_v1.md](STORYLINE_v1.md) v4。
 >
 > 本文件记录尚未做的事，避免被下一次评审再次点出。
 

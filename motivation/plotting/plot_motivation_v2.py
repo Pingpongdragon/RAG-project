@@ -3,7 +3,7 @@
 Current framing:
   Fig.1 -- L1 temporal-locality diagnosis: access history handles simple
             temporal drift; timestamps and freshness are too coarse.
-  Fig.2 -- L2/L3 diagnosis: SemFlow helps direct semantic multi-hop, but
+  Fig.2 -- L2/L3 diagnosis: DRIP-Dense helps direct semantic multi-hop, but
             bridge/topological access requires entity-chained prefetch.
 """
 import json, sys
@@ -15,6 +15,17 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'motivation_1' / 'data'
 OUT  = ROOT / 'paper_figs' / 'intro'
 OUT.mkdir(parents=True, exist_ok=True)
+
+LEGACY_STRATEGY_ALIASES = {
+    ''.join(('Query', 'Driven')): 'DRIP-Dense',
+}
+
+
+def normalize_strategy_names(summary):
+    for old, new in LEGACY_STRATEGY_ALIASES.items():
+        if new not in summary and old in summary:
+            summary[new] = summary[old]
+    return summary
 
 # ── style ───────────────────────────────────────────────────────────
 plt.rcParams.update({
@@ -42,7 +53,7 @@ COLOR = {
     'TemporalAware': '#2563EB',
     'RecencyTTL':    '#1E40AF',
     'OnDemandFetch': '#0F766E',
-    'QueryDriven':   '#10B981',
+    'DRIP-Dense':    '#10B981',
     'DRIP':          '#2563EB',
     'Oracle':        '#DC2626',
 }
@@ -62,8 +73,8 @@ LABEL = {
     'TemporalAware': 'Temporal-Aware\n(decay)',
     'RecencyTTL':    'Recency-TTL\n(oracle ts)',
     'OnDemandFetch': 'On-Demand Fetch',
-    'QueryDriven':   'SemFlow',
-    'DRIP':          'DRIP\n(final)',
+    'DRIP-Dense':    'DRIP-Dense',
+    'DRIP':          'DRIP',
     'Oracle':        'Oracle',
 }
 SIGNAL_FAMILY = {
@@ -81,7 +92,7 @@ SIGNAL_FAMILY = {
     'AgentRAGCache': 'cache',
     'TemporalAware': 'time',
     'RecencyTTL':    'time',
-    'QueryDriven':   'query',
+    'DRIP-Dense':    'query',
     'DRIP':          'query',
     'OnDemandFetch': 'oracle',
     'Oracle':        'oracle',
@@ -122,12 +133,12 @@ def fig1():
     from matplotlib.transforms import blended_transform_factory
 
     d = load('streamingqa_temporal_final_clean')
-    s = d['summary']
+    s = normalize_strategy_names(d['summary'])
     cfg = d['config']
     nw = cfg['n_windows']
 
     ORDER = ['LRU', 'TinyLFU', 'Proximity', 'GPTCacheStyle', 'DocArrival',
-             'AgentRAGCache', 'QueryDriven', 'DRIP', 'OnDemandFetch', 'Oracle']
+             'AgentRAGCache', 'DRIP-Dense', 'DRIP', 'OnDemandFetch', 'Oracle']
     ORDER = [n for n in ORDER if n in s]
     cols  = [COLOR[n] for n in ORDER]
 
@@ -143,7 +154,7 @@ def fig1():
         'Proximity':     'Proximity',
         'AgentRAGCache': 'ARC',
         'RecencyTTL':    'RecencyTTL',
-        'QueryDriven':   'SemFlow',
+        'DRIP-Dense':    'DRIP-Dense',
         'DRIP':          'DRIP',
         'OnDemandFetch': 'OnDemand',
         'Oracle':        'Oracle (dense)',
@@ -154,7 +165,7 @@ def fig1():
     LW = {
         'Oracle':        (2.8, '-'),
         'OnDemandFetch': (2.4, '-'),
-        'QueryDriven':   (2.4, '-'),
+        'DRIP-Dense':    (2.4, '-'),
         'DRIP':          (2.5, '-'),
         'RecencyTTL':    (1.6, ':'),
         'DocArrival':    (1.4, '--'),
@@ -276,6 +287,8 @@ def fig2():
     WIKI_FILE   = DATA2 / 'results_2wiki_bc_entity_expand_gradual_q2k_final_clean.json'
     d_hot  = json.load(open(HOTPOT_FILE))['hotpotqa']
     d_wiki = json.load(open(WIKI_FILE))['2wikimultihopqa']
+    d_hot['summary'] = normalize_strategy_names(d_hot['summary'])
+    d_wiki['summary'] = normalize_strategy_names(d_wiki['summary'])
 
     COLOR2 = {**COLOR}
     LABEL2 = {
@@ -289,8 +302,8 @@ def fig2():
         'GPTCacheStyle': 'GPTCache',
         'Proximity':     'Proximity',
         'AgentRAGCache': 'ARC',
-        'QueryDriven':   'SemFlow (ours)',
-        'DRIP':          'DRIP (final)',
+        'DRIP-Dense':    'DRIP-Dense',
+        'DRIP':          'DRIP',
         'OnDemandFetch': 'On-Demand Fetch',
         'Oracle':        'Oracle',
     }
@@ -300,7 +313,7 @@ def fig2():
         'GPTCacheStyle': 1.5, 'AgentRAGCache': 2.2,
         'DRIP': 2.5,
         'MissLRU': 2.2, 'MissTinyLFU': 1.6,
-        'QueryDriven': 2.8, 'OnDemandFetch': 2.0, 'Oracle': 2.2,
+        'DRIP-Dense': 2.8, 'OnDemandFetch': 2.0, 'Oracle': 2.2,
     }
     LS2 = {
         'Static': '--', 'TinyLFU': ':', 'LRU': ':', 'DocArrival': '--',
@@ -308,10 +321,10 @@ def fig2():
         'GPTCacheStyle': ':', 'AgentRAGCache': '-.',
         'DRIP': '-',
         'MissLRU': '-.', 'MissTinyLFU': ':',
-        'QueryDriven': '-', 'OnDemandFetch': '--', 'Oracle': '-',
+        'DRIP-Dense': '-', 'OnDemandFetch': '--', 'Oracle': '-',
     }
     ORDER_LINE = ['LRU', 'TinyLFU', 'Proximity', 'GPTCacheStyle', 'DocArrival',
-                  'AgentRAGCache', 'QueryDriven', 'DRIP', 'OnDemandFetch', 'Oracle']
+                  'AgentRAGCache', 'DRIP-Dense', 'DRIP', 'OnDemandFetch', 'Oracle']
 
     def add_gradual_bg(ax, n_w, y_max):
         left  = np.array([219, 234, 254], dtype=float) / 255.0
@@ -349,8 +362,8 @@ def fig2():
 
         for n in names:
             pw = np.array(summ[n].get('recall@5_per_window', []), dtype=float)
-            alpha  = 0.95 if n in ('QueryDriven', 'DRIP', 'Oracle', 'OnDemandFetch', 'AgentRAGCache') else 0.7
-            zorder = 4 if n in ('QueryDriven', 'DRIP', 'AgentRAGCache') else 3
+            alpha  = 0.95 if n in ('DRIP-Dense', 'DRIP', 'Oracle', 'OnDemandFetch', 'AgentRAGCache') else 0.7
+            zorder = 4 if n in ('DRIP-Dense', 'DRIP', 'AgentRAGCache') else 3
             ax.plot(wx, smooth_centered(pw),
                     color=COLOR2.get(n, '#888'),
                     lw=LW2.get(n, 1.3),
@@ -380,7 +393,7 @@ def fig2():
         panel_lbl='a', ds_title='L2 direct multi-hop: HotpotQA-comp  (both entities in query)',
         annot_text=(f'ARC is strong when query-document locality is direct '
                     f'(H2 {hot["AgentRAGCache"]["recall@5_h2"]:.1f}%)\n'
-                    f'SemFlow H2 {hot["QueryDriven"]["recall@5_h2"]:.1f}%  '
+                    f'DRIP-Dense H2 {hot["DRIP-Dense"]["recall@5_h2"]:.1f}%  '
                     f'DRIP {hot["DRIP"]["recall@5_h2"]:.1f}%  '
                     f'vs. LRU {hot["LRU"]["recall@5_h2"]:.1f}%'),
         annot_color='#065F46', annot_bg='#D1FAE5')
@@ -391,7 +404,7 @@ def fig2():
         annot_text=(f'Bridge evidence leaves a gap to Oracle '
                     f'(Oracle H2 {wiki["Oracle"]["recall@5_h2"]:.1f}%)\n'
                     f'ARC {wiki["AgentRAGCache"]["recall@5_h2"]:.1f}%, '
-                    f'SemFlow {wiki["QueryDriven"]["recall@5_h2"]:.1f}%, '
+                    f'DRIP-Dense {wiki["DRIP-Dense"]["recall@5_h2"]:.1f}%, '
                     f'DRIP {wiki["DRIP"]["recall@5_h2"]:.1f}%'),
         annot_color='#92400E', annot_bg='#FEF3C7')
 
@@ -406,7 +419,7 @@ def fig2():
                ncol=5, fontsize=8.5, framealpha=0.92,
                columnspacing=1.0, handlelength=2.2)
 
-    fig.suptitle('L2 vs. L3 Agentic RAG access: SemFlow helps direct multi-hop but not hidden bridge paths',
+    fig.suptitle('L2 vs. L3 Agentic RAG access: DRIP-Dense helps direct multi-hop but not hidden bridge paths',
                  fontsize=11.5, y=0.98)
 
     for ext in ('pdf', 'png'):

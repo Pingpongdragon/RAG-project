@@ -1,4 +1,4 @@
-# QueryDrivenCluster (QDC) — Conditions for Effectiveness
+# DRIP-Dense (QDC) — Conditions for Effectiveness
 
 QDC shows a **clear advantage over all offline baselines** when all three conditions below hold simultaneously.
 

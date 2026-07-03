@@ -1,7 +1,7 @@
 # 设计note：从「热库子模策展」转向「漂移感知的跨层预取」
 
 > office-hours 产出（2026-06）。记录框架转向的决策、理由、被否决的方案。
-> 旧方法 = QARC/DRYAD（漂移检测 → 热库子模换入换出）。
+> 旧方法 = DRIP/DRIP（漂移检测 → 热库子模换入换出）。
 > 新方法 = drift-aware prefetch（漂移检测 → 从向量库预取进 cache；换出交给 LRU/ARC）。
 
 ## Summary
@@ -13,7 +13,7 @@ cache 策略（LRU / Agent-RAG ARC 2511.02919）负责，不自己重造。
 ## Problem
 
 审稿人反馈："冷库做筛选没必要，通常都是一直加。" —— 工业界 backing store
-(Milvus 等) 确实是 append-only，eviction 只在 cache 层。旧 QARC 在"冷库"做
+(Milvus 等) 确实是 append-only，eviction 只在 cache 层。旧 DRIP 在"冷库"做
 子模筛选，与真实系统分层不符，且把贡献押在一个被质疑的环节上。
 
 ## 系统框架（两层，工业标准）
@@ -81,5 +81,5 @@ L1  cache (固定预算, 内存, 快) ── 在此检测 query 漂移；LRU/ARC
 1. 删 ComRAG/ERASE（进行中）。
 2. 新增 AgentRAGCache baseline (2511.02919) 进 algorithms/cache/。
 3. 新增检测器 baseline (NoDetector/ADWIN/MMD) 与 DriftLensDetector 同接口。
-4. 命名：QARC/DRYAD → 待定（DAP / TierShift / DriftFetch），代码统一替换。
+4. 命名：DRIP/DRIP → 待定（DAP / TierShift / DriftFetch），代码统一替换。
 5. 回填 ARC_COMPARISON.md。

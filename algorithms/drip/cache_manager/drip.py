@@ -1,11 +1,27 @@
-"""Final DRIP cache policy."""
+"""Paper-facing DRIP cache policies."""
 
 from .config import DRIPCoreConfig
-from .local_ppr import PPRBridgeDebtDRIPCore
+from .support_completion import EmbeddingOnlyDRIPCore, EvidenceConditionedDRIPCore
 
 
-class DRIP(PPRBridgeDebtDRIPCore):
-    """Final DRIP method: PPR candidates with bridge-debt admission."""
+def _default_config():
+    return DRIPCoreConfig(
+        gain_margin=1.35,
+        hidden_comparison_slots=4,
+        use_oracle_route_hint=True,
+    )
+
+
+class DRIPQueryHidden(EvidenceConditionedDRIPCore):
+    """DRIP-QueryHidden: complete evidence hidden behind a visible anchor.
+
+    This is the current DRIP method:
+
+        query-visible A -> evidence-conditioned B -> pair lease for A+B
+
+    The pair lease is an internal retention mechanism, not a separate public
+    query class.
+    """
 
     def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
         super().__init__(
@@ -13,19 +29,49 @@ class DRIP(PPRBridgeDebtDRIPCore):
             doc_pool,
             doc_embs,
             title_to_idx,
-            config=config or DRIPCoreConfig(gain_margin=1.5),
-            ppr_kwargs=dict(c=0.5, L=3, R=2, K0=5, d_cap=30),
-            bridge_reserve=0.15,
-            bridge_margin=1.0,
-            bridge_stickiness=2.0,
-            echo_weight=0.75,
-            echo_decay=0.99,
-            serve_weight=1.0,
-            write_budget_scale=1.0,
-            debt_topk=3,
-            direct_debt_topk=3,
-            direct_debt_gain=1.4,
-            debt_decay=0.96,
-            debt_gain=1.8,
-            debt_specificity=0.5,
+            config=config or _default_config(),
+            use_bridge=True,
+            use_pair_lease=True,
+            use_text_encoder=True,
         )
+
+
+class DRIP(DRIPQueryHidden):
+    """Current DRIP method; shorthand for DRIP-QueryHidden."""
+
+
+class DRIPQueryVisible(EmbeddingOnlyDRIPCore):
+    """DRIP-QueryVisible: dense/direct admission for query-visible evidence."""
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
+        super().__init__(
+            name,
+            doc_pool,
+            doc_embs,
+            title_to_idx,
+            config=config or _default_config(),
+        )
+
+
+class DRIPESC(EvidenceConditionedDRIPCore):
+    """Ablation: evidence-conditioned support completion without pair lease."""
+
+    def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
+        super().__init__(
+            name,
+            doc_pool,
+            doc_embs,
+            title_to_idx,
+            config=config or _default_config(),
+            use_bridge=True,
+            use_pair_lease=False,
+            use_text_encoder=True,
+        )
+
+
+class DRIPDense(DRIPQueryVisible):
+    """Paper alias for the query-visible dense/direct branch."""
+
+
+class DRIPESCLease(DRIP):
+    """Paper alias for the full ESC + Pair Lease method."""

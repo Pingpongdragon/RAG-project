@@ -7,7 +7,7 @@ Generated 2026-05-12. All artifacts in `motivation/figures_v3/`.
 * **5 production cache strategies** added: LRU, GPTCacheStyle (semantic dedup),
   MemGPTStyle (importance-weighted), KnowledgeEdit-style (full-doc edits).
 * Re-ran 8 (dataset × drift) cells × 9 strategies on Mo1 (single-hop) and 6 on Mo2.
-* **Headline (Mo1, H2 Recall@5):** QueryDriven beats every cache baseline on
+* **Headline (Mo1, H2 Recall@5):** DRIP-Dense beats every cache baseline on
   7/8 cells; max gap +25.7pp (FEVER-sudden), mean gap +5.4pp.
 * **Figures regenerated with corrected `cov_per_window` key** (was previously
   blank because the plotting code looked for `kb_coverage_per_window`):
@@ -80,11 +80,11 @@ uses pre-set `round` field). New CLI: `--drift temporal`.
 | LRU | 34.9 | 5,053 | 24.7 | cache (recency) |
 | MemGPTStyle | 37.8 | 5,046 | 24.4 | cache (importance) |
 | GPTCacheStyle | 40.1 | 4,841 | 28.2 | cache (semantic) |
-| **QueryDriven (ours)** | **30.9** | **6,343** | **38.8** | **ours** |
+| **DRIP-Dense (ours)** | **30.9** | **6,343** | **38.8** | **ours** |
 | KnowledgeEdit | 652.7 | 15,411 | 28.7 | edit-based |
 | Oracle | 0.0 | 129,024 | 81.0 | upper-bound |
 
-**Reading:** QueryDriven dominates the cache cluster on **both** axes
+**Reading:** DRIP-Dense dominates the cache cluster on **both** axes
 (latency 30.9 ms < GPTCache 40.1 ms; quality +10.6 pp R@5). Rebuts both
 "storage is cheap" (Concern 2) and "no system metrics" (Concern 4):
 the real cost of update is **wall-clock latency**, and our method is on
@@ -94,7 +94,7 @@ Artifacts: `latency_quality_mo{1,2}.{pdf,png}`, `system_metrics_table.tex`.
 
 ## DEMAND_DECAY ablation (2wiki-gradual gap closure)
 
-Reviewer-side ablation: `motivation_2/strategies.py :: QueryDrivenCluster.DEMAND_DECAY`
+Reviewer-side ablation: `motivation_2/strategies.py :: DRIP-Dense.DEMAND_DECAY`
 0.85 → 0.92.
 
 | Setting | 2wiki-gradual H2 R@5 | Gap vs LogDriven |

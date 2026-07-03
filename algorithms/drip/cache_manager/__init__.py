@@ -1,9 +1,9 @@
-"""DRIP-Core cache manager.
+"""DRIP cache manager.
 
 Directory map:
-  - query_router.py: route r(q)
+  - query_router.py: query evidence visibility r(q)
   - embedding_index.py: dense/direct evidence
-  - graph_index.py: bridge evidence
+  - graph_index.py: hidden-support evidence
   - config.py: all knobs
 
 The two paper formulas live in this adapter:
@@ -16,15 +16,16 @@ import numpy as np
 
 from algorithms.cache.base import BaseStrategy
 from algorithms.cache.params import PARAMS as _P
+from algorithms.drip.detection.multi_agent_drift import MultiAgentDriftDetector
 
 from .config import DRIPCoreConfig
 from .embedding_index import EmbeddingIndex
 from .graph_index import GraphIndex
-from .query_router import BRIDGE, MULTI_DIRECT, SINGLE, QueryRouter, RouteDecision
+from .query_router import QUERY_HIDDEN, QUERY_VISIBLE, QueryRouter, RouteDecision
 
 
 class DRIPCore(BaseStrategy):
-    """Detector-free DRIP cache manager."""
+    """DRIP cache manager with query-visible/query-hidden evidence channels."""
 
     def __init__(self, name, doc_pool, doc_embs, title_to_idx, config=None):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
@@ -37,6 +38,17 @@ class DRIPCore(BaseStrategy):
         self.last_admission = {}
         self.bridge_log = []
         self.route_log = []
+        self.drift_log = []
+        self.drift_detector = None
+        self._drift_severity = 0.0
+        self._last_drift_result = None
+        if self.config.use_drift_detector:
+            self.drift_detector = MultiAgentDriftDetector(
+                warmup_windows=self.config.drift_warmup_windows,
+                min_agent_queries=self.config.drift_min_agent_queries,
+                z_threshold=self.config.drift_z_threshold,
+                centroid_threshold=self.config.drift_centroid_threshold,
+            )
 
     @property
     def _pool_ents(self):
@@ -56,6 +68,7 @@ class DRIPCore(BaseStrategy):
             return
 
         kb_idx, kb_emb, nqe, q_kb = self._observe(window_query_embs)
+        self._update_drift_control(window_queries, nqe, q_kb, window_idx)
         self._decay()
         self._credit_serve(q_kb, kb_idx)
 
@@ -63,7 +76,7 @@ class DRIPCore(BaseStrategy):
         probe_k = max(self.config.direct_topk, self.config.bridge_step1_k)
         n_under = 0
         under_slots = []
-        route_counts = {SINGLE: 0, MULTI_DIRECT: 0, BRIDGE: 0}
+        route_counts = {QUERY_VISIBLE: 0, QUERY_HIDDEN: 0}
         direct_updates = bridge_updates = 0
         direct_mass = bridge_mass = 0.0
         bridge_direct_updates = 0
@@ -74,6 +87,15 @@ class DRIPCore(BaseStrategy):
         route_labeled = route_match = 0
         graph_stats = defaultdict(int)
         graph_entities = Counter()
+        bridge_hidden_updates = 0
+        bridge_hidden_mass = 0.0
+        bridge_hidden_top1 = 0
+        bridge_hidden_top5 = 0
+        bridge_hidden_top10 = 0
+        bridge_hidden_mrr = 0.0
+        self._window_hidden_pos = set()
+        for query in window_queries:
+            self._window_hidden_pos.update(self._hidden_positions(query))
 
         for qi, query in enumerate(window_queries):
             dense = self.embedding_index.search_one(nqe[qi], probe_k)
@@ -83,12 +105,18 @@ class DRIPCore(BaseStrategy):
                 for pi, sim in first_hops
                 if sim > 0.0
             ]
-            route = self.router.route(query, q_kb[qi], first_hop_entities)
-            if not self.graph_index.has_metadata():
+            route = self.router.route(query, q_kb[qi], first_hop_entities, first_hops)
+            if getattr(self, "force_query_visible", False) and route.route == QUERY_HIDDEN:
                 route = RouteDecision(
-                    SINGLE,
-                    self.config.singlehop_slots,
-                    "no_graph_metadata",
+                    QUERY_VISIBLE,
+                    route.target_slots,
+                    "query_visible_only",
+                )
+            elif route.route == QUERY_HIDDEN and not self.graph_index.has_metadata():
+                route = RouteDecision(
+                    QUERY_VISIBLE,
+                    route.target_slots,
+                    "hidden_no_graph_metadata",
                 )
             route_counts[route.route] = route_counts.get(route.route, 0) + 1
             expected_route = self._expected_route(query)
@@ -102,16 +130,31 @@ class DRIPCore(BaseStrategy):
             n_under += 1
             under_slots.append(route.target_slots)
             gold_pos = self._gold_positions(query)
+            hidden_pos = self._hidden_positions(query)
             window_gold_pos.update(gold_pos)
 
-            if route.route == BRIDGE and self.graph_index.has_metadata():
+            if route.route == QUERY_HIDDEN and self.graph_index.has_metadata():
+                scoring_query = query
+                if isinstance(query, dict):
+                    scoring_query = dict(query)
+                    scoring_query["_drip_query_emb"] = nqe[qi]
+                graph_hops = self._bridge_graph_hops(
+                    scoring_query, first_hops, dense, q_kb[qi], kb_idx, kb_pos)
                 candidates = self.graph_index.graph_evidence(
-                    query, first_hops, kb_pos, kb_emb, self.doc_embs)
+                    scoring_query, graph_hops, kb_pos, kb_emb, self.doc_embs)
                 for key, value in self.graph_index.last_stats.items():
                     if key == "bridge_top_entities":
                         graph_entities.update(dict(value))
                     elif isinstance(value, (int, float)):
                         graph_stats[key] += value
+                for rank, (pi, score) in enumerate(candidates, start=1):
+                    if int(pi) in hidden_pos:
+                        bridge_hidden_updates += 1
+                        bridge_hidden_mass += float(score)
+                        bridge_hidden_top1 += int(rank <= 1)
+                        bridge_hidden_top5 += int(rank <= 5)
+                        bridge_hidden_top10 += int(rank <= 10)
+                        bridge_hidden_mrr += 1.0 / float(rank)
                 updates, mass, gold_updates, gold_mass = self._credit_graph(
                     candidates, gold_pos)
                 bridge_updates += updates
@@ -143,7 +186,7 @@ class DRIPCore(BaseStrategy):
 
         self.maint_retrieval_cost += n_under * probe_k
         self._prune_demand()
-        budget = min(_P.WRITE_CAP, sum(under_slots))
+        budget = min(self._effective_write_cap(), sum(under_slots))
         write_stats = self._write(kb_idx, kb_emb, budget, window_gold_pos)
         writes = int(write_stats["writes"])
         self.update_cost += writes
@@ -155,6 +198,12 @@ class DRIPCore(BaseStrategy):
             "bridge_mass": round(bridge_mass, 4),
             "bridge_gold_updates": int(bridge_gold_updates),
             "bridge_gold_mass": round(bridge_gold_mass, 4),
+            "bridge_hidden_updates": int(bridge_hidden_updates),
+            "bridge_hidden_mass": round(bridge_hidden_mass, 4),
+            "bridge_hidden_top1": int(bridge_hidden_top1),
+            "bridge_hidden_top5": int(bridge_hidden_top5),
+            "bridge_hidden_top10": int(bridge_hidden_top10),
+            "bridge_hidden_mrr": round(bridge_hidden_mrr, 4),
             "bridge_direct_updates": int(bridge_direct_updates),
             "bridge_direct_mass": round(bridge_direct_mass, 4),
             "bridge_direct_gold_updates": int(bridge_direct_gold_updates),
@@ -177,6 +226,18 @@ class DRIPCore(BaseStrategy):
             "write_gold_candidates": int(write_stats["gold_candidates"]),
             "write_gold": int(write_stats["gold_writes"]),
             "write_gold_rate": round(float(write_stats["gold_rate"]), 4),
+            "write_hidden_candidates": int(write_stats.get("hidden_candidates", 0)),
+            "write_hidden": int(write_stats.get("hidden_writes", 0)),
+            "write_hidden_rate": round(float(write_stats.get("hidden_rate", 0.0)), 4),
+            "hidden_evictions": int(write_stats.get("hidden_evictions", 0)),
+            "direct_writes": int(write_stats.get("direct_writes", 0)),
+            "bridge_writes": int(write_stats.get("bridge_writes", 0)),
+            "direct_budget": int(write_stats.get("direct_budget", 0)),
+            "bridge_budget": int(write_stats.get("bridge_budget", 0)),
+            "bridge_reserve": round(float(write_stats.get("bridge_reserve", 0.0)), 4),
+            "pair_activations": int(write_stats.get("pair_activations", 0)),
+            "pair_lease_docs": int(write_stats.get("pair_lease_docs", 0)),
+            "pair_lease_mass": round(float(write_stats.get("pair_lease_mass", 0.0)), 4),
         })
         self.route_log.append({
             "w": window_idx,
@@ -194,7 +255,35 @@ class DRIPCore(BaseStrategy):
             "writes": int(writes),
             "write_gold": int(write_stats["gold_writes"]),
             "write_gold_candidates": int(write_stats["gold_candidates"]),
+            "write_hidden": int(write_stats.get("hidden_writes", 0)),
+            "hidden_evictions": int(write_stats.get("hidden_evictions", 0)),
+            "drift_severity": round(float(self._drift_severity), 4),
         }
+
+    def _update_drift_control(self, window_queries, nqe, q_kb, window_idx):
+        if self.drift_detector is None:
+            self._drift_severity = 0.0
+            self._last_drift_result = None
+            return
+        result = self.drift_detector.detect(nqe, q_kb, window_queries)
+        self._last_drift_result = result
+        self._drift_severity = float(result.severity)
+        self.drift_log.append(result.to_log(window_idx))
+
+    def _effective_write_cap(self):
+        boost = 1.0 + self.config.drift_write_boost * self._drift_severity
+        return int(max(0, np.ceil(float(_P.WRITE_CAP) * boost)))
+
+    def _effective_demand_decay(self):
+        decay = self.config.demand_decay * (
+            1.0 - self.config.drift_decay_boost * self._drift_severity
+        )
+        return float(np.clip(decay, 0.0, 1.0))
+
+    def _effective_gain_margin(self, base_margin=None):
+        margin = self.config.gain_margin if base_margin is None else float(base_margin)
+        discount = 1.0 - self.config.drift_margin_discount * self._drift_severity
+        return float(max(0.05, margin * discount))
 
     def _observe(self, window_query_embs):
         kb_idx = np.array([self.d2p[d] for d in sorted(self.kb)], dtype=np.int64)
@@ -207,16 +296,28 @@ class DRIPCore(BaseStrategy):
     def _expected_route(self, query):
         if not isinstance(query, dict):
             return None
-        qtype = str(query.get("qtype") or query.get("type") or "").lower()
+        qtype = str(
+            query.get("route_hint") or query.get("qtype") or query.get("type") or ""
+        ).lower()
         if not qtype:
             return None
         if "bridge" in qtype or "compositional" in qtype or "inference" in qtype:
-            return BRIDGE
+            return QUERY_HIDDEN
         if "comparison" in qtype:
-            return MULTI_DIRECT
+            return QUERY_VISIBLE
         if "single" in qtype or "temporal" in qtype:
-            return SINGLE
+            return QUERY_VISIBLE
         return None
+
+    def _bridge_graph_hops(self, query, first_hops, dense, q_kb_row, kb_idx, kb_pos):
+        """Seed bridge evidence. Subclasses may add resident anchors here.
+
+        The default keeps the historical behavior: bridge candidates are
+        expanded from dense first-hop documents only. Direct evidence credit
+        still uses ``first_hops`` so changing graph seeds cannot silently alter
+        the single-hop admission path.
+        """
+        return first_hops
 
     def _gold_positions(self, query):
         """Gold is used only for diagnostics in experiment logs."""
@@ -229,8 +330,18 @@ class DRIPCore(BaseStrategy):
                 out.add(int(pi))
         return out
 
+    def _hidden_positions(self, query):
+        """Hidden reuse target positions, used only for diagnostics."""
+        if not isinstance(query, dict):
+            return set()
+        title = query.get("reuse_support_title")
+        if not title:
+            return set()
+        pi = self.title_to_idx.get(title)
+        return {int(pi)} if pi is not None else set()
+
     def _decay(self):
-        d = self.config.demand_decay
+        d = self._effective_demand_decay()
         s = self.config.serve_decay
         m = self.config.min_stat
         self.demand = {p: v * d for p, v in self.demand.items() if v * d >= m}
@@ -258,6 +369,11 @@ class DRIPCore(BaseStrategy):
             for p in pos:
                 pi = int(kb_idx[p])
                 self.serve[pi] = self.serve.get(pi, 0.0) + credit
+                self._after_serve_credit(pi, credit)
+
+    def _after_serve_credit(self, pi, credit):
+        """Optional hook for subclasses that protect served resident evidence."""
+        return None
 
     def _credit_dense(self, candidates, kb_pos, gamma=None, gold_pos=None, top1_bonus=None):
         """Formula 1 dense branch: E_dense(q,d) = top1_bonus + max(0, sim(q,d))."""
@@ -325,6 +441,7 @@ class DRIPCore(BaseStrategy):
     def _write(self, kb_idx, kb_emb, budget, gold_pos=None):
         """Formula 2 admission: admit c iff D_t(c) > P_t(v)."""
         gold_pos = gold_pos or set()
+        hidden_pos = getattr(self, "_window_hidden_pos", set())
         if budget <= 0:
             return {
                 "writes": 0,
@@ -332,6 +449,10 @@ class DRIPCore(BaseStrategy):
                 "gold_candidates": 0,
                 "gold_writes": 0,
                 "gold_rate": 0.0,
+                "hidden_candidates": 0,
+                "hidden_writes": 0,
+                "hidden_rate": 0.0,
+                "hidden_evictions": 0,
             }
         kb_pos = set(int(p) for p in kb_idx)
         candidates = sorted(
@@ -345,6 +466,10 @@ class DRIPCore(BaseStrategy):
                 "gold_candidates": 0,
                 "gold_writes": 0,
                 "gold_rate": 0.0,
+                "hidden_candidates": 0,
+                "hidden_writes": 0,
+                "hidden_rate": 0.0,
+                "hidden_evictions": 0,
             }
 
         priority = self._resident_priority(kb_idx, kb_emb)
@@ -352,31 +477,40 @@ class DRIPCore(BaseStrategy):
         current_kb_emb = self.doc_embs[np.array(sorted(kb_pos), dtype=np.int64)]
         writes = 0
         gold_writes = 0
+        hidden_writes = 0
+        hidden_evictions = 0
         victim_i = 0
 
         for cand_value, cp in candidates:
             if writes >= budget or victim_i >= len(victims):
                 break
             victim = victims[victim_i]
-            gain = cand_value - self.config.gain_margin * priority[victim]
+            gain = cand_value - self._effective_gain_margin() * priority[victim]
             if gain <= 0.0:
                 break
             duplicate = float((self.doc_embs[cp] @ current_kb_emb.T).max())
             if duplicate > self.config.tau_duplicate:
                 continue
+            hidden_evictions += int(int(victim) in hidden_pos)
             self.kb.discard(self.p2d[victim])
             self.kb.add(self.p2d[cp])
             self.serve.pop(victim, None)
             victim_i += 1
             writes += 1
             gold_writes += int(int(cp) in gold_pos)
+            hidden_writes += int(int(cp) in hidden_pos)
         gold_candidates = sum(1 for _, p in candidates if int(p) in gold_pos)
+        hidden_candidates = sum(1 for _, p in candidates if int(p) in hidden_pos)
         return {
             "writes": int(writes),
             "candidates": int(len(candidates)),
             "gold_candidates": int(gold_candidates),
             "gold_writes": int(gold_writes),
             "gold_rate": float(gold_writes / writes) if writes else 0.0,
+            "hidden_candidates": int(hidden_candidates),
+            "hidden_writes": int(hidden_writes),
+            "hidden_rate": float(hidden_writes / writes) if writes else 0.0,
+            "hidden_evictions": int(hidden_evictions),
         }
 
 
@@ -388,10 +522,21 @@ __all__ = [
     "EmbeddingIndex",
     "GraphIndex",
     "RouteDecision",
-    "SINGLE",
-    "MULTI_DIRECT",
-    "BRIDGE",
+    "QUERY_VISIBLE",
+    "QUERY_HIDDEN",
+    "DRIPQueryVisible",
+    "DRIPQueryHidden",
+    "DRIPDense",
+    "DRIPESC",
+    "DRIPESCLease",
 ]
 
 
-from .drip import DRIP
+from .drip import (
+    DRIP,
+    DRIPDense,
+    DRIPESC,
+    DRIPESCLease,
+    DRIPQueryHidden,
+    DRIPQueryVisible,
+)

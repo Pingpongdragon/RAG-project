@@ -1,4 +1,4 @@
-"""GraphIndex for DRIP-Core."""
+"""GraphIndex for DRIP cache manager."""
 from collections import Counter, defaultdict
 import math
 import re

@@ -1,32 +1,44 @@
 # Code Explained
 
-This document points to the current DRIP code path. Older notes about
-`DRIPPipeline`, `KBUpdateAgent`, `DRIPKBCurator`, `RoutedCache`, and
-`algorithms/cache/ours/drip.py` refer to retired implementations.
+This document points to the current DRIP code path. Older pipeline and
+detector-wrapped prototypes are retired; the active cache-policy path is the
+`algorithms/drip/cache_manager/` package.
 
 ## Active Code Path
 
 | File | Role |
 |---|---|
-| `algorithms/drip/support_flow/__init__.py` | DRIPCore cache manager: route, evidence ledger, support-priority admission. |
-| `algorithms/drip/support_flow/query_router.py` | Deterministic SINGLE / MULTI_DIRECT / BRIDGE route selection. |
-| `algorithms/drip/support_flow/embedding_index.py` | Dense direct candidates. |
-| `algorithms/drip/support_flow/graph_index.py` | Graph bridge evidence with IDF, entity-degree penalty, novelty, and complementarity. |
-| `algorithms/drip/support_flow/config.py` | DRIPCore hyperparameters. |
-| `algorithms/cache/ours/query_driven.py` | Retained minimal SemFlow / QueryDriven direct-demand baseline. |
-| `algorithms/cache/ours/config.py` | QueryDriven baseline hyperparameters. |
-| `algorithms/drip/detection/` | Optional detector utilities, not the active cache-policy entry point. |
+| `algorithms/drip/cache_manager/__init__.py` | DRIPCore cache manager: drift control, route, evidence ledger, support-priority admission. |
+| `algorithms/drip/detection/multi_agent_drift.py` | Multi-agent drift detector/controller for update aggressiveness. |
+| `algorithms/drip/cache_manager/query_router.py` | Deterministic QUERY_VISIBLE / QUERY_HIDDEN route selection. |
+| `algorithms/drip/cache_manager/embedding_index.py` | Dense direct candidates. |
+| `algorithms/drip/cache_manager/graph_index.py` | Entity metadata and postings used by bridge completion. |
+| `algorithms/drip/cache_manager/support_completion.py` | Hidden-support completion and pair lease retention. |
+| `algorithms/drip/cache_manager/drip.py` | Paper-facing policy classes: `DRIP-QueryVisible`, `DRIP-QueryHidden`, and `DRIP`. |
+| `algorithms/drip/cache_manager/config.py` | DRIPCore hyperparameters. |
+| `algorithms/drip/detection/baseline_detectors.py` | Detector ablation baselines. |
 
-## Final Algorithm
+## Current Algorithm
+
+The paper-facing variants separate query-visible and query-hidden evidence:
+
+| Strategy | Enabled channels |
+|---|---|
+| `DRIP-QueryVisible` | Dense/direct evidence only. |
+| `DRIP-QueryHidden` | Query-visible A plus evidence-conditioned hidden-support completion B and pair lease. |
+| `DRIP` | Alias for the current `DRIP-QueryHidden` policy. |
 
 For each query window:
 
 1. Score current queries against the resident cache.
-2. Route each under-covered query as SINGLE, MULTI_DIRECT, or BRIDGE.
-3. Credit dense/direct evidence for SINGLE and MULTI_DIRECT.
-4. Credit GraphIndex bridge evidence for BRIDGE.
-5. Maintain serve evidence for resident documents that covered queries.
-6. Replace resident documents only when candidate demand beats the weakest resident support priority.
+2. Detect multi-agent drift severity from query-cache alignment.
+3. Use severity to adjust demand decay, write cap, and admission margin.
+4. Route each under-covered query as QUERY_VISIBLE or QUERY_HIDDEN.
+5. Credit dense/direct evidence for QUERY_VISIBLE.
+6. Credit hidden-support evidence for QUERY_HIDDEN: retrieve missing B conditioned on resident/easy A.
+7. Maintain serve evidence for resident documents that covered queries.
+8. Protect completed A+B support pairs with pair lease.
+9. Replace resident documents only when candidate demand beats the weakest resident support priority.
 
 The strategy registry entry is `STRATEGY_FACTORIES["DRIP"]` in
 `algorithms/cache/registry.py`.

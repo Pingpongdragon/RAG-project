@@ -1,21 +1,30 @@
 """DRIP algorithm package.
 
 This package contains the canonical DRIP components.  The current main engine is
-DRIPCore, a detector-free support-cache manager.  Drift detectors live here as
-optional epoch-controller utilities for a future detector-wrapped DRIP.
+DRIPCore, a support-cache manager with an optional multi-agent drift controller.
+The controller tunes update aggressiveness; it does not route query evidence.
 """
 
 from .interfaces import BaseDriftDetector, DriftResult
 from .detection.baseline_detectors import ADWINDetector, MMDDetector, NoDetector
+from .detection.multi_agent_drift import (
+    AgentDriftSignal,
+    MultiAgentDriftDetector,
+    MultiAgentDriftResult,
+)
 from .cache_manager import (
-    BRIDGE,
     DRIP,
+    DRIPDense,
+    DRIPESC,
+    DRIPESCLease,
+    DRIPQueryHidden,
+    DRIPQueryVisible,
     EmbeddingIndex,
     GraphIndex,
-    MULTI_DIRECT,
+    QUERY_HIDDEN,
+    QUERY_VISIBLE,
     QueryRouter,
     RouteDecision,
-    SINGLE,
     DRIPCore,
     DRIPCoreConfig,
 )
@@ -32,14 +41,21 @@ __all__ = [
     "NoDetector",
     "ADWINDetector",
     "MMDDetector",
+    "AgentDriftSignal",
+    "MultiAgentDriftDetector",
+    "MultiAgentDriftResult",
     "DRIPCore",
     "DRIPCoreConfig",
     "DRIP",
+    "DRIPDense",
+    "DRIPESC",
+    "DRIPESCLease",
+    "DRIPQueryHidden",
+    "DRIPQueryVisible",
     "QueryRouter",
     "EmbeddingIndex",
     "GraphIndex",
     "RouteDecision",
-    "SINGLE",
-    "MULTI_DIRECT",
-    "BRIDGE",
+    "QUERY_VISIBLE",
+    "QUERY_HIDDEN",
 ]

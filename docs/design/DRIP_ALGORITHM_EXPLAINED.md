@@ -5,16 +5,20 @@
 
 Source of truth:
 
-- Final policy: `algorithms/drip/support_flow/__init__.py`
-- Query router: `algorithms/drip/support_flow/query_router.py`
-- Graph bridge evidence: `algorithms/drip/support_flow/graph_index.py`
-- Query-demand baseline: `algorithms/cache/ours/query_driven.py`
+- Current policy: `algorithms/drip/cache_manager/__init__.py`
+- Paper-facing variants: `algorithms/drip/cache_manager/drip.py`
+- Multi-agent drift controller: `algorithms/drip/detection/multi_agent_drift.py`
+- Query router: `algorithms/drip/cache_manager/query_router.py`
+- Dense/direct channel: `algorithms/drip/cache_manager/embedding_index.py`
+- Query-hidden support channel: `algorithms/drip/cache_manager/support_completion.py`
+- Graph metadata: `algorithms/drip/cache_manager/graph_index.py`
 - Strategy registry: `algorithms/cache/registry.py`
 
 ## Claim
 
-DRIP routes each query to the right evidence channel, credits dense or graph
-evidence into a support ledger, and admits documents whose evidence beats the
+DRIP first decides whether the missing evidence is query-visible or
+query-hidden. It then credits dense/direct or evidence-conditioned hidden
+support into a support ledger, and admits documents whose evidence beats the
 weakest resident cache item.
 
 The paper should frame DRIP as solving:
@@ -46,31 +50,59 @@ The paper should frame DRIP as solving:
 query window
     |
     v
-ROUTE: SINGLE / MULTI_DIRECT / BRIDGE
+DRIFT CONTROL: rho_t from multi-agent query-cache alignment
     |
     v
-EVIDENCE: dense direct evidence or GraphIndex bridge evidence
+ROUTE: QUERY_VISIBLE / QUERY_HIDDEN
     |
     v
-ADMIT/EVICT: demand + serve ledger with support-priority replacement
+EVIDENCE: dense direct evidence or evidence-conditioned hidden support
+    |
+    v
+ADMIT/EVICT: demand + serve + pair-lease ledger with support-priority replacement
 ```
 
-## Graph Bridge Evidence
+## Evidence Channels
 
-For bridge queries, DRIPCore uses:
+The drift controller runs before evidence routing. It uses query-cache
+alignment, not query type, to tune update aggressiveness:
+
+```text
+write_cap_t = write_cap_0 * (1 + alpha * rho_t)
+demand_decay_t = demand_decay_0 * (1 - beta * rho_t)
+margin_t = margin_0 * (1 - gamma * rho_t)
+```
+
+For query-visible evidence, `DRIP-QueryVisible` writes candidates from the
+dense/direct channel:
+
+```text
+D_dir(d | q) = max_{r <= K} sim(q, d_r) * rank_decay(r)
+```
+
+For query-hidden evidence, `DRIP-QueryHidden` adds evidence-conditioned
+hidden-support completion:
 
 ```text
 q -> A -> entity e -> B
 ```
 
 `A` is a dense first-hop document. `B` is a hidden second-hop candidate found by
-shared entities. In code, GraphIndex scores:
+conditioning on the evidence in `A`. In code, GraphIndex metadata and the
+hidden-support scorer produce:
 
 ```text
-score(B) = sum_{A,e} s(q,A) * IDF(e) / g(e)^rho * novelty(B|C_t) * complementarity(A,B)
+D_hid(B | q, A) = E_hidden(q, B | A)
 ```
 
-The score is then clipped to top bridge candidates and normalized per query.
+The hidden mode then protects completed support pairs:
+
+```text
+P(d) = S(d) + D_dir(d) + D_hid(d) + lambda_pair * L(d)
+```
+
+where `S(d)` is resident serve evidence and `L(d)` is the pair lease assigned
+to both documents after an A+B bridge support pair is completed.
 
 ## Admission
 
@@ -92,10 +124,8 @@ Near-duplicates of the current cache are skipped.
 
 ## Runnable Variants
 
-| Variant | Status | Meaning |
-|---|---|---|
-| `QueryDriven` | retained | Minimal direct-demand SemFlow baseline. |
-| `DRIP` | current method | DRIPCore with route-aware dense and graph evidence. |
-
-Retired `RoutedCache` and detector-wrapped `algorithms/cache/ours/drip.py`
-should not be used as current strategies.
+| Variant | Meaning |
+|---|---|
+| `DRIP-QueryVisible` | Embedding/direct channel only. |
+| `DRIP-QueryHidden` | Query-visible A plus evidence-conditioned hidden support B and pair lease. |
+| `DRIP` | Current main alias for `DRIP-QueryHidden`. |

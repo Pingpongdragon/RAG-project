@@ -5,7 +5,6 @@ under ``algorithms.drip``.
 """
 
 from .drip import (
-    BRIDGE,
     BaseDriftDetector,
     DriftResult,
     DriftLensDetector,
@@ -13,13 +12,16 @@ from .drip import (
     DRIP,
     EmbeddingIndex,
     GraphIndex,
-    MULTI_DIRECT,
+    QUERY_HIDDEN,
+    QUERY_VISIBLE,
     NoDetector,
     QueryRouter,
     RouteDecision,
-    SINGLE,
     ADWINDetector,
     MMDDetector,
+    AgentDriftSignal,
+    MultiAgentDriftDetector,
+    MultiAgentDriftResult,
 )
 
 __all__ = [
@@ -29,13 +31,15 @@ __all__ = [
     "EmbeddingIndex",
     "GraphIndex",
     "RouteDecision",
-    "SINGLE",
-    "MULTI_DIRECT",
-    "BRIDGE",
+    "QUERY_VISIBLE",
+    "QUERY_HIDDEN",
     "BaseDriftDetector",
     "DriftResult",
     "DriftLensDetector",
     "NoDetector",
     "ADWINDetector",
     "MMDDetector",
+    "AgentDriftSignal",
+    "MultiAgentDriftDetector",
+    "MultiAgentDriftResult",
 ]

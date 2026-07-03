@@ -1,9 +1,9 @@
-"""Talk figure for the current DRIP-Core rerun.
+"""Talk figure for the current DRIP ablation rerun.
 
 This intentionally does not overwrite the paper Fig.2.  It uses the newbridge
 rerun files and frames the current story for a progress talk:
 
-  - HotpotQA comparison: DRIP-Core helps direct multi-hop evidence.
+  - HotpotQA comparison: DRIP-ESC-Lease helps direct multi-hop evidence.
   - 2Wiki bridge: current graph bridge/admission is not calibrated yet.
 """
 import json
@@ -28,8 +28,8 @@ COLOR = {
     "GPTCacheStyle": "#0891B2",
     "DocArrival": "#7C3AED",
     "AgentRAGCache": "#111827",
-    "QueryDriven": "#10B981",
-    "DRIP": "#2563EB",
+    "DRIP-Dense": "#10B981",
+    "DRIP-ESC-Lease": "#2563EB",
     "OnDemandFetch": "#0F766E",
     "Oracle": "#DC2626",
 }
@@ -40,8 +40,8 @@ LABEL = {
     "GPTCacheStyle": "GPTCache",
     "DocArrival": "IndexGrowth",
     "AgentRAGCache": "ARC",
-    "QueryDriven": "QueryDriven",
-    "DRIP": "DRIP-Core",
+    "DRIP-Dense": "DRIP-Dense",
+    "DRIP-ESC-Lease": "DRIP-ESC-Lease",
     "OnDemandFetch": "On-Demand",
     "Oracle": "Oracle",
 }
@@ -52,8 +52,8 @@ LW = {
     "GPTCacheStyle": 1.25,
     "DocArrival": 1.25,
     "AgentRAGCache": 2.1,
-    "QueryDriven": 2.3,
-    "DRIP": 2.8,
+    "DRIP-Dense": 2.3,
+    "DRIP-ESC-Lease": 2.8,
     "OnDemandFetch": 2.0,
     "Oracle": 2.2,
 }
@@ -64,8 +64,8 @@ LS = {
     "GPTCacheStyle": ":",
     "DocArrival": "--",
     "AgentRAGCache": "-.",
-    "QueryDriven": "-",
-    "DRIP": "-",
+    "DRIP-Dense": "-",
+    "DRIP-ESC-Lease": "-",
     "OnDemandFetch": "--",
     "Oracle": "-",
 }
@@ -76,11 +76,23 @@ ORDER = [
     "GPTCacheStyle",
     "DocArrival",
     "AgentRAGCache",
-    "QueryDriven",
-    "DRIP",
+    "DRIP-Dense",
+    "DRIP-ESC-Lease",
     "OnDemandFetch",
     "Oracle",
 ]
+
+LEGACY_STRATEGY_ALIASES = {
+    "".join(("Query", "Driven")): "DRIP-Dense",
+    "DRIP": "DRIP-ESC-Lease",
+}
+
+
+def normalize_strategy_names(summary):
+    for old, new in LEGACY_STRATEGY_ALIASES.items():
+        if new not in summary and old in summary:
+            summary[new] = summary[old]
+    return summary
 
 
 def smooth_centered(values, w=7):
@@ -117,7 +129,7 @@ def add_gradual_bg(ax, n_w, y_max):
 
 
 def route_diag(summary):
-    drip = summary["DRIP"]
+    drip = summary["DRIP-ESC-Lease"]
     routes = drip.get("route_log", [])
     out = {k: sum(x.get("routes", {}).get(k, 0) for x in routes)
            for k in ("SINGLE", "MULTI_DIRECT", "BRIDGE")}
@@ -127,7 +139,7 @@ def route_diag(summary):
 
 
 def bridge_diag(summary):
-    b = summary["DRIP"].get("bridge_log", [])
+    b = summary["DRIP-ESC-Lease"].get("bridge_log", [])
     total = sum(x.get("bridge_updates", 0) for x in b)
     gold = sum(x.get("bridge_gold_updates", 0) for x in b)
     direct_total = sum(x.get("bridge_direct_updates", 0) for x in b)
@@ -150,8 +162,8 @@ def draw_panel(ax, data, panel, title, note, note_color, note_bg, y_min=0):
 
     for name in names:
         vals = summ[name].get("recall@5_per_window", [])
-        alpha = 1.0 if name in {"DRIP", "QueryDriven", "AgentRAGCache", "Oracle", "OnDemandFetch"} else 0.62
-        z = 5 if name in {"DRIP", "QueryDriven", "AgentRAGCache"} else 3
+        alpha = 1.0 if name in {"DRIP-ESC-Lease", "DRIP-Dense", "AgentRAGCache", "Oracle", "OnDemandFetch"} else 0.62
+        z = 5 if name in {"DRIP-ESC-Lease", "DRIP-Dense", "AgentRAGCache"} else 3
         ax.plot(
             wx,
             smooth_centered(vals),
@@ -198,8 +210,10 @@ def main():
 
     hot = json.load(open(HOTPOT_FILE))["hotpotqa"]
     wiki = json.load(open(WIKI_FILE))["2wikimultihopqa"]
-    hs = hot["summary"]
-    ws = wiki["summary"]
+    hs = normalize_strategy_names(hot["summary"])
+    ws = normalize_strategy_names(wiki["summary"])
+    hot["summary"] = hs
+    wiki["summary"] = ws
 
     h_routes, h_match, h_labeled = route_diag(hs)
     w_routes, w_match, w_labeled = route_diag(ws)
@@ -214,9 +228,9 @@ def main():
         "a",
         "Direct multi-hop: HotpotQA comparison",
         (
-            f"DRIP-Core improves H2 R@5: {hs['DRIP']['recall@5_h2']:.1f}%\n"
+            f"DRIP-ESC-Lease improves H2 R@5: {hs['DRIP-ESC-Lease']['recall@5_h2']:.1f}%\n"
             f"vs ARC {hs['AgentRAGCache']['recall@5_h2']:.1f}%, "
-            f"QueryDriven {hs['QueryDriven']['recall@5_h2']:.1f}%\n"
+            f"DRIP-Dense {hs['DRIP-Dense']['recall@5_h2']:.1f}%\n"
             f"router: MULTI_DIRECT {h_routes['MULTI_DIRECT']}/{h_labeled}"
         ),
         "#065F46",
@@ -228,8 +242,8 @@ def main():
         "b",
         "Hidden bridge: 2WikiMultihopQA bridge-comparison",
         (
-            f"Current bridge path fails: DRIP H2 R@5 {ws['DRIP']['recall@5_h2']:.1f}%\n"
-            f"QueryDriven {ws['QueryDriven']['recall@5_h2']:.1f}%, "
+            f"Current bridge path fails: DRIP-ESC-Lease H2 R@5 {ws['DRIP-ESC-Lease']['recall@5_h2']:.1f}%\n"
+            f"DRIP-Dense {ws['DRIP-Dense']['recall@5_h2']:.1f}%, "
             f"ARC {ws['AgentRAGCache']['recall@5_h2']:.1f}%, "
             f"Oracle {ws['Oracle']['recall@5_h2']:.1f}%\n"
             f"bridge gold rate {wg}/{wt} = {wr:.1f}% "
@@ -258,7 +272,7 @@ def main():
         handlelength=2.2,
     )
     fig.suptitle(
-        "DRIP-Core rerun: direct multi-hop works; hidden bridge admission is still the bottleneck",
+        "DRIP ablation rerun: direct multi-hop works; hidden bridge admission is still the bottleneck",
         fontsize=11.7,
         y=0.98,
     )

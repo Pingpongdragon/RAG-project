@@ -3,7 +3,7 @@
 对比 stock DRIPCore (合并预算, bridge 赚不到 serve)
  vs  BucketedDRIPCore (按 route 分桶预算 + bridge serve 腿)
 
-只验证机制(协议第1步), 不上 PPR。
+只验证机制(协议第1步), 不改变 bridge evidence。
 """
 import os, sys
 import numpy as np
@@ -11,7 +11,6 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from algorithms.drip.cache_manager import DRIPCore
-from algorithms.drip.cache_manager.query_router import BRIDGE
 
 
 class BucketedDRIPCore(DRIPCore):
@@ -142,7 +141,10 @@ for _round in range(6):
         a_idx = title_to_idx[f"AnchorPerson_{k}"]
         q_emb = _unit(doc_embs[a_idx] + 0.05 * np.random.randn(DIM))
         queries.append({
-            "question": f"bridge_q_{k}_r{_round}",
+            "question": (
+                f"Whose missing fact is connected to AnchorPerson_{k} "
+                f"in round {_round}?"
+            ),
             "qtype": "bridge",
             "sf_titles": [f"AnchorPerson_{k}", f"BridgeFact_{k}"],
             "_emb": q_emb,
@@ -216,4 +218,4 @@ if __name__ == "__main__":
     print("=" * 64)
     # 区分两个病: 上限 = 实际拿到 demand 的 B 数量 (匹配能力上限)
     print("注: bucketed 只能救回'已被 bridge router 找到'的 B;")
-    print("    找不到的 B 是匹配病(graph_index judgment), 需 PPR 才能解。")
+    print("    找不到的 B 是匹配病(graph_index judgment), 需更强 bridge evidence 才能解。")

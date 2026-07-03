@@ -37,6 +37,7 @@ results/
 *.out
 *.snm
 *.toc
+*.xdv
 *.synctex.gz
 *.fls
 *.fdb_latexmk

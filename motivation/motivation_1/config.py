@@ -106,8 +106,11 @@ STRATEGY_LABELS = {
     'RecencyTTL':         'Recency-TTL (oracle timestamp)',
     'OnDemandFetch':      'On-Demand Fetch (per-query)',
     'AgentRAGCache':      'ARC (DRF+Hubness)',
+    'ARC':                'ARC (DRF+Hubness)',
     'AgentRAGCache_NoHub': 'ARC w/o Hubness',
     'RoutedCache':        'Routed Cache (ours)',
+    'DRIP-QueryVisible':  'DRIP-Visible (ours)',
+    'DRIP-QueryHidden':   'DRIP-Hidden (ours)',
     'DRIP':               'DRIP (ours)',
     'Oracle':             'Oracle (upper bound)',
 }
@@ -123,8 +126,11 @@ STRATEGY_STYLES = {
     'TemporalAware':      {'color': '#2563EB', 'marker': 'o',  'ls': '-.'},
     'RecencyTTL':         {'color': '#1E40AF', 'marker': 'h',  'ls': ':'},
     'AgentRAGCache':      {'color': '#111827', 'marker': 'o',  'ls': '-'},
+    'ARC':                {'color': '#111827', 'marker': 'o',  'ls': '-'},
     'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o',  'ls': '--'},
     'RoutedCache':        {'color': '#2563EB', 'marker': 's',  'ls': '-'},
+    'DRIP-QueryVisible':  {'color': '#0F766E', 'marker': '*',  'ls': '-'},
+    'DRIP-QueryHidden':   {'color': '#0D9488', 'marker': 'X',  'ls': '-.'},
     'DRIP':               {'color': '#0F766E', 'marker': '*',  'ls': '-'},
     'Oracle':             {'color': '#DC2626', 'marker': '*',  'ls': '--'},
 }

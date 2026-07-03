@@ -4,12 +4,14 @@ This directory now has one canonical DRIP implementation.
 
 ## Canonical Method
 
-The paper method is the DRIP-Core support-cache policy:
+The paper method is the DRIP cache manager support-cache policy:
 
 - `algorithms/drip/cache_manager/__init__.py` - DRIPCore cache manager.
-- `algorithms/drip/cache_manager/query_router.py` - route decisions.
+- `algorithms/drip/detection/multi_agent_drift.py` - multi-agent drift detector/controller.
+- `algorithms/drip/cache_manager/query_router.py` - query-visible/query-hidden route decisions.
 - `algorithms/drip/cache_manager/embedding_index.py` - dense/direct evidence.
-- `algorithms/drip/cache_manager/graph_index.py` - graph bridge evidence.
+- `algorithms/drip/cache_manager/graph_index.py` - entity metadata/index used by hidden-support completion.
+- `algorithms/drip/cache_manager/support_completion.py` - hidden-support completion and pair lease.
 - `algorithms/drip/cache_manager/config.py` - DRIP cache-manager hyperparameters.
 
 Experiments should instantiate DRIP through:
@@ -31,6 +33,7 @@ the paper method.
 `algorithms/drip/` also keeps detector interfaces and detector baselines:
 
 - `algorithms/drip/interfaces.py`
+- `algorithms/drip/detection/multi_agent_drift.py`
 - `algorithms/drip/detection/drift_detector.py`
 - `algorithms/drip/detection/baseline_detectors.py`
 
@@ -53,8 +56,11 @@ Cache baselines live under `algorithms/cache/`:
 The current algorithm is:
 
 ```text
-Route each query as single, multi-direct, or bridge
-  -> accumulate dense or graph evidence into demand
+Detect multi-agent query-cache drift severity
+  -> adjust demand decay, write cap, and admission margin
+  -> route each query as QUERY_VISIBLE or QUERY_HIDDEN
+  -> accumulate dense or hidden-support evidence into demand
   -> maintain serve evidence for resident documents
+  -> protect completed A+B support pairs with pair lease
   -> admit candidate c over resident e iff demand gain beats support priority
 ```

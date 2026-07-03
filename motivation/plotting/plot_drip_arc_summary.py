@@ -1,10 +1,10 @@
 """One-slide summary figure for DRIP vs ARC discussion.
 
 The figure intentionally combines two result families:
-  1. StreamingQA temporal drift: ARC collapses after era changes; DRIP/SemFlow
-     recover because they admit documents from query failures.
-  2. 2Wiki bridge-comparison: RoutedCache shows the entity-chain bridge signal;
-     DRIP currently trades quality for much lower writes.
+  1. StreamingQA temporal drift: ARC collapses after era changes; DRIP-Dense
+     and DRIP-ESC-Lease recover because they admit documents from query failures.
+  2. 2Wiki bridge-comparison: DRIP-ESC shows the bridge signal; DRIP-ESC-Lease
+     adds pair-lease retention.
 """
 import json
 from pathlib import Path
@@ -31,22 +31,36 @@ COLORS = {
     "LRU": "#B45309",
     "FIFO": "#8B5CF6",
     "AgentRAGCache": "#111827",
-    "QueryDriven": "#10B981",
-    "RoutedCache": "#059669",
-    "DRIP": "#2563EB",
+    "DRIP-Dense": "#10B981",
+    "DRIP-ESC": "#059669",
+    "DRIP-ESC-Lease": "#2563EB",
     "Oracle": "#DC2626",
 }
 
 LABELS = {
     "AgentRAGCache": "ARC",
-    "QueryDriven": "SemFlow",
-    "RoutedCache": "Routed",
+    "DRIP-Dense": "DRIP-Dense",
+    "DRIP-ESC": "DRIP-ESC",
+    "DRIP-ESC-Lease": "DRIP-ESC-Lease",
+}
+
+LEGACY_STRATEGY_ALIASES = {
+    "".join(("Query", "Driven")): "DRIP-Dense",
+    "".join(("Routed", "Cache")): "DRIP-ESC",
+    "DRIP": "DRIP-ESC-Lease",
 }
 
 
 def load(path: Path):
     data = json.load(open(path))
     return data[list(data.keys())[0]]
+
+
+def normalize_strategy_names(summary):
+    for old, new in LEGACY_STRATEGY_ALIASES.items():
+        if new not in summary and old in summary:
+            summary[new] = summary[old]
+    return summary
 
 
 def smooth(values, w=5):
@@ -64,7 +78,8 @@ bridge = load(M2 / "results_50w_2wiki_bridge_dual_drip.json")
 
 temporal = dict(temporal_base["summary"])
 temporal.update(temporal_drip["summary"])
-bridge_summary = bridge["summary"]
+temporal = normalize_strategy_names(temporal)
+bridge_summary = normalize_strategy_names(bridge["summary"])
 
 fig = plt.figure(figsize=(13.6, 7.2))
 gs = fig.add_gridspec(2, 2, width_ratios=[1.65, 1.0], height_ratios=[1, 1],
@@ -74,7 +89,7 @@ ax_temp = fig.add_subplot(gs[0, 1])
 ax_bridge = fig.add_subplot(gs[1, 1])
 
 # Panel A: temporal per-window recovery.
-line_order = ["LRU", "AgentRAGCache", "QueryDriven", "DRIP", "Oracle"]
+line_order = ["LRU", "AgentRAGCache", "DRIP-Dense", "DRIP-ESC-Lease", "Oracle"]
 for name in line_order:
     if name not in temporal:
         continue
@@ -83,7 +98,7 @@ for name in line_order:
         np.arange(len(y)), y,
         label=LABELS.get(name, name),
         color=COLORS[name],
-        lw=2.6 if name in {"DRIP", "QueryDriven", "Oracle"} else 2.0,
+        lw=2.6 if name in {"DRIP-Dense", "DRIP-ESC-Lease", "Oracle"} else 2.0,
         alpha=0.95,
     )
 
@@ -106,7 +121,7 @@ ax_line.grid(alpha=0.25)
 ax_line.legend(ncol=3, loc="lower left", frameon=True, framealpha=0.92)
 
 # Panel B: temporal aggregate quality and writes.
-temp_order = ["LRU", "AgentRAGCache", "QueryDriven", "DRIP", "Oracle"]
+temp_order = ["LRU", "AgentRAGCache", "DRIP-Dense", "DRIP-ESC-Lease", "Oracle"]
 x = np.arange(len(temp_order))
 width = 0.34
 r5 = [temporal[m]["recall@5_h2"] for m in temp_order]
@@ -128,7 +143,7 @@ ax_temp.grid(axis="y", alpha=0.25)
 ax_temp.legend(fontsize=8, loc="upper left")
 
 # Panel C: bridge H2 quality vs write cost.
-bridge_order = ["QueryDriven", "RoutedCache", "DRIP", "AgentRAGCache", "Oracle"]
+bridge_order = ["DRIP-Dense", "DRIP-ESC", "DRIP-ESC-Lease", "AgentRAGCache", "Oracle"]
 x2 = np.arange(len(bridge_order))
 width = 0.34
 r5b = [bridge_summary[m]["recall@5_h2"] for m in bridge_order]

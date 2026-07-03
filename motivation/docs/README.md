@@ -22,7 +22,7 @@
 
 ## design/ 与 literature/ — 已上移到项目顶层 docs/
 
-算法设计（DRYAD）与文献综述属于全项目级，已移到 [../../docs/](../../docs/)：
+算法设计（DRIP）与文献综述属于全项目级，已移到 [../../docs/](../../docs/)：
 - 算法设计 → [../../docs/design/](../../docs/design/)（FINAL_METHOD / REFERENCES / UNIFICATION / ALGORITHM_DESIGN / DESIGN_DIRECTIONS）
 - 文献背景 → [../../docs/literature/](../../docs/literature/)（query shift / agent memory notes）
 

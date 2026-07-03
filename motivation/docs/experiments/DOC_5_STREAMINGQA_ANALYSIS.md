@@ -31,7 +31,7 @@ GPTCacheStyle    44.9%   2.6%   52.6%  3.2%    75
 MemGPTStyle      27.8%   2.7%   31.6%  2.8%    78
 KnowledgeEdit    25.2%   2.0%   29.9%  2.8%   198
 OnDemandFetch    64.4%  58.6%   100%  75.5%     0
-QueryDriven      79.2%  17.2%   94.1% 19.2%    91
+DRIP-Dense      79.2%  17.2%   94.1% 19.2%    91
 Oracle           81.0%  76.2%   100%  100%    380
 
 H1→H2 Static R@5 从84.5%→3.0%，drift极其剧烈（金融危机时代 vs Brexit/COVID，gold docs无重叠）。
@@ -76,7 +76,7 @@ recall@5_per_window (W26-W50):
 
 ---
 
-## 4. 为什么 QueryDriven 有效（H2 R@5=17.2%）
+## 4. 为什么 DRIP-Dense 有效（H2 R@5=17.2%）
 
 核心：使用失败查询的embedding探测pool，把"被workload证明需要"的文档写入KB。
 
@@ -95,11 +95,11 @@ Step 3：H2期间持续写入但recall受限（平均17.2%）
   受两重限制：
   a. KB budget上限：750槽，H2约有2000个不同gold docs，理论命中率上限750/2000=37.5%
   b. 时序错配：H2的stream先采R3(W26-W33)，而pool里R5(2019-20)文档最多(48%)，
-     QueryDriven优先写R5相关文档，但这批文档对R3的query没用→写错了方向。
+     DRIP-Dense优先写R5相关文档，但这批文档对R3的query没用→写错了方向。
 
 对比OnDemandFetch(H2 R@5=58.6%)：
   OnDemand每次query即时从pool拉取，天然回避了时序错配和KB容量限制。
-  代价：serve latency 7.1ms/query vs QueryDriven 1.6ms/query（4.5×差距）。
+  代价：serve latency 7.1ms/query vs DRIP-Dense 1.6ms/query（4.5×差距）。
 
 cov_h2(19.2%) > recall@5_h2(17.2%)的差距说明：
   部分gold doc虽然进了KB，但被更多噪声文档稀释，检索时没排进top-5。
@@ -112,7 +112,7 @@ cov_h2(19.2%) > recall@5_h2(17.2%)的差距说明：
 |---|---|
 | Drift幅度 | StreamingQA的H1→H2 drift是灾难性的：所有cache类方法R@5-H2 < 4%，与Static持平 |
 | Cache类方法根本缺陷 | 更新信号来自supply-side（池子里随机来了什么），而非demand-side（query失败需要什么） |
-| QueryDriven有效理由 | 用失败query的embedding精准探测pool；写入量自动随drift程度扩展（drift越严重写得越多） |
+| DRIP-Dense有效理由 | 用失败query的embedding精准探测pool；写入量自动随drift程度扩展（drift越严重写得越多） |
 | OnDemand的代价 | 服务延迟4.5×，R@5-H2是QD的3.4倍（58.6% vs 17.2%）：知道答案但付出延迟 vs 延迟低但覆盖率低 |
 | Oracle差距揭示 | Oracle R@5-H2=76.2%，远高于QD 17.2%：QD的时序错配+KB容量上限压制了准确率上界 |
 | 结论句 | 在14年真实新闻流中，supply-side cache与静态KB无显著差异；demand-side failure signal方法可追踪drift，但最优解(OnDemand)以延迟为代价 |

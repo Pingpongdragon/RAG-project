@@ -6,26 +6,26 @@ This file is the place for algorithm design directions. The paper / README text 
 
 ### 1.1 Single-hop demand signal is real, but simple-case gaps split in two
 - **mo1 / HotpotQA-comparison (`100x50`)** is the clean single-hop positive example.
-  - Sudden H2: QueryDrivenCluster = **32.4 / 29.8** vs LogDriven 20.6 / 18.6.
-  - Gradual H2: QueryDrivenCluster = **49.2 / 43.1** vs LogDriven 37.7 / 31.8.
+  - Sudden H2: DRIP-Dense = **32.4 / 29.8** vs LogDriven 20.6 / 18.6.
+  - Gradual H2: DRIP-Dense = **49.2 / 43.1** vs LogDriven 37.7 / 31.8.
 - **Scale-matched SQuAD (`100x50`)** is positive under sudden drift but not a full win under gradual drift.
   - Target setting: `n_source=30000`, realized pool = **20,958**, KB = **5,000**.
-  - Sudden H2: QueryDrivenCluster = **27.2 / 21.4** vs LogDriven 18.3 / 13.4.
-  - Gradual H2: QueryDrivenCluster = 33.4 / 25.9 vs Static 54.0 / 40.8, DocArrival 50.3 / 38.3, LogDriven 30.4 / 21.8.
+  - Sudden H2: DRIP-Dense = **27.2 / 21.4** vs LogDriven 18.3 / 13.4.
+  - Gradual H2: DRIP-Dense = 33.4 / 25.9 vs Static 54.0 / 40.8, DocArrival 50.3 / 38.3, LogDriven 30.4 / 21.8.
 - Conclusion: direct-evidence regimes still confirm that query-demand signal is useful, but long gradual streams expose a separate **capacity-allocation / eviction** problem even without multi-hop bridge complexity.
 
 ### 1.2 mo2 — QDC wins but bridge gap vs OnDemandFetch persists
-- **QueryDrivenCluster is the strongest persistent writer on all three datasets** under both drift modes.
+- **DRIP-Dense is the strongest persistent writer on all three datasets** under both drift modes.
 - **HotpotQA-expanded** (`pool=54,862`, `KB=14,000`, 26%):
-  - QueryDrivenCluster = **11.0** sudden / **30.9** gradual.
+  - DRIP-Dense = **11.0** sudden / **30.9** gradual.
   - KnowledgeEdit = 9.4 / 22.1; LogDrivenArrival = 9.2 / 24.2.
   - OnDemandFetch = 60.7 / 60.5 → large persistent gap.
 - **2Wiki-expanded** (`pool=29,253`, `KB=7,000`, 24%):
-  - QueryDrivenCluster = **9.5** sudden / **24.1** gradual.
+  - DRIP-Dense = **9.5** sudden / **24.1** gradual.
   - KnowledgeEdit = 8.3 / 15.6; LogDrivenArrival = 8.1 / 15.8.
   - OnDemandFetch = 66.1 / 55.9 → large persistent gap.
 - **MuSiQue-expanded** (`pool=43,017`, `KB=11,000`, 26%):
-  - QueryDrivenCluster = **17.6** sudden / **24.7** gradual.
+  - DRIP-Dense = **17.6** sudden / **24.7** gradual.
   - KnowledgeEdit = 7.7 / 14.9; LogDrivenArrival = 6.9 / 15.4.
   - OnDemandFetch = 43.7 / 42.1 → large persistent gap.
 - Conclusion: after the single-hop positives are established, the demand signal helps even in multi-hop settings, but the main remaining failure mode is **bridge-aware persistent acquisition under low cross-query reuse** (gap vs OnDemandFetch, not gap vs baselines).
@@ -45,7 +45,7 @@ OnDemandFetch often finds useful bridge documents, but that information is not h
 High-reuse direct-evidence regimes (Hotpot-comparison, sudden scale-matched SQuAD) and sparse-bridge multi-hop regimes should not use the same policy. Current QDC is too monolithic.
 
 ### G-5 Capacity-allocation / eviction gap
-Even when the signal is useful, the writer still needs to protect sticky head content while reserving budget for new tail evidence. In the current runs, this is clearest in the `100x50` gradual SQuAD probe with realized pool 20,958 and KB 5,000, where QueryDrivenCluster beats LogDrivenArrival but still trails Static / DocArrival.
+Even when the signal is useful, the writer still needs to protect sticky head content while reserving budget for new tail evidence. In the current runs, this is clearest in the `100x50` gradual SQuAD probe with realized pool 20,958 and KB 5,000, where DRIP-Dense beats LogDrivenArrival but still trails Static / DocArrival.
 
 ## 3. Algorithm design directions
 

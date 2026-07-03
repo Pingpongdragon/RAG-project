@@ -16,7 +16,7 @@
       ]
     },
     "summary": {
-      "QueryDriven": {
+      "SemFlow": {
         "recall@1_h1": 37.8,
         "recall@1_h2": 13.0,
         "recall@1_per_window": [

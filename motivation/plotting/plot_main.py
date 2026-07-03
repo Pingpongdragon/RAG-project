@@ -82,8 +82,8 @@ PALETTE = {
     'TemporalAware':      ('#2563EB',(0,(4,1,1,1))),
     'OnDemandFetch':      ('#00ACC1',(0,(2,1.5))),
     'LogDrivenArrival':   ('#EF8C00',(0,(7,2))),
-    'QueryDriven': ('#1565C0','-'),
-    'QueryDrivenLoose':   ('#0288D1',(0,(10,2))),
+    'DRIP-Dense': ('#1565C0','-'),
+    'DRIP-Dense-Loose':   ('#0288D1',(0,(10,2))),
     'Oracle':             ('#C62828','-'),
     # Mo2-only
     'RandomFIFO':         ('#BCBD22',(0,(3,2))),
@@ -97,8 +97,8 @@ LABELS={
     'MemGPTStyle':'MemGPT-style (fair)','TemporalAware':'Temporal-Aware (Temporal-RAG)',
     'OnDemandFetch':'On-Demand (per-query)',
     'LogDrivenArrival':'Log-Driven (lagged)',
-    'QueryDriven':r'NQM (ours)',
-    'QueryDrivenLoose':'QueryDriven-Loose','Oracle':'Oracle',
+    'DRIP-Dense':r'NQM (ours)',
+    'DRIP-Dense-Loose':'DRIP-Dense-Loose','Oracle':'Oracle',
     'RandomFIFO':'Random-FIFO','OnDemandFetch':'On-Demand (per-query)',
     'LogDrivenArrival':'Log-Driven (lagged)',
 }
@@ -106,11 +106,11 @@ DS_TITLES_MO1={'hotpotqa_comparison':'HotpotQA-comp','2wiki_simple':'2wiki-simpl
                'fever':'FEVER','triviaqa_wikipedia':'TriviaQA-Wiki'}
 DS_TITLES_MO2={'hotpotqa':'HotpotQA','2wikimultihopqa':'2WikiMultihopQA','musique':'MuSiQue'}
 SHOW_MAIN=['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle','MemGPTStyle',
-           'OnDemandFetch','QueryDriven','Oracle']
+           'OnDemandFetch','DRIP-Dense','Oracle']
 # Mo2 has extra strategies: RandomFIFO, OnDemandFetch, LogDrivenArrival
 SHOW_MAIN_MO2=['Static','RandomFIFO','DocArrival','KnowledgeEdit','LRU',
                'GPTCacheStyle','MemGPTStyle','OnDemandFetch','LogDrivenArrival',
-               'QueryDriven','Oracle']
+               'DRIP-Dense','Oracle']
 SHOW_FULL=list(PALETTE.keys())
 SHOW_FULL_MO2=list(PALETTE.keys()) + ['RandomFIFO','OnDemandFetch','LogDrivenArrival']
 
@@ -130,7 +130,7 @@ def draw_panel(ax, res, show, mk, ylabel, lw1=3.0, lw2=2.4, lw3=1.6, sw=6, first
         col,ls=PALETTE.get(name,('#888','-'))
         # values already in % (0–100 scale)
         vals=smooth(np.asarray(per, dtype=float), half, sw)
-        if name=='QueryDriven': lw,al,z=lw1,1.0,7
+        if name=='DRIP-Dense': lw,al,z=lw1,1.0,7
         elif name=='Oracle':           lw,al,z=lw2,0.95,6
         elif name in ('GPTCacheStyle','LRU','MemGPTStyle'): lw,al,z=lw3,0.9,5
         elif name=='Static':           lw,al,z=lw3,0.85,3
@@ -305,13 +305,13 @@ for drift, data, title in [
 
 # ── H2 bar chart ───────────────────────────────────────────────────────
 print('Building H2 bar charts…')
-STRATS_BAR=['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle','MemGPTStyle','QueryDriven']
+STRATS_BAR=['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle','MemGPTStyle','DRIP-Dense']
 BAR_COLORS={'Static':'#9E9E9E','DocArrival':'#43A047','KnowledgeEdit':'#8E24AA',
             'LRU':'#F4511E','GPTCacheStyle':'#E91E63','MemGPTStyle':'#FF9800',
-            'QueryDriven':'#1565C0'}
+            'DRIP-Dense':'#1565C0'}
 BAR_LABELS={'Static':'Static','DocArrival':'Doc-Arrival','KnowledgeEdit':'KnowledgeEdit',
             'LRU':'LRU (fair)','GPTCacheStyle':'GPTCache (fair)','MemGPTStyle':'MemGPT (fair)',
-            'QueryDriven':'NQM (ours)'}
+            'DRIP-Dense':'NQM (ours)'}
 
 def h2_bar(cells, title, fname):
     n=len(cells); ns=len(STRATS_BAR); x=np.arange(n); w=0.11
@@ -321,7 +321,7 @@ def h2_bar(cells, title, fname):
         # values already in %
         vals=[rd.get(dk,{}).get('summary',{}).get(sn,{}).get('recall@5_h2',0) for _,rd,dk in cells]
         ax.bar(x+offsets[si],vals,w*0.92,color=BAR_COLORS[sn],zorder=3,label=BAR_LABELS[sn])
-        if sn=='QueryDriven':
+        if sn=='DRIP-Dense':
             for xi,v in zip(x+offsets[si],vals):
                 ax.text(xi,v+0.5,f'{v:.1f}',ha='center',va='bottom',fontsize=7,
                         fontweight='bold',color='#1565C0')
@@ -338,9 +338,9 @@ for drift,rd in [('sudden',mo1s),('gradual',mo1g)]:
 
 # ── Write-efficiency scatter ───────────────────────────────────────────
 print('Building write-efficiency scatter…')
-SCATTER=['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle','MemGPTStyle','QueryDriven','Oracle']
+SCATTER=['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle','MemGPTStyle','DRIP-Dense','Oracle']
 MARKERS={'Static':'o','DocArrival':'s','KnowledgeEdit':'^','LRU':'D','GPTCacheStyle':'P',
-         'MemGPTStyle':'X','QueryDriven':'*','Oracle':'v'}
+         'MemGPTStyle':'X','DRIP-Dense':'*','Oracle':'v'}
 fig4,ax4=plt.subplots(figsize=(8.5,6.0))
 for sn in SCATTER:
     xs,ys=[],[]
@@ -350,9 +350,9 @@ for sn in SCATTER:
             if r: xs.append(r.get('update_cost',0)); ys.append(r.get('recall@5_h2',0))
     if not xs: continue
     col=PALETTE.get(sn,('#888','-'))[0]
-    ax4.scatter(xs,ys,s=(220 if sn=='QueryDriven' else 70),c=col,
+    ax4.scatter(xs,ys,s=(220 if sn=='DRIP-Dense' else 70),c=col,
                 marker=MARKERS.get(sn,'o'),label=BAR_LABELS.get(sn,sn),alpha=0.82,zorder=5,
-                edgecolors=('#0D47A1' if sn=='QueryDriven' else 'white'),linewidths=1.5)
+                edgecolors=('#0D47A1' if sn=='DRIP-Dense' else 'white'),linewidths=1.5)
 ax4.set_xlabel('Total KB writes (update_cost)',fontsize=12)
 ax4.set_ylabel('Post-drift Recall@5 H2 (%)',fontsize=12)
 ax4.set_title('Write efficiency: post-drift quality vs. write cost\n'
@@ -376,7 +376,7 @@ lines=[
 for ds,dl in DS_TITLES_MO1.items():
     for drift,rd in [('Sudden',mo1s),('Gradual',mo1g)]:
         st=h2v(rd,ds,'Static'); lru=h2v(rd,ds,'LRU'); gpt=h2v(rd,ds,'GPTCacheStyle')
-        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'QueryDriven')
+        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'DRIP-Dense')
         if None in (st,lru,gpt,mem,qdc): continue
         best_cache=max(lru,gpt,mem)
         def fmt(v,best=best_cache):
@@ -397,7 +397,7 @@ print('-'*84)
 for ds,dl in DS_TITLES_MO1.items():
     for drift,rd in [('sudden',mo1s),('gradual',mo1g)]:
         lru=h2v(rd,ds,'LRU'); gpt=h2v(rd,ds,'GPTCacheStyle')
-        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'QueryDriven')
+        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'DRIP-Dense')
         if None in (lru,gpt,mem,qdc): continue
         d=qdc-max(lru,gpt,mem); w='✓' if d>=0 else '✗'
         print(f'{dl:26s} {drift:8s} | {lru:5.1f} {gpt:6.1f} {mem:6.1f} {qdc:6.1f} | {d:+7.1f}pp {w}')
@@ -407,7 +407,7 @@ print('MO2:')
 for ds,dl in DS_TITLES_MO2.items():
     for drift,rd in [('sudden',mo2s),('gradual',mo2g)]:
         lru=h2v(rd,ds,'LRU'); gpt=h2v(rd,ds,'GPTCacheStyle')
-        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'QueryDriven')
+        mem=h2v(rd,ds,'MemGPTStyle'); qdc=h2v(rd,ds,'DRIP-Dense')
         if None in (lru,gpt,mem,qdc): continue
         d=qdc-max(lru,gpt,mem); w='✓' if d>=0 else '✗'
         print(f'{dl:26s} {drift:8s} | {lru:5.1f} {gpt:6.1f} {mem:6.1f} {qdc:6.1f} | {d:+7.1f}pp {w}')
@@ -421,11 +421,11 @@ print('Building system-metrics 3-bar figure...')
 
 MARKERS = {s: m for s, m in zip(
     ['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle',
-     'MemGPTStyle','QueryDriven','QueryDrivenLoose','Oracle'],
+     'MemGPTStyle','DRIP-Dense','DRIP-Dense-Loose','Oracle'],
     ['s','D','P','o','^','v','*','h','X'])}
 
 SYS_ORDER = ['Static','DocArrival','KnowledgeEdit','LRU',
-             'GPTCacheStyle','MemGPTStyle','OnDemandFetch','QueryDriven']
+             'GPTCacheStyle','MemGPTStyle','OnDemandFetch','DRIP-Dense']
 
 def build_system_bars(data_dict, ds_map, title, fname):
     recall, latency, overhead = {}, {}, {}
@@ -463,7 +463,7 @@ def build_system_bars(data_dict, ds_map, title, fname):
                  for s in SYS_ORDER]
         bars = ax.bar(x, means, color=bcolors, zorder=3,
                       edgecolor='white', linewidth=0.6)
-        qd_i = SYS_ORDER.index('QueryDriven')
+        qd_i = SYS_ORDER.index('DRIP-Dense')
         bars[qd_i].set_edgecolor('#0D47A1')
         bars[qd_i].set_linewidth(2.2)
         mx = max(means) if max(means) > 0 else 1.0
@@ -544,17 +544,17 @@ FAMILY = {
     'KnowledgeEdit': 'edit-based', 'LRU': 'cache (recency)',
     'GPTCacheStyle': 'cache (semantic)', 'MemGPTStyle': 'cache (importance)',
     'OnDemandFetch': 'online fetch',
-    'QueryDriven': r'\textbf{ours}', 'Oracle': 'upper-bound',
+    'DRIP-Dense': r'\textbf{ours}', 'Oracle': 'upper-bound',
 }
 order = ['Static','DocArrival','KnowledgeEdit','LRU','GPTCacheStyle',
-         'MemGPTStyle','OnDemandFetch','QueryDriven','Oracle']
+         'MemGPTStyle','OnDemandFetch','DRIP-Dense','Oracle']
 for sn in order:
     d = agg_mo1_s.get(sn, {})
     if not d.get('serve_latency'): continue
     qlat = float(np.mean(d['serve_latency']))
     ulat = float(np.mean(d['update_latency']))
     h2 = float(np.mean(d['h2']))
-    fmt_name = r'\textbf{NQM (ours)}' if sn == 'QueryDriven' \
+    fmt_name = r'\textbf{NQM (ours)}' if sn == 'DRIP-Dense' \
                else BAR_LABELS.get(sn, sn)
     lines.append(f'  {fmt_name} & {qlat:6.1f} & {ulat:6.1f} & {h2:5.1f} & {FAMILY[sn]} \\\\')
 lines += [r'\bottomrule', r'\end{tabular}', r'\end{table*}']
@@ -618,11 +618,11 @@ if TREC_TEMPORAL.exists():
     ax_tc.plot(x_tc, sc, color=PALETTE['Static'][0], lw=2.0,
                ls=(0, (2, 2)), alpha=0.85, label='Static (frozen KB)', zorder=5)
     # Strong baselines plus adaptive routes.
-    for sn_tc in ['LRU', 'GPTCacheStyle', 'MemGPTStyle', 'TemporalAware', 'OnDemandFetch', 'QueryDriven']:
+    for sn_tc in ['LRU', 'GPTCacheStyle', 'MemGPTStyle', 'TemporalAware', 'OnDemandFetch', 'DRIP-Dense']:
         cpw = tc_sm.get(sn_tc, {}).get('recall@5_per_window')
         if not cpw: continue
         col_tc, ls_tc = PALETTE.get(sn_tc, ('#888', '--'))
-        _hot = ('QueryDriven', 'OnDemandFetch', 'TemporalAware')
+        _hot = ('DRIP-Dense', 'OnDemandFetch', 'TemporalAware')
         lw_tc = 2.2 if sn_tc in _hot else 1.5
         alpha_tc = 0.9 if sn_tc in _hot else 0.6
         z_tc = 5 if sn_tc in _hot else 3
@@ -664,9 +664,9 @@ DG_FILES = {
 }
 DG_LABELS = {'hotpotqa_bridge': 'HotpotQA-Bridge',
              '2wiki': '2WikiMultihopQA', 'musique': 'MuSiQue'}
-DG_STRATS = ['Static', 'QueryDriven', 'Oracle']
-DC = {'Static': '#9E9E9E',  'QueryDriven': '#1565C0',  'Oracle': '#C62828'}
-GC = {'Static': '#BDBDBD',  'QueryDriven': '#42A5F5',  'Oracle': '#EF9A9A'}
+DG_STRATS = ['Static', 'DRIP-Dense', 'Oracle']
+DC = {'Static': '#9E9E9E',  'DRIP-Dense': '#1565C0',  'Oracle': '#C62828'}
+GC = {'Static': '#BDBDBD',  'DRIP-Dense': '#42A5F5',  'Oracle': '#EF9A9A'}
 
 all_dg_ok = all(p[0].exists() and p[1].exists() for p in DG_FILES.values())
 if all_dg_ok:
@@ -717,11 +717,11 @@ print('\nBuilding intro diagnostic figure (3-panel)…')
 def draw_intro_panel3(ax, res, mk, ylabel, ds_title, show_on_demand=False):
     """Clean single panel for the intro figure."""
     INTRO_SHOW = ['Static', 'LRU', 'GPTCacheStyle', 'MemGPTStyle',
-                  'KnowledgeEdit', 'QueryDriven', 'Oracle']
+                  'KnowledgeEdit', 'DRIP-Dense', 'Oracle']
     if show_on_demand:
         INTRO_SHOW = ['Static', 'LRU', 'GPTCacheStyle', 'MemGPTStyle',
                       'KnowledgeEdit', 'LogDrivenArrival', 'OnDemandFetch',
-                      'QueryDriven', 'Oracle']
+                      'DRIP-Dense', 'Oracle']
     cfg = res['config']; nw = cfg['n_windows']; half = nw // 2
     x = np.arange(1, nw + 1)
     ax.axvspan(0.5, half+0.5, facecolor=PRE_BG, alpha=1.0, zorder=0)
@@ -732,10 +732,10 @@ def draw_intro_panel3(ax, res, mk, ylabel, ds_title, show_on_demand=False):
         if not per: continue
         col, ls = PALETTE.get(name, ('#888', '-'))
         vals = smooth(np.asarray(per, dtype=float), half, w=5)
-        lw = 3.0 if name == 'QueryDriven' else (2.2 if name == 'Oracle' else
+        lw = 3.0 if name == 'DRIP-Dense' else (2.2 if name == 'Oracle' else
               (2.6 if name == 'OnDemandFetch' else 1.8))
-        al = 1.0 if name in ('QueryDriven', 'OnDemandFetch') else (0.9 if name == 'Oracle' else 0.72)
-        z  = 7 if name == 'QueryDriven' else (8 if name == 'OnDemandFetch' else (6 if name == 'Oracle' else 3))
+        al = 1.0 if name in ('DRIP-Dense', 'OnDemandFetch') else (0.9 if name == 'Oracle' else 0.72)
+        z  = 7 if name == 'DRIP-Dense' else (8 if name == 'OnDemandFetch' else (6 if name == 'Oracle' else 3))
         ax.plot(x, vals, color=col, linestyle=ls, linewidth=lw, alpha=al,
                 zorder=z, label=LABELS.get(name, name),
                 solid_capstyle='round', dash_capstyle='round')
@@ -763,11 +763,11 @@ def draw_intro_system_bars(ax, res, n_queries, panel_title, font_scale=1.0, bar_
       higher serving cost with zero update overhead.
     """
     methods = ['LRU', 'GPTCacheStyle', 'MemGPTStyle', 'KnowledgeEdit',
-               'OnDemandFetch', 'QueryDriven']
+               'OnDemandFetch', 'DRIP-Dense']
     short = {
         'LRU': 'LRU', 'GPTCacheStyle': 'GPTCache', 'MemGPTStyle': 'MemGPT',
         'KnowledgeEdit': 'RECIPE', 'OnDemandFetch': 'OnDemand',
-        'QueryDriven': 'QD',
+        'DRIP-Dense': 'QD',
     }
     vals = {m: {'recall': 0.0, 'serve_latency': 0.0, 'update_latency': 0.0}
             for m in methods}
@@ -806,7 +806,7 @@ def draw_intro_system_bars(ax, res, n_queries, panel_title, font_scale=1.0, bar_
         y = [vals[m][key] for m in methods]
         x = np.arange(len(methods))
         colors = [PALETTE.get(m, ('#888', '-'))[0] for m in methods]
-        edges = ['#111' if m in ('QueryDriven', 'OnDemandFetch') else 'none'
+        edges = ['#111' if m in ('DRIP-Dense', 'OnDemandFetch') else 'none'
                  for m in methods]
         bars = sub.bar(x, y, color=colors, edgecolor=edges, linewidth=1.0,
                        alpha=0.92, zorder=3)
@@ -819,20 +819,20 @@ def draw_intro_system_bars(ax, res, n_queries, panel_title, font_scale=1.0, bar_
         for m, bar, val in zip(methods, bars, y):
             # Annotate only the methods that matter for the story. Dense labels
             # in the compressed intro panel collide with titles and ticks.
-            if m not in ('QueryDriven', 'OnDemandFetch') and abs(val - ymax) > 1e-6:
+            if m not in ('DRIP-Dense', 'OnDemandFetch') and abs(val - ymax) > 1e-6:
                 continue
             if val <= 0 and key != 'update_latency':
                 continue
             txt = f'{val:.0f}' if key == 'recall' else (
                 f'{val:.0f}' if val >= 100 else f'{val:.1f}')
-            is_hi = (m in ('QueryDriven', 'OnDemandFetch')
+            is_hi = (m in ('DRIP-Dense', 'OnDemandFetch')
                      or abs(val - ymax) < 1e-6)
             sub.text(bar.get_x() + bar.get_width() / 2,
                      bar.get_height() + ymax * 0.02,
                      txt, ha='center', va='bottom',
                      fontsize=6.6*font_scale,
                      fontweight='bold' if is_hi else 'normal',
-                     color='#1565C0' if m == 'QueryDriven' else (
+                     color='#1565C0' if m == 'DRIP-Dense' else (
                          '#00838F' if m == 'OnDemandFetch' else '#333'))
         sub.set_title(title.replace('Online serving', 'Serve').replace('Offline update', 'Update'),
                       fontsize=7.4*font_scale, fontweight='bold', pad=2)

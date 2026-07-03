@@ -9,18 +9,27 @@ Use these files as the current source of truth:
 
 - [FINAL_METHOD.md](FINAL_METHOD.md) — paper-level method definition.
 - [DRIP_ALGORITHM_EXPLAINED.md](DRIP_ALGORITHM_EXPLAINED.md) — implementation-facing explanation.
-- [algorithms/drip/support_flow/__init__.py](../../algorithms/drip/support_flow/__init__.py) — canonical DRIPCore implementation.
-- [algorithms/drip/support_flow/query_router.py](../../algorithms/drip/support_flow/query_router.py) — route selection.
-- [algorithms/drip/support_flow/graph_index.py](../../algorithms/drip/support_flow/graph_index.py) — bridge evidence scoring.
+- [algorithms/drip/cache_manager/__init__.py](../../algorithms/drip/cache_manager/__init__.py) — canonical DRIPCore implementation.
+- [algorithms/drip/detection/multi_agent_drift.py](../../algorithms/drip/detection/multi_agent_drift.py) — multi-agent drift controller.
+- [algorithms/drip/cache_manager/drip.py](../../algorithms/drip/cache_manager/drip.py) — paper-facing `DRIP-QueryVisible`, `DRIP-QueryHidden`, and `DRIP` variants.
+- [algorithms/drip/cache_manager/query_router.py](../../algorithms/drip/cache_manager/query_router.py) — query visibility selection.
+- [algorithms/drip/cache_manager/support_completion.py](../../algorithms/drip/cache_manager/support_completion.py) — evidence-conditioned hidden-support completion and pair lease.
+- [algorithms/drip/cache_manager/graph_index.py](../../algorithms/drip/cache_manager/graph_index.py) — graph metadata for bridge completion.
 
 Current method summary:
 
 ```text
+MultiAgentDriftDetector -> update aggressiveness rho_t
 QueryRouter
-  -> dense/direct evidence or GraphIndex bridge evidence
-  -> demand + serve evidence ledger
+  -> query-visible dense/direct evidence or query-hidden support evidence
+  -> demand + serve + pair-lease evidence
   -> support-priority admission
 ```
 
-The retired `algorithms/cache/ours` simplified cache implementation has been
-deleted to keep the codebase aligned with the latest DRIPCore path.
+Current ablations:
+
+| Strategy | Enabled channels |
+|---|---|
+| `DRIP-QueryVisible` | Dense/direct channel only. |
+| `DRIP-QueryHidden` | Query-visible A plus evidence-conditioned hidden support B and pair lease. |
+| `DRIP` | Current main alias for `DRIP-QueryHidden`. |

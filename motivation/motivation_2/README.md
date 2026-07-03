@@ -7,14 +7,14 @@
 ## 这一层在叙事中的角色（L2 / L3）
 
 承接 `motivation_1`（Fig 1）的单跳校准，本层把 static-corpus 多跳拆成两个 regime，
-暴露 query-only 信号的边界，直接 motivate `[METHOD]` 的 entity-chained prefetch：
+暴露 query-only 信号的边界，直接 motivate `DRIP-ESC` / `DRIP-ESC-Lease` 的 hidden-support completion：
 
 - **L2 — direct evidence（Fig 2a, HotpotQA）**：query embedding 与目标证据天然对齐，
-  `LRU` 已经不错（44.6%），`SemFlow` 靠 soft demand propagation 再 **+9.7pp → 54.3%**。
-  这是 SemFlow 的 *positive evidence*。
+  `LRU` 已经不错（44.6%），`DRIP-Dense` 靠 soft demand propagation 再 **+9.7pp → 54.3%**。
+  这是 DRIP-Dense 的 *positive evidence*。
 - **L3 — bridge evidence（Fig 2b, 2WikiMultihopQA）**：证据链 `Q → A → B`，query 只暴露 A，
   桥接文档 B 在 embedding 空间里离 query 很远 → 纯 query 信号触达不到。
-  `SemFlow` 仅 **+7.3pp**，距 Oracle 仍差 **21pp**。这是引出 `[METHOD]` 的 *negative evidence*。
+  `DRIP-Dense` 仅 **+7.3pp**，距 Oracle 仍差 **21pp**。这是引出 `DRIP-ESC` / `DRIP-ESC-Lease` 的 *negative evidence*。
 
 > 当前 tex Fig 2 直接采用的两个数据文件（被 `../plotting/plot_motivation_v2.py` 的 `fig2()` 读取）：
 > `data/results_hotpotqa_comp_full_gradual_q2k.json`（2a）、
@@ -31,7 +31,7 @@ Goal: diagnose what remains after Motivation 1 establishes the three conditions 
 
 The right reading of mo2 is not "single-hop vs multi-hop" and not "QDC is useless". It is:
 
-- QueryDrivenCluster is the strongest **persistent writer** on all three datasets under both drift modes.
+- DRIP-Dense is the strongest **persistent writer** on all three datasets under both drift modes.
 - OnDemandFetch is better understood as an agent-side **dynamic acquisition channel**: it can fetch evidence that is not currently in the persistent KB.
 - In an agent system, those fetched documents can become QDC's next candidate pool. The open problem is not raw retrievability, but **persistent admission**: deciding which transient on-demand discoveries should be written into long-lived KB for future reuse.
 - Mo2 exposes cases where Cond-B is weak for query-only QDC: a failed query points at the surface task, while the reusable evidence may be bridge/bundle documents surfaced only by on-demand retrieval traces.
@@ -55,14 +55,14 @@ The right reading of mo2 is not "single-hop vs multi-hop" and not "QDC is useles
 ## 100w H2 results — Recall@5
 
 ### Sudden drift
-| Dataset | Static | RandFIFO | DocArr | KEdit | LogDriven | **QueryDrivenCluster** | OnDemandFetch | Oracle |
+| Dataset | Static | RandFIFO | DocArr | KEdit | LogDriven | **DRIP-Dense** | OnDemandFetch | Oracle |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | HotpotQA      |  2.8 |  6.1 |  2.9 |  9.4 |  9.2 | **11.0** | 60.7 | 70.0 |
 | MuSiQue       |  4.9 |  7.2 |  5.1 |  7.7 |  6.9 | **17.6** | 43.7 | 52.7 |
 | 2WikiMultihop |  1.9 |  8.7 |  2.3 |  8.3 |  8.1 |  **9.5** | 66.1 | 72.4 |
 
 ### Gradual drift
-| Dataset | Static | RandFIFO | DocArr | KEdit | LogDriven | **QueryDrivenCluster** | OnDemandFetch | Oracle |
+| Dataset | Static | RandFIFO | DocArr | KEdit | LogDriven | **DRIP-Dense** | OnDemandFetch | Oracle |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | HotpotQA      | 23.5 | 23.4 | 23.3 | 22.1 | 24.2 | **30.9** | 60.5 | 71.9 |
 | MuSiQue       | 17.2 | 17.1 | 17.1 | 14.9 | 15.4 | **24.7** | 42.1 | 50.2 |

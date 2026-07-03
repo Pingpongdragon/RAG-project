@@ -7,8 +7,8 @@ behavior, and the exact commands to reproduce the numbers in the paper.
 > **迁移对拍（2026-06）**：策略代码已统一到 `algorithms/cache/`（见 docs/design/EXPERIMENT_PROTOCOL §4）。
 > 用相同命令（`EMBED_MODEL=BAAI/bge-base-en-v1.5`）重跑验证，H2 Recall@5：
 > **MissLRU 28.8=28.8、OnDemandFetch 46.4=46.4、Oracle 81.2=81.2（零误差）**，
-> QueryDriven 27.1→27.9（mo1 统一用 mo2 的 DEMAND_DECAY=0.92，+0.8pp）。
-> Fig1 核心结论保持：单跳时序下 access-history(MissLRU 28.8) ≥ SemFlow(27.9)，
+> DRIP-Dense 27.1→27.9（mo1 统一用 mo2 的 DEMAND_DECAY=0.92，+0.8pp）。
+> Fig1 核心结论保持：单跳时序下 access-history(MissLRU 28.8) ≥ DRIP-Dense(27.9)，
 > RecencyTTL(timestamp oracle) 仍崩到 5.9、纯 LRU 1.4。迁移逐字保真无 bug。
 > ⚠️ 复现必须设 `EMBED_MODEL=BAAI/bge-base-en-v1.5`（默认 MiniLM 会得不同数字）。
 
@@ -50,7 +50,7 @@ Pool / hot KB:
 | Index growth            | `DocArrival`      | append-on-arrival ≡ HippoRAG2 / LightRAG behavior |
 | Cache access            | `GPTCacheStyle`   | semantic LLM cache, modern SOTA |
 | Document timestamps     | `RecencyTTL`      | **given oracle publication years** — strongest TTL |
-| Query-side demand       | `QueryDriven`     | the minimal rule this paper proposes |
+| Query-side demand       | `DRIP-Dense`     | the minimal rule this paper proposes |
 | Online (always-fetch)   | `OnDemandFetch`   | CRAG / agent-RAG style |
 | Frozen lower bound      | `Static`          | freeze K after warmup |
 | Non-causal upper bound  | `Oracle`          | sees future query stream |
@@ -62,7 +62,7 @@ All strategies live in `motivation/motivation_1/strategies.py` and are
 registered in the global `STRATEGIES` dict. `RecencyTTL` is around
 lines 711–760; `OnDemandFetch` (with the
 `serve_retrieval_cost` accumulator that drives Fig.~1c) is around
-lines 423–475; `QueryDriven` is around line 200.
+lines 423–475; `DRIP-Dense` is around line 200.
 
 ---
 
@@ -78,7 +78,7 @@ CUDA_VISIBLE_DEVICES=1 EMBED_MODEL=BAAI/bge-base-en-v1.5 python run.py \
     --n-windows  100 \
     --window-size 50 \
     --strategies Static DocArrival GPTCacheStyle RecencyTTL \
-                 QueryDriven OnDemandFetch Oracle \
+                 DRIP-Dense OnDemandFetch Oracle \
     --output     results_streamingqa_temporal.json
 ```
 
@@ -104,7 +104,7 @@ Per-round mean Recall@5 (chunks of 20 windows):
 | DocArrival      | 81.2  | 74.4  |  4.7  |  1.6  |  1.5  |  5.9 | 0       |
 | GPTCacheStyle   | 56.1  | 16.0  |  2.3  |  3.0  |  3.8  |  6.1 | 0       |
 | RecencyTTL      | 85.6  | 88.9  |  7.3  |  6.6  |  5.4  |  6.1 | 0       |
-| QueryDriven     | 85.2  | 68.0  | 28.4  | 27.3  |  8.6  |  6.1 | 0       |
+| DRIP-Dense     | 85.2  | 68.0  | 28.4  | 27.3  |  8.6  |  6.1 | 0       |
 | OnDemandFetch   | 77.7  | 79.8  | 56.1  | 40.0  | 35.6  | 16.6 | 101,450 |
 | Oracle          | 82.5  | 86.0  | 82.3  | 79.6  | 76.3  |  7.0 | 0       |
 
@@ -121,7 +121,7 @@ distribution with the warmup, so every strategy keeps R1-level accuracy
 through R2. **True drift starts at R2 → R3**, which is exactly where every
 passive baseline collapses.
 
-### 5.2 Why does the minimal `QueryDriven` rule **collapse in R5** to 8.6 %?
+### 5.2 Why does the minimal `DRIP-Dense` rule **collapse in R5** to 8.6 %?
 This is **the intended empirical result**, not a bug. Three compounding factors:
 
 1. **Topic breadth explosion.** R5 contains 2,148 dated queries (of which
@@ -165,7 +165,7 @@ This is exactly the cost/quality trade-off Fig.~1b and Fig.~1c quantify.
 |------|-----------------|
 | `motivation/motivation_1/loaders_temporal.py` | `YEAR_TO_ROUND` mapping, dated-query filter |
 | `motivation/motivation_1/utils.py`            | `cluster_and_build_stream()` (`temporal` branch — natural 5×20 round stream, no synthetic flip) |
-| `motivation/motivation_1/strategies.py`       | `QueryDriven`, `RecencyTTL`, `OnDemandFetch` definitions |
+| `motivation/motivation_1/strategies.py`       | `DRIP-Dense`, `RecencyTTL`, `OnDemandFetch` definitions |
 | `motivation/motivation_1/run.py`              | top-level experiment driver (`--strategies`, `--drift`) |
 | `motivation/motivation_1/data/results_streamingqa_temporal.json` | raw per-window metrics |
 | `motivation/plotting/plot_motivation_v2.py`   | `fig1()` produces the integrated 3-panel figure |

@@ -51,7 +51,7 @@ pip install sentence-transformers ir_datasets torch numpy matplotlib tqdm
 
 ### STRATEGY_FACTORIES keys（motivation_1）
 ```
-['Static', 'DocArrival', 'KnowledgeEdit', 'LRU', 'GPTCacheStyle', 'MemGPTStyle', 'QueryDrivenCluster', 'Oracle']
+['Static', 'DocArrival', 'KnowledgeEdit', 'LRU', 'GPTCacheStyle', 'MemGPTStyle', 'DRIP-Dense', 'Oracle']
 ```
 
 ### motivation.tex
@@ -69,7 +69,7 @@ python3 run.py \
   --datasets fever \
   --n-windows 4 --window-size 20 \
   --drift gradual \
-  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle QueryDrivenCluster Oracle
+  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle DRIP-Dense Oracle
 ```
 预期：4 个窗口正常跑完，打印 summary 表格，JSON 写入 `data/` 目录。
 
@@ -93,14 +93,14 @@ python3 run.py \
   --datasets fever 2wiki hotpot musique \
   --n-windows 50 --window-size 100 \
   --drift gradual \
-  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle QueryDrivenCluster Oracle
+  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle DRIP-Dense Oracle
 
 # mo1 TREC-COVID（真实时序）
 python3 run.py \
   --datasets trec_covid \
   --n-windows 20 \
   --drift gradual \
-  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle QueryDrivenCluster Oracle
+  --strategies Static DocArrival LRU GPTCacheStyle MemGPTStyle DRIP-Dense Oracle
 ```
 
 ### 4.4 重新生成图表（❌ 未做）

@@ -55,6 +55,11 @@ DATASET_CONFIGS = {
     'hotpotqa':        dict(_DEFAULT_CFG),
     '2wikimultihopqa': dict(_DEFAULT_CFG),
     'musique':         dict(_DEFAULT_CFG),
+    # DOM/control snippets are much more template-like than Wikipedia passages;
+    # a paragraph-calibrated 0.62 threshold creates false "covered" positives.
+    'mind2web_agent':  dict(
+        _DEFAULT_CFG, n_clusters=10, top_head=4, kb_head_mult=0.8,
+        sf_hit_thresh=0.82),
 }
 
 # ── Strategy hyper-parameters ──────────────────────
@@ -118,8 +123,12 @@ STRATEGY_LABELS = {
     'AgentRAGCache':    'ARC (DRF+Hubness)',
     'ARC':              'ARC (DRF+Hubness)',
     'AgentRAGCache_NoHub': 'ARC w/o Hubness',
-    'RoutedCache':      'Routed Cache (ours)',
     'DRIP':             'DRIP (ours)',
+    'DRIP-Dense':       'DRIP-Dense',
+    'DRIP-ESC':         'DRIP-ESC',
+    'DRIP-ESC-Lease':   'DRIP-ESC-Lease',
+    'DRIP-QueryVisible': 'DRIP-QueryVisible',
+    'DRIP-QueryHidden':  'DRIP-QueryHidden',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
@@ -137,8 +146,12 @@ STRATEGY_STYLES = {
     'AgentRAGCache':    {'color': '#111827', 'marker': 'o', 'ls': '-'},
     'ARC':              {'color': '#111827', 'marker': 'o', 'ls': '-'},
     'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o', 'ls': '--'},
-    'RoutedCache':      {'color': '#2563EB', 'marker': 's', 'ls': '-'},
     'DRIP':             {'color': '#0F766E', 'marker': '*', 'ls': '-'},
+    'DRIP-Dense':       {'color': '#14B8A6', 'marker': 'x', 'ls': '--'},
+    'DRIP-ESC':         {'color': '#0D9488', 'marker': 'D', 'ls': '-.'},
+    'DRIP-ESC-Lease':   {'color': '#115E59', 'marker': '*', 'ls': '-'},
+    'DRIP-QueryVisible': {'color': '#14B8A6', 'marker': 'x', 'ls': '--'},
+    'DRIP-QueryHidden':  {'color': '#115E59', 'marker': 'D', 'ls': '-.'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

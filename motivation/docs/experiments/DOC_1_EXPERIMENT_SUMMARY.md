@@ -31,7 +31,7 @@
 | B3 | **KnowledgeEdit** | 事实编辑 | 外部编辑请求 | ≤30 edits | RECIPE |
 | B4 | **OnDemandFetch** | 被动搜索 | 查询失败 | 临时检索Top-20 | Agent/CRAG (用完即弃) |
 | B5 | **LogDrivenArrival** | 人工日志反馈 | T期fail日志 | T+1期≤50 swaps | Human-in-the-loop (滞后) |
-| V1 | **QueryDriven** | 需求驱动 | 查询失败+效用淘汰 | ≤60 swaps | 简单demand-driven |
+| V1 | **DRIP-Dense** | 需求驱动 | 查询失败+效用淘汰 | ≤60 swaps | 简单demand-driven |
 | B6 | **Oracle** | 理论上限 | 完美未来知识 | 一次性重建 | 理论上界 |
 
 ### 新增策略说明
@@ -52,7 +52,7 @@
 | KnowledgeEdit | 22.6→2.2 (-20.4) | 21.7→3.0 (-18.7) | 18.6→1.4 (-17.2) |
 | OnDemandFetch | 27.5→10.9 (-16.6) | 26.2→4.0 (-22.2) | 22.6→10.6 (-12.0) |
 | LogDrivenArrival | 20.9→7.2 (-13.7) | 15.7→4.2 (-11.5) | 17.1→2.9 (-14.2) |
-| **QueryDriven** | 22.2→**7.5** (-14.7) | 24.6→**2.7** (-21.9) | 21.2→**8.8** (-12.4) |
+| **DRIP-Dense** | 22.2→**7.5** (-14.7) | 24.6→**2.7** (-21.9) | 21.2→**8.8** (-12.4) |
 | **Oracle** | 23.6→**74.5** (+50.9) | 26.1→**60.9** (+34.8) | 21.3→**55.1** (+33.8) |
 
 ### Recall@20
@@ -65,7 +65,7 @@
 | KnowledgeEdit | 2.2 | 4.1 | 2.3 |
 | OnDemandFetch | 12.3 | 4.7 | 15.0 |
 | LogDrivenArrival | 8.2 | 5.2 | 3.8 |
-| QueryDriven | 8.2 | 3.2 | 10.3 |
+| DRIP-Dense | 8.2 | 3.2 | 10.3 |
 | **Oracle** | **81.6** | **66.2** | **64.6** |
 
 ### Cost (累计操作次数)
@@ -77,7 +77,7 @@
 | KnowledgeEdit | 513 | 593 | 578 |
 | OnDemandFetch | 835 | 358 | 440 |
 | LogDrivenArrival | 950 | 950 | 950 |
-| QueryDriven | 731 | 626 | 464 |
+| DRIP-Dense | 731 | 626 | 464 |
 | Oracle | 995 | 590 | 900 |
 
 ## 5. 核心发现
@@ -88,7 +88,7 @@
 4. **事实编辑只修补旧领域**: KnowledgeEdit 在旧领域内微调,无法应对领域级需求转移
 5. **被动搜索代价高且不沉淀**: OnDemandFetch 在 HotpotQA/MuSiQue 效果不错 (10-11%),但每次查询都需外部检索,证明"沉淀到KB"的必要性
 6. **人工反馈永远滞后一步**: LogDrivenArrival 在 T+1 才修复 T 的问题,持续漂移下永远追不上
-7. **简单 QueryDriven 虽超越传统范式,但仍有限**: 受限于 single-hop 语义匹配,最好也只到 7-11%
+7. **简单 DRIP-Dense 虽超越传统范式,但仍有限**: 受限于 single-hop 语义匹配,最好也只到 7-11%
 8. **Oracle 上限巨大**: 55-75%,证明 KB 容量足够,瓶颈是 content selection precision
 9. **最佳非Oracle方法→Oracle gap = 47-64 百分点**: 这就是图谱增强方法需要填补的空间
 

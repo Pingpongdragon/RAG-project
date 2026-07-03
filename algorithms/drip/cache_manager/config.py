@@ -1,15 +1,22 @@
-"""Configuration for the canonical DRIP-Core cache manager."""
+"""Configuration for the canonical DRIP cache manager."""
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class DRIPCoreConfig:
-    """Detector-free DRIP-Core cache configuration.
+    """DRIP cache-manager configuration.
 
     The defaults are design-level settings, not per-dataset tuned constants.
-    When entity metadata is available, DRIP-Core expects two support slots so
-    multi-hop/comparison queries can warm missing second evidence. Without
-    entity metadata, it behaves like a single-support temporal cache manager.
+    DRIP separates two evidence visibility regimes:
+
+    * query-visible evidence: the needed document is reachable from the query
+      embedding, so dense/direct demand is enough;
+    * query-hidden evidence: the query first exposes an anchor A, then DRIP
+      completes the missing support B through evidence conditioned on A.
+
+    Public benchmark query types are diagnostics only by default. Main runs
+    should not route from ``qtype`` or ``route_hint`` unless an explicit oracle
+    ablation enables ``use_oracle_route_hint``.
     """
 
     demand_decay: float = 0.92
@@ -20,6 +27,7 @@ class DRIPCoreConfig:
 
     singlehop_slots: int = 1
     multihop_slots: int = 2
+    hidden_comparison_slots: int = 4
     serve_topk: int = 1
 
     direct_topk: int = 8
@@ -49,11 +57,20 @@ class DRIPCoreConfig:
     # so weak/incorrect first hops do not spawn bridge candidates.
     bridge_min_firsthop_sim: float = 0.0
     bridge_max_seed_entities: int = 12
-    use_query_type_hint: bool = True
+    use_oracle_route_hint: bool = False
     router_min_entities: int = 2
     router_dense_diversity: float = 0.65
-    router_bridge_top1_ratio: float = 0.8
+    router_hidden_anchor_ratio: float = 0.8
     graph_novelty_floor: float = 0.05
+
+    use_drift_detector: bool = True
+    drift_warmup_windows: int = 3
+    drift_min_agent_queries: int = 2
+    drift_z_threshold: float = 2.0
+    drift_centroid_threshold: float = 0.25
+    drift_write_boost: float = 1.0
+    drift_decay_boost: float = 0.25
+    drift_margin_discount: float = 0.25
 
     tau_duplicate: float = 0.95
     redundancy_threshold: float = 0.85

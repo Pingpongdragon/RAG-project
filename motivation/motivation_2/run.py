@@ -68,6 +68,9 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     t0 = time.time()
     nw = cfg['n_windows']
     ws = cfg['window_size']
+    if cfg.get('sf_hit_thresh') is not None:
+        _P.SF_HIT_THRESH = float(cfg['sf_hit_thresh'])
+        log.info(f"[{ds_name}] SF hit threshold override -> {_P.SF_HIT_THRESH:.2f}")
 
     # ── Load data ──
     lname = loader_name or ds_name
@@ -119,6 +122,12 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
     if init_stream_gold:
         init_kb = _init_kb_with_stream_gold(
             init_kb, doc_pool, doc_embs, title_to_idx, stream, centroids, kb_budget)
+    elif workload in ('anchored_bridge_reuse', 'resident_anchor_bridge_reuse',
+                      'multi_agent_bridge_reuse', 'topic_shift_bridge_reuse',
+                      'delayed_multi_agent_bridge_reuse',
+                      'agent_multistep_reuse'):
+        init_kb = _init_anchored_bridge_kb(
+            init_kb, doc_pool, doc_embs, title_to_idx, stream, centroids, kb_budget)
     elif mask_stream_gold and workload in ('temporal_bridge_reuse', 'burst_bridge_reuse'):
         init_kb = _mask_stream_gold_from_init_kb(
             init_kb, doc_pool, doc_embs, title_to_idx, stream, centroids, kb_budget)
@@ -143,7 +152,8 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             _sub_lists = batch_decompose(queries, tag=tag + '_llmexp')
             from sentence_transformers import SentenceTransformer as _ST
             from config import EMBED_MODEL as _EM, BGE_QUERY_PREFIX as _BP
-            _sbert = _ST(_EM, device='cuda')
+            _device = 'cuda' if __import__('torch').cuda.is_available() else 'cpu'
+            _sbert = _ST(_EM, device=_device)
             _qpref = _BP if 'bge' in _EM.lower() else ''
             _flat = [sq for sqs in _sub_lists for sq in sqs]
             _flat_embs = _sbert.encode([_qpref + q for q in _flat], batch_size=256, show_progress_bar=False,
@@ -161,6 +171,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
             sub_query_embs = sub_query_ents = None
     else:
         sub_query_embs = sub_query_ents = None
+
     # ── Strategies ──
     strategies = {}
     for name in strategies_to_run:
@@ -171,7 +182,7 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         if hasattr(st, '_stream'):
             st._stream = stream
             st._query_embs = query_embs
-        # Inject pool entities into entity-aware strategies (e.g. RoutedCache R3).
+        # Inject pool entities into entity-aware DRIP strategies.
         # Build lazily here if not already extracted for graph/entity_expand.
         if hasattr(st, '_pool_ents'):
             if pool_ents is None:
@@ -301,10 +312,23 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
 def _new_residency_metrics():
     return {
         'cold_fetches': [],
+        'support_coverage': [],
+        'has_answer_hits': 0,
+        'has_answer_queries': 0,
+        'hidden_hits': 0,
+        'hidden_queries': 0,
         'reuse_hits': 0,
         'reuse_queries': 0,
         'exposure_cold_fetches': [],
         'reuse_cold_fetches': [],
+        'target_cold_fetches': [],
+        'target_support_coverage': [],
+        'target_has_answer_hits': 0,
+        'target_has_answer_queries': 0,
+        'background_cold_fetches': [],
+        'background_support_coverage': [],
+        'background_has_answer_hits': 0,
+        'background_has_answer_queries': 0,
     }
 
 
@@ -345,6 +369,79 @@ def _mask_stream_gold_from_init_kb(init_kb, doc_pool, doc_embs, title_to_idx,
         f"forbidden={len(forbidden)} KB={len(masked)}/{kb_budget}"
     )
     return masked
+
+
+def _init_anchored_bridge_kb(init_kb, doc_pool, doc_embs, title_to_idx,
+                             stream, centroids, kb_budget):
+    """Seed visible anchors while holding out the reusable hidden bridge doc.
+
+    For anchored bridge-reuse, each group marks ``reuse_support_title`` as the
+    hidden B. We remove those B documents from the initial KB, but keep/add the
+    other support titles as anchors A when capacity allows. This creates the
+    intended cache-management condition: resident support chain stubs need the
+    missing bridge document to become complete.
+    """
+    from collections import Counter
+
+    hidden_titles = {
+        q.get('reuse_support_title')
+        for q in stream
+        if q.get('reuse_support_title')
+    }
+    hidden_titles.discard(None)
+    hidden_doc_ids = {
+        doc_pool[title_to_idx[t]]['doc_id']
+        for t in hidden_titles
+        if t in title_to_idx
+    }
+
+    anchor_counts = Counter()
+    for q in stream:
+        hidden = q.get('reuse_support_title')
+        for title in q.get('sf_titles', []):
+            if title == hidden or title not in title_to_idx:
+                continue
+            anchor_counts[title] += 1
+
+    selected = []
+    selected_ids = set()
+    for title, _ in anchor_counts.most_common():
+        did = doc_pool[title_to_idx[title]]['doc_id']
+        if did in hidden_doc_ids or did in selected_ids:
+            continue
+        selected.append(did)
+        selected_ids.add(did)
+        if len(selected) >= kb_budget:
+            break
+
+    for did in sorted(init_kb):
+        if len(selected) >= kb_budget:
+            break
+        if did in hidden_doc_ids or did in selected_ids:
+            continue
+        selected.append(did)
+        selected_ids.add(did)
+
+    if len(selected) < kb_budget:
+        forbidden = hidden_doc_ids | selected_ids
+        rest = [
+            i for i, d in enumerate(doc_pool)
+            if d['doc_id'] not in forbidden
+        ]
+        need = kb_budget - len(selected)
+        if rest and need > 0:
+            norm_c = centroids / np.clip(
+                np.linalg.norm(centroids, axis=1, keepdims=True), 1e-10, None)
+            scores = (doc_embs[rest] @ norm_c.T).max(axis=1)
+            top = np.argsort(scores)[-min(need, len(rest)):]
+            selected.extend(doc_pool[rest[int(i)]]['doc_id'] for i in top)
+
+    anchored = set(selected[:kb_budget])
+    log.info(
+        f"Anchored bridge init: anchors={len(anchor_counts)} "
+        f"hidden={len(hidden_doc_ids)} KB={len(anchored)}/{kb_budget}"
+    )
+    return anchored
 
 
 def _init_kb_with_stream_gold(init_kb, doc_pool, doc_embs, title_to_idx,
@@ -417,17 +514,35 @@ def _record_residency_metrics(metrics, kb_doc_ids, window_queries,
         if total <= 0:
             continue
         metrics['cold_fetches'].append(float(missing))
+        metrics['support_coverage'].append(float(total - missing) / float(total))
+        metrics['has_answer_queries'] += 1
+        metrics['has_answer_hits'] += int(missing == 0)
+        support_title = q.get('reuse_support_title')
+        pi = title_to_idx.get(support_title) if support_title else None
+        if pi is not None:
+            metrics['hidden_queries'] += 1
+            did = doc_pool[pi]['doc_id']
+            metrics['hidden_hits'] += int(did in kb_doc_ids)
         role = q.get('reuse_role')
         if role == 'exposure':
             metrics['exposure_cold_fetches'].append(float(missing))
         elif role == 'reuse':
             metrics['reuse_cold_fetches'].append(float(missing))
-            support_title = q.get('reuse_support_title')
-            pi = title_to_idx.get(support_title) if support_title else None
             if pi is not None:
                 metrics['reuse_queries'] += 1
-                did = doc_pool[pi]['doc_id']
                 metrics['reuse_hits'] += int(did in kb_doc_ids)
+        if role in {'exposure', 'reuse'}:
+            metrics['target_cold_fetches'].append(float(missing))
+            metrics['target_support_coverage'].append(
+                float(total - missing) / float(total))
+            metrics['target_has_answer_queries'] += 1
+            metrics['target_has_answer_hits'] += int(missing == 0)
+        else:
+            metrics['background_cold_fetches'].append(float(missing))
+            metrics['background_support_coverage'].append(
+                float(total - missing) / float(total))
+            metrics['background_has_answer_queries'] += 1
+            metrics['background_has_answer_hits'] += int(missing == 0)
 
 
 def _mean_or_zero(values):
@@ -437,13 +552,44 @@ def _mean_or_zero(values):
 def _summarise_residency_metrics(metrics):
     reuse_q = int(metrics['reuse_queries'])
     reuse_hits = int(metrics['reuse_hits'])
+    has_q = int(metrics['has_answer_queries'])
+    has_hits = int(metrics['has_answer_hits'])
+    hidden_q = int(metrics['hidden_queries'])
+    hidden_hits = int(metrics['hidden_hits'])
+    target_q = int(metrics['target_has_answer_queries'])
+    target_hits = int(metrics['target_has_answer_hits'])
+    bg_q = int(metrics['background_has_answer_queries'])
+    bg_hits = int(metrics['background_has_answer_hits'])
     return {
         'cold_fetches_per_query': round(_mean_or_zero(metrics['cold_fetches']), 3),
+        'support_coverage_rate': round(_mean_or_zero(metrics['support_coverage']) * 100, 1),
+        'has_answer_rate': round((has_hits / has_q) * 100, 1) if has_q else 0.0,
+        'has_answer_queries': has_q,
+        'has_answer_hits': has_hits,
+        'hidden_B_hit_rate': round((hidden_hits / hidden_q) * 100, 1) if hidden_q else 0.0,
+        'hidden_B_queries': hidden_q,
+        'hidden_B_hits': hidden_hits,
         'reuse_hit_rate': round((reuse_hits / reuse_q) * 100, 1) if reuse_q else 0.0,
         'reuse_queries': reuse_q,
         'reuse_hits': reuse_hits,
         'first_exposure_cost': round(_mean_or_zero(metrics['exposure_cold_fetches']), 3),
         'amortized_cold_cost': round(_mean_or_zero(metrics['reuse_cold_fetches']), 3),
+        'target_cold_fetches_per_query': round(
+            _mean_or_zero(metrics['target_cold_fetches']), 3),
+        'target_support_coverage_rate': round(
+            _mean_or_zero(metrics['target_support_coverage']) * 100, 1),
+        'target_has_answer_rate': round((target_hits / target_q) * 100, 1)
+        if target_q else 0.0,
+        'target_has_answer_queries': target_q,
+        'target_has_answer_hits': target_hits,
+        'background_cold_fetches_per_query': round(
+            _mean_or_zero(metrics['background_cold_fetches']), 3),
+        'background_support_coverage_rate': round(
+            _mean_or_zero(metrics['background_support_coverage']) * 100, 1),
+        'background_has_answer_rate': round((bg_hits / bg_q) * 100, 1)
+        if bg_q else 0.0,
+        'background_has_answer_queries': bg_q,
+        'background_has_answer_hits': bg_hits,
     }
 
 
@@ -523,8 +669,9 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
         'AgentRAGCache':    ('#111827', '-',  'o'),
         'AgentRAGCache_NoHub': ('#6B7280', '--', 'o'),
-        'RoutedCache':      ('#2563EB', '-',  's'),
         'DRIP':             ('#0F766E', '-',  '*'),
+        'DRIP-QueryVisible': ('#14B8A6', '--', 'x'),
+        'DRIP-QueryHidden':  ('#115E59', '-.', 'D'),
         'Oracle':           ('#D62728', '-',  None),
     }
 
@@ -604,6 +751,12 @@ def main():
     parser.add_argument('--workload',
                         choices=['cluster_shift', 'random_static',
                                  'temporal_bridge_reuse',
+                                 'anchored_bridge_reuse',
+                                 'resident_anchor_bridge_reuse',
+                                 'multi_agent_bridge_reuse',
+                                 'delayed_multi_agent_bridge_reuse',
+                                 'topic_shift_bridge_reuse',
+                                 'agent_multistep_reuse',
                                  'burst_bridge_reuse'],
                         default='cluster_shift',
                         help='Query stream constructor. cluster_shift preserves historical behavior.')
@@ -615,7 +768,7 @@ def main():
     parser.add_argument('--n-stream-queries', type=int, default=None,
                         help='Cap stream-query count (decouple from pool size). None=use all.')
     parser.add_argument('--llm-expand', action='store_true',
-                        help='Use LLM sub-question decomposition to augment retrieval')
+                        help='Use LLM query expansion to augment retrieval')
     parser.add_argument('--datasets', nargs='+',
                         default=['hotpotqa', '2wikimultihopqa', 'musique'])
     parser.add_argument('--strategies', nargs='+', default=None,
@@ -631,7 +784,7 @@ def main():
                         help='Seed the initial KB with stream support docs before filling slack. '
                              'This is an oracle capacity sanity check, not a causal benchmark.')
     parser.add_argument('--retrieval', choices=['dense', 'graph', 'entity_expand'], default='dense',
-                        help='Recall@K backend: dense cosine (default) or PPR over passage-entity graph')
+                        help='Recall@K backend: dense cosine (default), passage-entity graph, or entity expansion')
     args = parser.parse_args()
 
     strategies_to_run = args.strategies or STRATEGY_ORDER
@@ -651,9 +804,12 @@ def main():
                 'hotpotqa':        'hotpotqa_expanded',
                 '2wikimultihopqa': '2wiki_expanded',
                 'musique':         'musique_expanded',
+                'mind2web_agent':  'mind2web_agent',
             }[ds]
             n_source = args.n_source
             base_cfg['n_source'] = args.n_source
+        elif ds == 'mind2web_agent':
+            n_source = args.n_source
 
         log.info(f"\n{'='*60}\n  Running: {ds} ({args.drift})\n{'='*60}")
         all_results[ds] = run_dataset(

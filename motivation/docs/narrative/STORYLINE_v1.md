@@ -5,13 +5,13 @@
 > - **三级访问模式（L1/L2/L3）作为叙事主轴**：L1 = temporal locality（集体话题漂移），L2 = direct semantic multi-hop（实体在 query 中显式可见），L3 = bridge/topological multi-hop（second-hop 实体被隐藏）。Fig 0 / Fig 1 / Fig 2 不再是"先试 A 不行再试 B"的流水账，而是按三级访问模式分开的诊断证据。
 > - **Fig 0 计划补 (c) 子图**：从 AgentBench / WebShop 等真实 agent trace 中提取链式关联查询比例，把 Fig 0 从"宏观集体话题漂移"扩展到"Agent 微观链式访问也是高频模式"，弥合评审指出的 macroscopic↔microscopic 断层（实施在下一轮，见 [NEXT_STEPS_AUDIT_TODO.md](NEXT_STEPS_AUDIT_TODO.md)）。
 > - **并发动机实验**：评审意见 §三.3 提议在 100-agent 批次上测桥接实体共享率。本轮先在 motivation.tex 里把这一段落 framing 写出来，但用诚实的占位说明数字 pending audit；具体跑数留下一轮（见 [NEXT_STEPS_AUDIT_TODO.md](NEXT_STEPS_AUDIT_TODO.md)）。
-> - **SemFlow 重定位**：不再写成 "纯语义 baseline"，而是定位为"针对 L2 direct semantic multi-hop 的 admission engine"；它在 L1 上不输 LRU 是合理的（L1 已被 access history 解决），在 L2 上 +9.2pp 是 positive evidence，在 L3 上的 21pp Oracle gap 是引出 [METHOD] 的 negative evidence。
+> - **DRIP-Dense 重定位**：不再写成 "纯语义 baseline"，而是定位为"针对 L2 direct semantic multi-hop 的 admission engine"；它在 L1 上不输 LRU 是合理的（L1 已被 access history 解决），在 L2 上 +9.2pp 是 positive evidence，在 L3 上的 21pp Oracle gap 是引出 [METHOD] 的 negative evidence。
 
 ---
 
 ## 0. 一句话主线 (logline)
 
-> 在多用户并发智能体共享 RAG 的部署场景里，hot-tier 缓存同时面临**宏观时间漂移（L1）**与**微观链式拓扑访问（L2/L3）**两类访问压力。本文先把 agent 工作负载抽象为 L1/L2/L3 三级访问模式，做一个统一的 system audit：L1 用 access history（LRU）就够了；L2 由我们提出的 SemFlow 通过 query 语义扩散解决；L3 桥接多跳暴露出语义信号触达不到的"second-hop 不可达"结构性缺陷。我们因此提出 [METHOD] —— 一个 drift-aware routed cache，把 SemFlow（L1/L2 的 demand engine）与 entity-chained graph prefetch（L3 的拓扑预取 engine）耦合起来。
+> 在多用户并发智能体共享 RAG 的部署场景里，hot-tier 缓存同时面临**宏观时间漂移（L1）**与**微观链式拓扑访问（L2/L3）**两类访问压力。本文先把 agent 工作负载抽象为 L1/L2/L3 三级访问模式，做一个统一的 system audit：L1 用 access history（LRU）就够了；L2 由我们提出的 DRIP-Dense 通过 query 语义扩散解决；L3 桥接多跳暴露出语义信号触达不到的"second-hop 不可达"结构性缺陷。我们因此提出 [METHOD] —— 一个 drift-aware routed cache，把 DRIP-Dense（L1/L2 的 demand engine）与 entity-chained graph prefetch（L3 的拓扑预取 engine）耦合起来。
 
 ---
 
@@ -53,7 +53,7 @@
 
 **节拍内容**
 - StreamingQA 14 年新闻流 → 把它定位成 **L1 cleanest natural temporal drift testbed**
-- Miss-driven LRU H2 R@5 = 28.8%，SemFlow = 27.1% —— **诚实承认 SemFlow 在 L1 上不胜出**
+- Miss-driven LRU H2 R@5 = 28.8%，DRIP-Dense = 27.1% —— **诚实承认 DRIP-Dense 在 L1 上不胜出**
 - 把 Recency-TTL（oracle year）当作 timestamp 信号的天花板：仍然只到 6.4%，因为 timestamp 在 candidate 内没有区分度（同 era 几千篇）
 - OnDemandFetch H2 R@5 = 46.4% 但代价是 1.45×10⁵ 次 cold-tier 检索，是 fallback 不是常驻策略
 
@@ -65,13 +65,13 @@
 
 ---
 
-### § 1.4  L2 诊断 — 直接语义多跳：query embedding 邻域可达，SemFlow 起作用
-**[论证目标]** SemFlow 不是"通用方法"，而是专门针对 L2 设计的 admission engine。HotpotQA-comparison 中 +9.2pp 是 positive evidence。
+### § 1.4  L2 诊断 — 直接语义多跳：query embedding 邻域可达，DRIP-Dense 起作用
+**[论证目标]** DRIP-Dense 不是"通用方法"，而是专门针对 L2 设计的 admission engine。HotpotQA-comparison 中 +9.2pp 是 positive evidence。
 
 **节拍内容**
 - 情境：HotpotQA-comparison query 把两个被对比实体都暴露在文本里，两跳证据都落在 query embedding 的邻域
-- SemFlow 算法回顾：tier-1 LRU floor + tier-2 失败 query 在 top-K 冷库邻居上累积 demand + 冗余惩罚淘汰
-- 数据：SemFlow R@5 H2 = 54.3%, LRU = 45.1%（+9.2pp）
+- DRIP-Dense 算法回顾：tier-1 LRU floor + tier-2 失败 query 在 top-K 冷库邻居上累积 demand + 冗余惩罚淘汰
+- 数据：DRIP-Dense R@5 H2 = 54.3%, LRU = 45.1%（+9.2pp）
 - **claim**：query-side semantic diffusion 在 "实体显式可见" 的多跳上是有效的 admission 信号
 
 **[支撑材料]** Fig 2(a) — HotpotQA-comparison
@@ -79,13 +79,13 @@
 ---
 
 ### § 1.5  L3 诊断 — 桥接多跳：query embedding 触达不到 second-hop，必须用图
-**[论证目标]** 通过 2Wiki bridge-comparison 暴露 SemFlow 的结构性缺陷，引出 [METHOD] 的图预取模块。
+**[论证目标]** 通过 2Wiki bridge-comparison 暴露 DRIP-Dense 的结构性缺陷，引出 [METHOD] 的图预取模块。
 
 **节拍内容**
 - 情境：2Wiki bridge-comparison query 只暴露 first-hop 实体，second-hop 实体只能从第一跳 doc 推出
-- second-hop doc 在 query embedding 空间里**与 query 不近** → SemFlow 的 tier-2 邻域 demand 抓不到
-- 数据：SemFlow R@5 H2 = 36.0%, LRU = 29.0%（+7.0pp），Oracle = 57.0% → **21pp 缺口**；OnDemandFetch = 48.8% → **13pp 缺口**
-- 这不是 SemFlow 调参问题，是**信号空间**问题：要触达 second-hop，必须沿实体/关系边在图结构上预取
+- second-hop doc 在 query embedding 空间里**与 query 不近** → DRIP-Dense 的 tier-2 邻域 demand 抓不到
+- 数据：DRIP-Dense R@5 H2 = 36.0%, LRU = 29.0%（+7.0pp），Oracle = 57.0% → **21pp 缺口**；OnDemandFetch = 48.8% → **13pp 缺口**
+- 这不是 DRIP-Dense 调参问题，是**信号空间**问题：要触达 second-hop，必须沿实体/关系边在图结构上预取
 - → 直接 motivate [METHOD] 的 R3 模块（entity-chained / graph-structured prefetch）
 
 **[支撑材料]** Fig 2(b) — 2WikiMultihopQA bridge-comparison
@@ -112,7 +112,7 @@
 
 **一段总览**
 - [METHOD] = drift detector + failure classifier + 3 repair routines
-- R1 = demand-aware replacement（处理 L1 + 部分 L2，复用 SemFlow 引擎）
+- R1 = demand-aware replacement（处理 L1 + 部分 L2，复用 DRIP-Dense 引擎）
 - R2 = online cold-tier retrieval（兜底，处理"hot tier 完全无证据"）
 - R3 = entity-chained / graph-structured prefetch（处理 L3 桥接多跳）
 - 价值主张："Where pure query embedding blindly diffuses, [METHOD] detects when to act and routes by access regime."
@@ -120,7 +120,7 @@
 **三个 contribution**
 1. **Problem formalization**：把 hot-tier admission for shared agentic RAG 形式化为 L1/L2/L3 三级访问模式问题
 2. **Empirical characterization**：跨 L1/L2/L3 的 system audit（Fig 0/1/2）+ 100-agent 共享压力诊断
-3. **[METHOD] framework**：drift-aware routed cache，把 SemFlow（L1/L2）与 entity-chained graph prefetch（L3）耦合起来；quality / latency / update cost 三轴 dominate SemFlow 与 OnDemand 的连线
+3. **[METHOD] framework**：drift-aware routed cache，把 DRIP-Dense（L1/L2）与 entity-chained graph prefetch（L3）耦合起来；quality / latency / update cost 三轴 dominate DRIP-Dense 与 OnDemand 的连线
 
 ---
 
@@ -131,8 +131,8 @@
 | **Fig 0(a/b)** | WildChat + Google Trends | §1.2 宏观 L1：集体话题漂移 | ✅ 已有 |
 | **Fig 0(c)** | AgentBench / WebShop / 合成多跳日志的链式关联查询占比 | §1.2 微观 L2/L3：Agent 链式访问也高频 | 🔜 下一轮跑 |
 | **Fig 1** | StreamingQA, 8 strategies | §1.3 L1 诊断：access history 够用 | ✅ 已有 |
-| **Fig 2(a)** | HotpotQA-comparison | §1.4 L2 诊断：SemFlow 起作用 | ✅ 已有 |
-| **Fig 2(b)** | 2WikiMultihopQA bridge-comparison | §1.5 L3 诊断：SemFlow 不够，引出图预取 | ✅ 已有 |
+| **Fig 2(a)** | HotpotQA-comparison | §1.4 L2 诊断：DRIP-Dense 起作用 | ✅ 已有 |
+| **Fig 2(b)** | 2WikiMultihopQA bridge-comparison | §1.5 L3 诊断：DRIP-Dense 不够，引出图预取 | ✅ 已有 |
 | **Fig 2(c) / appendix bar** | 100-agent 批次桥接实体共享率 | §1.6 防单 session memory 质疑 | 🔜 下一轮跑 |
 
 ---
@@ -162,7 +162,7 @@
 
 - **算法名字**：占位 [METHOD]，所有 tex/图/表都用 placeholder，最后统一替换
 - **Fig 1 保留 OnDemand**（作为 quality 天花板参照）
-- **SemFlow 定位**：明确为 L2 的 admission engine，不是 universal baseline
+- **DRIP-Dense 定位**：明确为 L2 的 admission engine，不是 universal baseline
 - **timestamp 论证**：核心反驳是"timestamp 在 candidate 内没有区分度"（Recency-TTL with oracle year 仍只到 6.4%）
 - **Fig 0(c) 数据来源**：评审意见建议 AgentBench / WebShop / 合成多跳日志，**优先使用真实 agent trace**（AgentBench 或 WebShop），合成日志作为 fallback
 - **并发实验**：保守报告，只统计 gold sf 的桥接实体重叠（不算 distractor 与一般 cold miss），承认数字是 lower bound

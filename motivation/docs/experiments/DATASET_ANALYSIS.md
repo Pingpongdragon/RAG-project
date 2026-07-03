@@ -1,4 +1,4 @@
-# Dataset Analysis: When Does QueryDrivenCluster (QDC) Work?
+# Dataset Analysis: When Does DRIP-Dense (QDC) Work?
 
 All experiments use **sudden distribution drift**, 100 windows (50 pre / 50 post), window size = 50 queries.
 QDC delta = QDC H2 R@5 minus Static H2 R@5 (positive = better than frozen KB).

@@ -7,7 +7,8 @@
 
 > 在多用户并发 agent 共享 RAG 的部署里，hot-tier 缓存面临 **query demand drift**：
 > 文档不变、需求在变。本文用一个三级 system audit 刻画"哪种 admission signal 在哪种
-> 访问模式下够用"，并据此提出 `[METHOD]` —— 一个 drift-aware routed cache。
+> 访问模式下够用"，并据此提出 **DRIP** —— 一个从 `DRIP-Dense` 到
+> `DRIP-ESC` 再到 `DRIP-ESC-Lease` 的 route-aware cache manager。
 > 完整设计见 [docs/design/ALGORITHM_DESIGN.md](docs/design/ALGORITHM_DESIGN.md)。
 
 ## 三级 audit ↔ 图 ↔ 目录映射
@@ -16,8 +17,8 @@
 |---|---|---|---|---|
 | **L1** 宏观需求漂移 | Fig 0 | WildChat / Google Trends topic 重排 | [motivation_0/](motivation_0/) | 漂移是 first-class 普遍现象 |
 | **L1** 单跳校准 | Fig 1 | StreamingQA 14 年 era 流 | [motivation_1/](motivation_1/) | access history（LRU）已够用 |
-| **L2** direct evidence | Fig 2a | HotpotQA 直接证据多跳 | [motivation_2/](motivation_2/) | SemFlow +9.7pp，语义扩散有效 |
-| **L3** bridge evidence | Fig 2b | 2Wiki `Q→A→B` 桥接多跳 | [motivation_2/](motivation_2/) | query 信号触达不到 B，21pp Oracle gap → 引出 `[METHOD]` |
+| **L2** direct evidence | Fig 2a | HotpotQA 直接证据多跳 | [motivation_2/](motivation_2/) | DRIP-Dense +9.7pp，语义扩散有效 |
+| **L3** bridge evidence | Fig 2b | 2Wiki `Q→A→B` 桥接多跳 | [motivation_2/](motivation_2/) | query 信号触达不到 B，21pp Oracle gap → 引出 DRIP-ESC / DRIP-ESC-Lease |
 
 ## 顶层文件 / 目录
 
@@ -44,6 +45,6 @@
 
 ## 约定
 
-- 算法名占位 `[METHOD]`，tex / 图 / 文档统一用 placeholder，定稿后统一替换。
+- 当前算法名统一为 `DRIP`，消融命名统一为 `DRIP-Dense` / `DRIP-ESC` / `DRIP-ESC-Lease`。
 - 实验数据（`motivation_*/data/*.json`）与 embedding 缓存（`motivation_*/cache/`）一律保留，不删。
 - 细粒度机制设计只写在 `docs/design/`，不进 README / tex 主线。

@@ -130,7 +130,7 @@ def step(...):
 
 ---
 
-## 7. QueryDrivenCluster (QDC) — 本文方法
+## 7. DRIP-Dense (QDC) — 本文方法
 
 > 核心：**两个衰减计数 (`demand`, `serve`) + 一个 admission gate；写入量自动正比于漂移强度。**
 
@@ -274,5 +274,5 @@ Gradual 比 Sudden **晚约 12 个 window** 才跌落，而不是理想的整个
 | KnowledgeEdit | ✗ | ✓ | 编辑预算 | 全池 NN |
 | OnDemandFetch | ✓ per-query | ✗（仅临时） | 每次失败 | **serve 检索（在线latency）** |
 | LogDrivenArrival | ✓ buffered | ✓ | 5-window 周期 | maint scan + 滞后 |
-| **QueryDrivenCluster** | ✓ **累积衰减** | ✓ | 失败×gate（自适应） | maint scan |
+| **DRIP-Dense** | ✓ **累积衰减** | ✓ | 失败×gate（自适应） | maint scan |
 | Oracle | 真值 SF | ✓ | 每 window 全建 | N/A，非 causal |

@@ -4,7 +4,7 @@ Decomposes each question into 2 sub-questions using a 30B LLM,
 then returns augmented query embeddings (mean-pooled) and
 augmented entity lists (union).
 """
-import json, logging, hashlib, os, time
+import json, logging, hashlib, os, re, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import numpy as np
@@ -23,6 +23,94 @@ _PROMPT = (
 
 CACHE_DIR = Path(__file__).parent / 'cache'
 CACHE_DIR.mkdir(exist_ok=True)
+
+
+_STOP_ENTITY_HEADS = {
+    "Do", "Does", "Did", "Were", "Was", "Are", "Is", "Which", "What",
+    "Who", "Whose", "When", "Where", "Both", "The", "A", "An",
+}
+
+
+def _candidate_entities(question: str) -> list[str]:
+    """Lightweight title/entity span extraction for local decomposition.
+
+    This is a deterministic diagnostic fallback, not a dataset oracle: it uses
+    only the question text and avoids support titles / labels.
+    """
+    # Prefer comparison spans introduced by common object nouns, then fall back
+    # to generic capitalized spans. This catches film/book/song titles without
+    # hard-coding 2Wiki support documents.
+    spans = []
+    intro = re.search(
+        r"\b(?:films?|movies?|books?|novels?|songs?|albums?|works?|shows?|series)\s+(.+?)(?:\?| have | has | were | was | is | are | by )",
+        question,
+        flags=re.IGNORECASE,
+    )
+    if intro:
+        piece = intro.group(1)
+        if not re.match(r"^(?:has|have|is|are|was|were|with|whose|which|that)\b", piece, re.I):
+            spans.extend(re.split(r"\s+(?:and|or)\s+|;\s*", piece))
+
+    cap_pat = re.compile(
+        r"(?:[A-Z][\w'&.-]*(?:\s+(?:of|the|and|&|in|to|for|from|The|A|An|"
+        r"[A-Z][\w'&().:-]*|\d{4}))*?)"
+        r"(?=\s+(?:and|or|have|has|was|were|is|are|directed|written|produced|composed)|[?,])"
+    )
+    spans.extend(m.group(0) for m in cap_pat.finditer(question))
+
+    out, seen = [], set()
+    for raw in spans:
+        ent = raw.strip(" ,?;:'\"")
+        ent = re.sub(r"\s+", " ", ent)
+        if not ent:
+            continue
+        if ent.split()[0] in _STOP_ENTITY_HEADS and len(ent.split()) <= 2:
+            continue
+        if len(ent) < 3 or ent.lower() in seen:
+            continue
+        seen.add(ent.lower())
+        out.append(ent)
+        if len(out) >= 4:
+            break
+    return out
+
+
+def heuristic_decompose(question: str) -> list[str]:
+    """Question-text-only decomposition used when the LLM endpoint is absent."""
+    ql = question.lower()
+    relation_queries = []
+    if "director" in ql or "directed" in ql:
+        relation_queries.append("director of {entity}")
+    if "producer" in ql or "produced" in ql:
+        relation_queries.append("producer of {entity}")
+    if "writer" in ql or "screenwriter" in ql or "written" in ql or "wrote" in ql:
+        relation_queries.append("writer of {entity}")
+    if "composer" in ql or "soundtrack" in ql or "music" in ql:
+        relation_queries.append("composer of {entity}")
+    if "actor" in ql or "actress" in ql or "starring" in ql or "starred" in ql:
+        relation_queries.append("cast of {entity}")
+    if "author" in ql or "written by" in ql:
+        relation_queries.append("author of {entity}")
+    if "country" in ql or "nationality" in ql:
+        relation_queries.append("nationality associated with {entity}")
+    if "born" in ql or "birth" in ql:
+        relation_queries.append("birth information for {entity}")
+    if "died" in ql or "death" in ql:
+        relation_queries.append("death information for {entity}")
+    if "release" in ql or "released" in ql:
+        relation_queries.append("release date of {entity}")
+
+    if not relation_queries:
+        relation_queries = ["support evidence for {entity}"]
+
+    entities = _candidate_entities(question)
+    subqs = []
+    for ent in entities[:3]:
+        for tpl in relation_queries[:2]:
+            subqs.append(tpl.format(entity=ent))
+            if len(subqs) >= 4:
+                return subqs
+    return subqs or [question]
 
 
 def _decompose_one(question: str, timeout: int = 30) -> list[str]:
@@ -51,14 +139,29 @@ def _decompose_one(question: str, timeout: int = 30) -> list[str]:
     return [question]  # fallback: no decomposition
 
 
-def batch_decompose(queries: list[dict], tag: str = '', max_workers: int = 40) -> list[list[str]]:
+def batch_decompose(
+    queries: list[dict],
+    tag: str = '',
+    max_workers: int = 40,
+    mode: str | None = None,
+) -> list[list[str]]:
     """Return list of sub-question lists (one per query)."""
-    cache_key = hashlib.md5((tag + ''.join(q['question'] for q in queries)).encode()).hexdigest()[:12]
-    cache_path = CACHE_DIR / f'llm_decompose_{cache_key}.json'
+    mode = (mode or os.environ.get('MO2_DECOMPOSE_MODE') or 'llm').lower()
+    cache_prefix = 'heuristic_decompose' if mode == 'heuristic' else 'llm_decompose'
+    cache_key = hashlib.md5((mode + tag + ''.join(q['question'] for q in queries)).encode()).hexdigest()[:12]
+    cache_path = CACHE_DIR / f'{cache_prefix}_{cache_key}.json'
     if cache_path.exists():
-        log.info(f'Loading cached LLM decompositions from {cache_path.name}')
+        log.info(f'Loading cached {mode} decompositions from {cache_path.name}')
         with open(cache_path) as f:
             return json.load(f)
+
+    if mode == 'heuristic':
+        log.info(f'Decomposing {len(queries)} queries with local heuristic.')
+        results = [heuristic_decompose(q['question']) for q in queries]
+        with open(cache_path, 'w') as f:
+            json.dump(results, f)
+        log.info(f'Cached heuristic decompositions to {cache_path.name}')
+        return results
 
     log.info(f'Decomposing {len(queries)} queries with LLM (workers={max_workers})...')
     results = [None] * len(queries)
@@ -97,7 +200,8 @@ def augment_with_llm(queries: list[dict], query_embs: np.ndarray,
     """
     from sentence_transformers import SentenceTransformer
     from config import EMBED_MODEL, BGE_QUERY_PREFIX
-    sbert = SentenceTransformer(EMBED_MODEL, device='cuda')
+    device = 'cuda' if __import__('torch').cuda.is_available() else 'cpu'
+    sbert = SentenceTransformer(EMBED_MODEL, device=device)
     _qprefix = BGE_QUERY_PREFIX if 'bge' in EMBED_MODEL.lower() else ''
 
     sub_lists = batch_decompose(queries, tag=tag, max_workers=max_workers)

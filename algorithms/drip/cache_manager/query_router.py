@@ -1,4 +1,4 @@
-"""QueryRouter for DRIP-Core."""
+"""Query visibility router for the DRIP cache manager."""
 from dataclasses import dataclass
 import re
 
@@ -7,9 +7,8 @@ import numpy as np
 from algorithms.cache.params import PARAMS as _P
 
 
-SINGLE = "SINGLE"
-MULTI_DIRECT = "MULTI_DIRECT"
-BRIDGE = "BRIDGE"
+QUERY_VISIBLE = "QUERY_VISIBLE"
+QUERY_HIDDEN = "QUERY_HIDDEN"
 
 
 @dataclass(frozen=True)
@@ -20,69 +19,115 @@ class RouteDecision:
 
 
 class QueryRouter:
-    """Deterministic router: no LLM and no gold support labels."""
+    """Classify whether missing evidence is visible from the query.
+
+    The production path uses only query text, dense similarities against the
+    current cache, and coarse first-hop entity sets. Dataset fields such as
+    ``qtype`` and ``route_hint`` are ignored unless an oracle ablation enables
+    ``use_oracle_route_hint`` in the config.
+    """
 
     _COMPARISON_CUES = (
         "compare", "same", "different", "which", "between", "both",
         "older", "younger", "larger", "smaller", "more", "less",
         "before", "after",
     )
-    _BRIDGE_CUES = (
-        "whose", "who", "what", "where", "when", "that", "which",
-        "the person", "the film", "the album", "the company",
+    _HIDDEN_CHAIN_CUES = (
+        "whose", "the person who", "the film that", "the album that",
+        "the company that", "the city where", "the country where",
+        "author of", "director of", "producer of", "located in",
+        "born in", "member of", "part of",
     )
 
     def __init__(self, config):
         self.config = config
 
-    def route(self, query, kb_sims, first_hop_entities):
+    def route(self, query, kb_sims, first_hop_entities, first_hops=None):
         text = query.get("question", "") if isinstance(query, dict) else str(query)
-        hinted = self._route_from_hint(query)
+        hinted = self._route_from_oracle_hint(query)
         if hinted is not None:
             return hinted
 
         lower = text.lower()
         kb_sims = np.asarray(kb_sims)
         cover_cnt = int((kb_sims >= _P.SF_HIT_THRESH).sum()) if kb_sims.size else 0
-        top1 = float(kb_sims.max()) if kb_sims.size else 0.0
+        cache_top1 = float(kb_sims.max()) if kb_sims.size else 0.0
+        first_hops = first_hops or ()
+        pool_top1 = max((float(sim) for _, sim in first_hops), default=0.0)
 
         has_compare = any(cue in lower for cue in self._COMPARISON_CUES)
-        has_bridge_cue = any(cue in lower for cue in self._BRIDGE_CUES)
+        has_hidden_cue = any(cue in lower for cue in self._HIDDEN_CHAIN_CUES)
+        entity_count = self._rough_entity_count(text)
         multi_signal = (
             has_compare
-            or has_bridge_cue
-            or self._rough_entity_count(text) >= self.config.router_min_entities
+            or has_hidden_cue
+            or entity_count >= self.config.router_min_entities
         )
         if not multi_signal:
-            return RouteDecision(SINGLE, self.config.singlehop_slots, "single_text")
-        if cover_cnt >= self.config.multihop_slots:
-            return RouteDecision(MULTI_DIRECT, self.config.multihop_slots, "covered")
+            return RouteDecision(
+                QUERY_VISIBLE,
+                self.config.singlehop_slots,
+                "visible_single_text",
+            )
+
+        target_slots = self.config.multihop_slots
+        if cover_cnt >= target_slots:
+            return RouteDecision(QUERY_VISIBLE, target_slots, "visible_covered")
         if self._first_hops_are_diverse(first_hop_entities):
-            return RouteDecision(MULTI_DIRECT, self.config.multihop_slots, "dense_diverse")
-        if top1 >= self.config.router_bridge_top1_ratio * _P.SF_HIT_THRESH or has_bridge_cue:
-            return RouteDecision(BRIDGE, self.config.multihop_slots, "bridge_missing")
-        return RouteDecision(MULTI_DIRECT, self.config.multihop_slots, "multi_direct")
+            return RouteDecision(QUERY_VISIBLE, target_slots, "visible_dense_diverse")
 
-    def _route_from_hint(self, query):
-        """Use an agent/dataset query-type hint when available.
+        anchor_threshold = (
+            self.config.router_hidden_anchor_ratio * _P.SF_HIT_THRESH
+        )
+        has_visible_anchor = max(cache_top1, pool_top1) >= anchor_threshold
+        if has_visible_anchor and (
+            has_hidden_cue or entity_count >= self.config.router_min_entities
+        ):
+            return RouteDecision(QUERY_HIDDEN, target_slots, "hidden_anchor_gap")
+        if has_compare:
+            return RouteDecision(
+                QUERY_HIDDEN,
+                target_slots,
+                "hidden_comparison_anchor_gap",
+            )
+        return RouteDecision(QUERY_VISIBLE, target_slots, "visible_dense_fallback")
 
-        In production this field can be produced by a cached LLM router. In the
-        benchmark loaders it comes from the public query type, not gold support
-        labels.
-        """
-        if not getattr(self.config, "use_query_type_hint", True):
+    def _route_from_oracle_hint(self, query):
+        """Use qtype/route_hint only in an explicit oracle-router ablation."""
+
+        if not getattr(self.config, "use_oracle_route_hint", False):
             return None
         if not isinstance(query, dict):
             return None
-        qtype = str(query.get("route_hint") or query.get("qtype") or query.get("type") or "").lower()
+        qtype = str(
+            query.get("route_hint") or query.get("qtype") or query.get("type") or ""
+        ).lower()
         if not qtype:
             return None
+        if "bridge" in qtype and "comparison" in qtype:
+            return RouteDecision(
+                QUERY_HIDDEN,
+                self.config.hidden_comparison_slots,
+                "oracle_hidden_bridge_comparison",
+            )
         if "bridge" in qtype or "compositional" in qtype or "inference" in qtype:
-            return RouteDecision(BRIDGE, self.config.multihop_slots, "query_type_bridge")
+            return RouteDecision(
+                QUERY_HIDDEN,
+                self.config.multihop_slots,
+                "oracle_hidden",
+            )
         if "comparison" in qtype:
-            return RouteDecision(MULTI_DIRECT, self.config.multihop_slots, "query_type_comparison")
+            return RouteDecision(
+                QUERY_VISIBLE,
+                self.config.multihop_slots,
+                "oracle_visible_comparison",
+            )
         if "single" in qtype or "temporal" in qtype:
-            return RouteDecision(SINGLE, self.config.singlehop_slots, "query_type_single")
+            return RouteDecision(
+                QUERY_VISIBLE,
+                self.config.singlehop_slots,
+                "oracle_visible_single",
+            )
         return None
 
     def _first_hops_are_diverse(self, entity_sets):

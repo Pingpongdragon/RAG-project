@@ -1,4 +1,4 @@
-"""EmbeddingIndex for DRIP-Core."""
+"""EmbeddingIndex for DRIP cache manager."""
 import numpy as np
 
 

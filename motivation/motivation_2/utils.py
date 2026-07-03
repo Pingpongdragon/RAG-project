@@ -197,6 +197,18 @@ def build_query_stream(queries, query_embs, cfg, workload='cluster_shift',
         stream = _build_random_static_stream(queries, cfg)
     elif workload == 'temporal_bridge_reuse':
         stream = _build_bridge_reuse_stream(queries, cfg, burst=False)
+    elif workload == 'anchored_bridge_reuse':
+        stream = _build_bridge_reuse_stream(queries, cfg, burst=False, hidden_only=True)
+    elif workload == 'resident_anchor_bridge_reuse':
+        stream = _build_resident_anchor_bridge_stream(queries, cfg)
+    elif workload == 'multi_agent_bridge_reuse':
+        stream = _build_multi_agent_bridge_stream(queries, cfg)
+    elif workload == 'delayed_multi_agent_bridge_reuse':
+        stream = _build_delayed_multi_agent_bridge_stream(queries, cfg)
+    elif workload == 'topic_shift_bridge_reuse':
+        stream = _build_topic_shift_bridge_stream(queries, cfg, drift_mode)
+    elif workload == 'agent_multistep_reuse':
+        stream = _build_agent_multistep_stream(queries, cfg)
     elif workload == 'burst_bridge_reuse':
         stream = _build_bridge_reuse_stream(queries, cfg, burst=True)
     else:
@@ -239,6 +251,11 @@ def _query_copy(q, *, role=None, group=None, support_title=None,
         out['reuse_group'] = group
     if support_title is not None:
         out['reuse_support_title'] = support_title
+        # This workload explicitly hides a reusable bridge support document.
+        # Mark the route as bridge so datasets without native qtype labels
+        # (notably MuSiQue) exercise the multi-hop cache path instead of
+        # silently degrading to direct dense admission.
+        out.setdefault('route_hint', 'bridge')
     if is_tail is not None:
         out['is_tail'] = bool(is_tail)
     if seq is not None:
@@ -271,7 +288,7 @@ def _support_groups(queries):
     return groups
 
 
-def _build_bridge_reuse_stream(queries, cfg, burst=False):
+def _build_bridge_reuse_stream(queries, cfg, burst=False, hidden_only=False):
     """Construct a reuse stream from queries sharing support titles.
 
     The chosen support title is the proxy for hidden reusable evidence B. Every
@@ -283,6 +300,19 @@ def _build_bridge_reuse_stream(queries, cfg, burst=False):
     n_q = cfg['n_windows'] * cfg['window_size']
     ws = cfg['window_size']
     groups = _support_groups(queries)
+    if hidden_only:
+        filtered = []
+        for title, qs in groups:
+            hidden_qs = [
+                q for q in qs
+                if title.lower() not in q.get('question', '').lower()
+            ]
+            if len(hidden_qs) >= 2:
+                filtered.append((title, hidden_qs))
+        if filtered:
+            groups = filtered
+        else:
+            log.warning("No hidden support-title groups found; using all reuse groups")
     if not groups:
         log.warning("No support-title reuse groups found; falling back to random_static")
         return _build_random_static_stream(queries, cfg)
@@ -347,6 +377,494 @@ def _build_bridge_reuse_stream(queries, cfg, burst=False):
                                   is_tail=True, seq=len(stream) + j)
                       for j, i in enumerate(extra_idx))
     return stream[:n_q]
+
+
+def _build_resident_anchor_bridge_stream(queries, cfg):
+    """Controlled resident-anchor bridge workload.
+
+    Each selected group has one hidden support title B that is absent from the
+    question text and reused by several distinct questions.  The first half of
+    the stream exposes groups; the second half asks reuse questions for the
+    same hidden B.  KB initialization seeds the other support docs as resident
+    anchors A while holding out B.
+    """
+    rng = np.random.default_rng(SEED + 733)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    min_group = int(cfg.get('anchor_min_group', 5))
+    reuse_per_group = int(cfg.get('anchor_reuse_per_group', 8))
+    max_groups = int(cfg.get('anchor_max_groups', 80))
+
+    groups = []
+    for title, qs in _support_groups(queries):
+        hidden_qs = [
+            q for q in qs
+            if title.lower() not in q.get('question', '').lower()
+            and len(q.get('sf_titles', [])) >= 2
+        ]
+        unique = {}
+        for q in hidden_qs:
+            unique.setdefault(q.get('qidx'), q)
+        hidden_qs = list(unique.values())
+        if len(hidden_qs) >= min_group:
+            groups.append((title, hidden_qs))
+
+    if not groups:
+        log.warning("No resident-anchor bridge groups found; using hidden anchored reuse")
+        return _build_bridge_reuse_stream(queries, cfg, burst=False, hidden_only=True)
+
+    selected = groups[: max(1, min(len(groups), max_groups))]
+    rng.shuffle(selected)
+    stream = []
+    exposures = []
+    for gi, (title, qs) in enumerate(selected):
+        qs = list(qs)
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        exposures.append(_query_copy(
+            qs[0], role='exposure', group=group_id,
+            support_title=title, is_tail=True, seq=gi))
+
+    half = n_q // 2
+    background_idx = rng.integers(0, len(queries), size=n_q)
+    background = [
+        _query_copy(queries[int(i)], role='background', is_tail=True, seq=j)
+        for j, i in enumerate(background_idx)
+    ]
+    stream.extend(exposures[:half])
+    if len(stream) < half:
+        stream.extend(background[:half - len(stream)])
+
+    reuses = []
+    for gi, (title, qs) in enumerate(selected):
+        qs = list(qs)
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        for j in range(reuse_per_group):
+            q = qs[(j + 1) % len(qs)]
+            reuses.append(_query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j + 1))
+    rng.shuffle(reuses)
+
+    back_need = n_q - len(stream)
+    stream.extend(reuses[:back_need])
+    if len(stream) < n_q:
+        start = max(0, half - len(exposures))
+        stream.extend(
+            background[start:start + (n_q - len(stream))]
+        )
+    return stream[:n_q]
+
+
+def _build_multi_agent_bridge_stream(queries, cfg):
+    """Multi-agent shared hidden-bridge reuse workload.
+
+    A hidden support title B is selected only when it is absent from question
+    text and appears in several distinct questions.  The initial KB keeps other
+    supports as resident anchors while holding out B.  Later windows contain
+    reuse questions from different synthetic agents, testing whether one
+    agent's bridge admission benefits future agents through the shared cache.
+    """
+    rng = np.random.default_rng(SEED + 907)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    min_group = int(cfg.get('agent_min_group', 3))
+    reuse_per_group = int(cfg.get('agent_reuse_per_group', 6))
+    # 160 groups is enough for the 20x25 debug benchmark.  For 100x50 full
+    # runs it would dilute the target signal with too much background, so the
+    # default scales with stream length while preserving the old small-run value.
+    max_groups = int(cfg.get('agent_max_groups', max(160, n_q // 4)))
+    n_agents = int(cfg.get('n_agents', 8))
+
+    groups = []
+    for title, qs in _support_groups(queries):
+        hidden_qs = [
+            q for q in qs
+            if title.lower() not in q.get('question', '').lower()
+            and len(q.get('sf_titles', [])) >= 2
+        ]
+        unique = {}
+        for q in hidden_qs:
+            unique.setdefault(q.get('qidx'), q)
+        hidden_qs = list(unique.values())
+        if len(hidden_qs) >= min_group:
+            groups.append((title, hidden_qs))
+
+    if not groups:
+        log.warning("No multi-agent bridge groups found; using resident anchor workload")
+        return _build_resident_anchor_bridge_stream(queries, cfg)
+
+    groups.sort(key=lambda item: (-len(item[1]), item[0]))
+    selected = groups[: max(1, min(len(groups), max_groups))]
+    rng.shuffle(selected)
+
+    exposures, reuses = [], []
+    for gi, (title, qs) in enumerate(selected):
+        qs = list(qs)
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        exposures.append(_query_copy(
+            qs[0], role='exposure', group=group_id,
+            support_title=title, is_tail=True, seq=0))
+        exposures[-1]['agent_id'] = int(gi % n_agents)
+        for j in range(reuse_per_group):
+            q = qs[(j + 1) % len(qs)]
+            item = _query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j + 1)
+            item['agent_id'] = int((gi + j + 1) % n_agents)
+            reuses.append(item)
+
+    rng.shuffle(exposures)
+    rng.shuffle(reuses)
+    background_idx = rng.integers(0, len(queries), size=n_q)
+    background = [
+        _query_copy(queries[int(i)], role='background', is_tail=True, seq=j)
+        for j, i in enumerate(background_idx)
+    ]
+    for j, item in enumerate(background):
+        item['agent_id'] = int(j % n_agents)
+
+    half = n_q // 2
+    front = exposures[:half]
+    if len(front) < half:
+        front.extend(background[:half - len(front)])
+    back = reuses[:n_q - half]
+    if len(back) < n_q - half:
+        start = max(0, half - len(front))
+        back.extend(background[start:start + (n_q - half - len(back))])
+    stream = (front[:half] + back[:n_q - half])[:n_q]
+    log.info(
+        f"Multi-agent bridge groups: selected={len(selected)} "
+        f"agents={n_agents} reuse_items={len(reuses)}"
+    )
+    return stream
+
+
+def _build_delayed_multi_agent_bridge_stream(queries, cfg):
+    """Long-gap version of multi-agent hidden-bridge reuse.
+
+    The ordinary multi-agent stream places exposures in the first half and
+    reuses in the second half.  For 20-window debug runs that can still leave
+    short exposure→reuse gaps.  This variant makes the locality confound
+    explicit: exposures are confined to the first 20% of windows, reusable
+    hidden supports are asked only in the last 20%, and the middle 60% is
+    unrelated background traffic.
+    """
+    rng = np.random.default_rng(SEED + 1709)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    ws = cfg['window_size']
+    min_group = int(cfg.get('agent_min_group', 3))
+    reuse_per_group = int(cfg.get('agent_reuse_per_group', 6))
+    max_groups = int(cfg.get('agent_max_groups', max(160, n_q // 4)))
+    n_agents = int(cfg.get('n_agents', 8))
+
+    groups = []
+    for title, qs in _support_groups(queries):
+        hidden_qs = [
+            q for q in qs
+            if title.lower() not in q.get('question', '').lower()
+            and len(q.get('sf_titles', [])) >= 2
+        ]
+        unique = {}
+        for q in hidden_qs:
+            unique.setdefault(q.get('qidx'), q)
+        hidden_qs = list(unique.values())
+        if len(hidden_qs) >= min_group:
+            groups.append((title, hidden_qs))
+
+    if not groups:
+        log.warning("No delayed multi-agent bridge groups found; using multi-agent bridge reuse")
+        return _build_multi_agent_bridge_stream(queries, cfg)
+
+    groups.sort(key=lambda item: (-len(item[1]), item[0]))
+    selected = groups[: max(1, min(len(groups), max_groups))]
+    rng.shuffle(selected)
+
+    exposures, reuses = [], []
+    for gi, (title, qs) in enumerate(selected):
+        qs = list(qs)
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        item = _query_copy(
+            qs[0], role='exposure', group=group_id,
+            support_title=title, is_tail=True, seq=0)
+        item['agent_id'] = int(gi % n_agents)
+        exposures.append(item)
+        for j in range(reuse_per_group):
+            q = qs[(j + 1) % len(qs)]
+            item = _query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j + 1)
+            item['agent_id'] = int((gi + j + 1) % n_agents)
+            reuses.append(item)
+
+    rng.shuffle(exposures)
+    rng.shuffle(reuses)
+    background_idx = rng.integers(0, len(queries), size=n_q)
+    background = [
+        _query_copy(queries[int(i)], role='background', is_tail=True, seq=j)
+        for j, i in enumerate(background_idx)
+    ]
+    for j, item in enumerate(background):
+        item['agent_id'] = int(j % n_agents)
+
+    exposure_windows = int(cfg.get('delay_exposure_windows', max(1, cfg['n_windows'] // 5)))
+    reuse_windows = int(cfg.get('delay_reuse_windows', max(1, cfg['n_windows'] // 5)))
+    exposure_cap = min(n_q, exposure_windows * ws)
+    reuse_cap = min(n_q - exposure_cap, reuse_windows * ws)
+    middle_cap = max(0, n_q - exposure_cap - reuse_cap)
+
+    front = exposures[:exposure_cap]
+    if len(front) < exposure_cap:
+        front.extend(background[:exposure_cap - len(front)])
+
+    mid_start = exposure_cap
+    middle = background[mid_start:mid_start + middle_cap]
+    if len(middle) < middle_cap:
+        extra_idx = rng.integers(0, len(queries), size=middle_cap - len(middle))
+        middle.extend(
+            _query_copy(queries[int(i)], role='background', is_tail=True,
+                        seq=len(background) + j)
+            for j, i in enumerate(extra_idx)
+        )
+
+    back = reuses[:reuse_cap]
+    if len(back) < reuse_cap:
+        start = mid_start + middle_cap
+        back.extend(background[start:start + (reuse_cap - len(back))])
+
+    stream = (front[:exposure_cap] + middle[:middle_cap] + back[:reuse_cap])[:n_q]
+    log.info(
+        f"Delayed multi-agent bridge groups: selected={len(selected)} "
+        f"agents={n_agents} exposure_windows={exposure_windows} "
+        f"gap_windows={max(0, cfg['n_windows'] - exposure_windows - reuse_windows)} "
+        f"reuse_windows={reuse_windows} reuse_items={len(reuses)}"
+    )
+    return stream
+
+
+def _build_topic_shift_bridge_stream(queries, cfg, drift_mode='sudden'):
+    """Combined topic-shift + hidden bridge reuse workload.
+
+    This is the benchmark version of the paper story:
+
+      H1: head-topic exposure queries reveal that a support pair needs a
+          hidden bridge document B, while B is held out of the initial KB.
+      H2: tail-topic reuse queries from other synthetic agents need the same B.
+
+    A group is valid only when the hidden support title B is absent from the
+    question text and has at least one head-cluster question plus at least two
+    tail-cluster questions.  That makes query-distribution shift and multi-hop
+    hidden-support reuse present in the same stream, but still measurable
+    separately via reuse_role / reuse_support_title.
+    """
+    rng = np.random.default_rng(SEED + 1103)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    min_tail = int(cfg.get('topic_bridge_min_tail', 2))
+    reuse_per_group = int(cfg.get('agent_reuse_per_group', 6))
+    max_groups = int(cfg.get('agent_max_groups', max(160, n_q // 4)))
+    n_agents = int(cfg.get('n_agents', 8))
+
+    groups = []
+    for title, qs in _support_groups(queries):
+        hidden_qs = [
+            q for q in qs
+            if title.lower() not in q.get('question', '').lower()
+            and len(q.get('sf_titles', [])) >= 2
+        ]
+        unique = {}
+        for q in hidden_qs:
+            unique.setdefault(q.get('qidx'), q)
+        hidden_qs = list(unique.values())
+        heads = [q for q in hidden_qs if not q.get('is_tail', True)]
+        tails = [q for q in hidden_qs if q.get('is_tail', True)]
+        if heads and len(tails) >= min_tail:
+            groups.append((title, heads, tails))
+
+    if not groups:
+        log.warning(
+            "No topic-shift bridge groups found; using multi-agent bridge reuse"
+        )
+        return _build_multi_agent_bridge_stream(queries, cfg)
+
+    groups.sort(key=lambda item: (-(len(item[1]) + len(item[2])), item[0]))
+    selected = groups[: max(1, min(len(groups), max_groups))]
+    rng.shuffle(selected)
+
+    exposures, reuses = [], []
+    for gi, (title, heads, tails) in enumerate(selected):
+        heads = list(heads)
+        tails = list(tails)
+        rng.shuffle(heads)
+        rng.shuffle(tails)
+        group_id = f"{title}::{gi}"
+        item = _query_copy(
+            heads[0], role='exposure', group=group_id,
+            support_title=title, is_tail=False, seq=0)
+        item['agent_id'] = int(gi % n_agents)
+        exposures.append(item)
+        for j in range(reuse_per_group):
+            q = tails[j % len(tails)]
+            item = _query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j + 1)
+            item['agent_id'] = int((gi + j + 1) % n_agents)
+            reuses.append(item)
+
+    rng.shuffle(exposures)
+    rng.shuffle(reuses)
+
+    heads = [q for q in queries if not q.get('is_tail', True)]
+    tails = [q for q in queries if q.get('is_tail', True)]
+    if not heads or not tails:
+        log.warning("Missing head/tail background pool; using random background")
+        heads = tails = queries
+
+    def background(src, n, offset):
+        idx = rng.integers(0, len(src), size=max(0, n))
+        out = []
+        for j, i in enumerate(idx):
+            item = _query_copy(
+                src[int(i)], role='background',
+                is_tail=src[int(i)].get('is_tail', True),
+                seq=offset + j)
+            item['agent_id'] = int((offset + j) % n_agents)
+            out.append(item)
+        return out
+
+    half = n_q // 2
+    if drift_mode in ('gradual', 'full_gradual'):
+        # Keep the bridge event order causal (exposures before reuses), while
+        # making background topics drift gradually across the whole stream.
+        stream = []
+        exp_i = reuse_i = 0
+        ws = cfg['window_size']
+        for wi in range(cfg['n_windows']):
+            head_pct = 0.97 - wi * 0.94 / max(cfg['n_windows'] - 1, 1)
+            target_cap = min(ws // 2, ws)
+            window = []
+            if wi < cfg['n_windows'] // 2:
+                take = min(target_cap, len(exposures) - exp_i)
+                window.extend(exposures[exp_i:exp_i + take])
+                exp_i += take
+            else:
+                take = min(target_cap, len(reuses) - reuse_i)
+                window.extend(reuses[reuse_i:reuse_i + take])
+                reuse_i += take
+            rem = ws - len(window)
+            n_head = int(rem * head_pct)
+            n_tail = rem - n_head
+            window.extend(background(heads, n_head, len(stream)))
+            window.extend(background(tails, n_tail, len(stream) + n_head))
+            rng.shuffle(window)
+            stream.extend(window)
+        log.info(
+            f"Topic-shift bridge groups: selected={len(selected)} "
+            f"mode={drift_mode} agents={n_agents} reuse_items={len(reuses)}"
+        )
+        return stream[:n_q]
+
+    front = exposures[:half]
+    if len(front) < half:
+        front.extend(background(heads, half - len(front), len(front)))
+    back = reuses[:n_q - half]
+    if len(back) < n_q - half:
+        back.extend(background(tails, n_q - half - len(back), len(back)))
+    stream = (front[:half] + back[:n_q - half])[:n_q]
+    log.info(
+        f"Topic-shift bridge groups: selected={len(selected)} "
+        f"mode={drift_mode} agents={n_agents} reuse_items={len(reuses)}"
+    )
+    return stream
+
+
+def _build_agent_multistep_stream(queries, cfg):
+    """Real web-agent stream from Mind2Web action trajectories.
+
+    Each query is the agent state before the next action.  ``target_title`` is
+    the current action's target element (hidden B); the previous action target
+    in ``sf_titles`` is the visible resident anchor A.  Groups are formed by
+    repeated target elements across different tasks/web sessions.
+    """
+    rng = np.random.default_rng(SEED + 1307)
+    n_q = cfg['n_windows'] * cfg['window_size']
+    min_group = int(cfg.get('agent_min_group', 2))
+    reuse_per_group = int(cfg.get('agent_reuse_per_group', 6))
+    max_groups = int(cfg.get('agent_max_groups', max(160, n_q // 4)))
+    n_agents = int(cfg.get('n_agents', 8))
+
+    by_target = defaultdict(list)
+    for q in queries:
+        title = q.get('target_title')
+        if not title:
+            continue
+        if int(q.get('step_idx', 0)) <= 0:
+            continue
+        by_target[title].append(q)
+
+    groups = []
+    for title, qs in by_target.items():
+        unique = {}
+        for q in qs:
+            unique.setdefault(q.get('agent_task_id', q.get('qidx')), q)
+        vals = list(unique.values())
+        if len(vals) >= min_group:
+            groups.append((title, vals))
+
+    if not groups:
+        log.warning("No repeated Mind2Web action targets found; using random_static")
+        return _build_random_static_stream(queries, cfg)
+
+    groups.sort(key=lambda item: (-len(item[1]), item[0]))
+    selected = groups[: max(1, min(len(groups), max_groups))]
+    rng.shuffle(selected)
+
+    exposures, reuses = [], []
+    for gi, (title, qs) in enumerate(selected):
+        qs = list(qs)
+        rng.shuffle(qs)
+        group_id = f"{title}::{gi}"
+        first = _query_copy(
+            qs[0], role='exposure', group=group_id,
+            support_title=title, is_tail=True, seq=0)
+        first['route_hint'] = 'bridge'
+        first['agent_id'] = int(gi % n_agents)
+        exposures.append(first)
+        for j in range(reuse_per_group):
+            q = qs[(j + 1) % len(qs)]
+            item = _query_copy(
+                q, role='reuse', group=group_id,
+                support_title=title, is_tail=True, seq=j + 1)
+            item['route_hint'] = 'bridge'
+            item['agent_id'] = int((gi + j + 1) % n_agents)
+            reuses.append(item)
+
+    background_pool = [q for q in queries if q.get('target_title')]
+    if not background_pool:
+        background_pool = queries
+    background_idx = rng.integers(0, len(background_pool), size=n_q)
+    background = [
+        _query_copy(background_pool[int(i)], role='background',
+                    is_tail=True, seq=j)
+        for j, i in enumerate(background_idx)
+    ]
+    for j, item in enumerate(background):
+        item['agent_id'] = int(j % n_agents)
+
+    half = n_q // 2
+    front = exposures[:half]
+    if len(front) < half:
+        front.extend(background[:half - len(front)])
+    back = reuses[:n_q - half]
+    if len(back) < n_q - half:
+        start = max(0, half - len(front))
+        back.extend(background[start:start + (n_q - half - len(back))])
+    stream = (front[:half] + back[:n_q - half])[:n_q]
+    log.info(
+        f"Mind2Web agent groups: selected={len(selected)} "
+        f"agents={n_agents} reuse_items={len(reuses)}"
+    )
+    return stream
 
 
 
