@@ -20,7 +20,7 @@ DRIP            后续接 drift detector 的版本，目前不是主结论。
 | `cache_manager/__init__.py` | cache manager 公开导出层，不放算法逻辑 | 是 |
 | `cache_manager/core.py` | DRIPCore 主循环：观察窗口、路由 evidence、更新账本、调用 writer | 是 |
 | `cache_manager/policies.py` | 策略入口：`DRIPNOdetector` / `DRIP` | 是 |
-| `cache_manager/drip_config.py` | 唯一 active 参数表 `DRIPCoreConfig` | 是 |
+| `cache_manager/drip_config.py` | 参数表；主实验只看 `DRIPCoreConfig` | 是 |
 | `cache_manager/evidence_core.py` | direct evidence、replacement-aware writer、hidden diagnostic | 是 |
 | `cache_manager/dense_index.py` | query-visible dense candidate 检索 | 是 |
 | `cache_manager/evidence_router.py` | 判断 evidence 是 visible 还是 hidden | 是 |
@@ -44,13 +44,14 @@ cost_aware_config.py
 cache_manager/drip_config.py
 ```
 
-它同时服务：
+里面分成两个类：
 
 ```text
-DRIPNOdetector  当前主实验
-DRIP            后续 detector 版本
-hidden branch   appendix/diagnostic
+DRIPCoreConfig              当前主实验最小参数
+DRIPHiddenDiagnosticConfig  hidden / detector 旧分支参数
 ```
+
+日常调主实验先只看 `DRIPCoreConfig`。
 
 ## 当前主公式对应文件
 

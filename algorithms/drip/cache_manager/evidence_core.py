@@ -505,7 +505,8 @@ class EvidenceConditionedDRIPCore(DRIPCore):
         gamma = self.config.direct_gamma if gamma is None else float(gamma)
         top1_bonus = self.config.direct_top1_bonus if top1_bonus is None else float(top1_bonus)
         gold_pos = gold_pos or set()
-        bridge_direct = top1_bonus == 0.0 and gamma <= self.config.bridge_direct_gamma + 1e-12
+        bridge_direct_gamma = float(getattr(self.config, "bridge_direct_gamma", 0.2))
+        bridge_direct = top1_bonus == 0.0 and gamma <= bridge_direct_gamma + 1e-12
         updates = 0
         mass = 0.0
         gold_updates = 0

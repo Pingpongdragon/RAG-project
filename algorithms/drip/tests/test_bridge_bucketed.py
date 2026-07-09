@@ -10,7 +10,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from algorithms.drip.cache_manager import DRIPCore
+from algorithms.drip.cache_manager import DRIPCore, DRIPHiddenDiagnosticConfig
 
 
 class BucketedDRIPCore(DRIPCore):
@@ -163,7 +163,9 @@ def initial_kb():
 
 
 def run(core_cls, label, diagnose=False):
-    core = core_cls("DRIP", docs, doc_embs, title_to_idx)
+    core = core_cls(
+        "DRIP", docs, doc_embs, title_to_idx,
+        config=DRIPHiddenDiagnosticConfig())
     core.graph_index.set_pool_entities(pool_ents)
     core.graph_index.build()
     core.set_kb(initial_kb())

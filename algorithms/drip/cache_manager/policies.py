@@ -9,29 +9,18 @@
 ``evidence_core.py``。
 """
 
-from .drip_config import DRIPCoreConfig
+from .drip_config import DRIPCoreConfig, DRIPHiddenDiagnosticConfig
 from .evidence_core import EmbeddingOnlyDRIPCore, EvidenceConditionedDRIPCore
 
 
 def _default_config():
-    return DRIPCoreConfig(
-        gain_margin=1.35,
-        hidden_comparison_slots=4,
-        use_oracle_route_hint=True,
-    )
+    """DRIP / hidden diagnostic 使用完整参数表。"""
+    return DRIPHiddenDiagnosticConfig()
 
 
 def _no_detector_config():
     """当前主实验先不用 detector，只保留 demand/serve admission 信号。"""
-    return DRIPCoreConfig(
-        gain_margin=1.35,
-        hidden_comparison_slots=4,
-        use_oracle_route_hint=True,
-        use_drift_detector=False,
-        drift_write_boost=0.0,
-        drift_decay_boost=0.0,
-        drift_margin_discount=0.0,
-    )
+    return DRIPCoreConfig()
 
 
 class DRIPQueryHidden(EvidenceConditionedDRIPCore):

@@ -20,10 +20,13 @@ algorithms/drip/cache_manager/evidence_core.py
   direct evidence、hidden diagnostic、replacement-aware admission。
 
 algorithms/drip/cache_manager/drip_config.py
-  唯一 active 参数表：DRIPCoreConfig。
+  参数表：
+    DRIPCoreConfig = 当前主实验最小参数；
+    DRIPHiddenDiagnosticConfig = hidden / detector 旧分支参数。
 ```
 
 旧 `CostAwareDRIP` 文件已经从 active 目录移除；现在不再有两套 config。
+日常调主实验只看 `DRIPCoreConfig`，可以先忽略 `DRIPHiddenDiagnosticConfig`。
 
 ## 2. Max 目标
 
@@ -167,15 +170,18 @@ replacement_ema_decay
 tau_duplicate
 ```
 
-## 7. Detector 参数
+## 7. Hidden / detector 旧参数
 
 当前主实验 `DRIPNOdetector` 明确关闭 detector：
 
 ```text
 use_drift_detector=False
-drift_write_boost=0
-drift_decay_boost=0
-drift_margin_discount=0
+```
+
+bridge / GraphIndex / detector 参数都集中在：
+
+```text
+DRIPHiddenDiagnosticConfig
 ```
 
 `detection/multi_agent_drift.py` 仍保留，之后调好 detector 后可作为 `DRIP`

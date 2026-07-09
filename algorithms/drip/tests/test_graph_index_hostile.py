@@ -15,7 +15,7 @@ Run directly (no pytest needed):
 """
 import numpy as np
 
-from algorithms.drip.cache_manager import DRIPCoreConfig, GraphIndex
+from algorithms.drip.cache_manager import DRIPHiddenDiagnosticConfig, GraphIndex
 
 
 def _build(cfg, pool, ents):
@@ -27,7 +27,7 @@ def _build(cfg, pool, ents):
 
 def test_true_bridge_beats_high_degree_hub():
     """B (sharing a rare entity) must out-rank 50 docs sharing a hub entity."""
-    cfg = DRIPCoreConfig(
+    cfg = DRIPHiddenDiagnosticConfig(
         bridge_abs_threshold=0.01,
         bridge_relation_floor=0.01,
         bridge_relation_overlap_weight=0.5,
@@ -57,7 +57,7 @@ def test_true_bridge_beats_high_degree_hub():
 
 def test_firsthop_sim_gate_blocks_weak_first_hop():
     """A first hop below bridge_min_firsthop_sim must spawn no candidates."""
-    cfg = DRIPCoreConfig(
+    cfg = DRIPHiddenDiagnosticConfig(
         bridge_abs_threshold=0.01,
         bridge_relation_floor=0.01,
         bridge_relation_overlap_weight=0.5,
@@ -92,7 +92,7 @@ def test_absolute_threshold_suppresses_lone_weak_candidate():
     This guards against per-query max normalisation, which would have
     rescaled even a weak lone candidate up to bridge_alpha.
     """
-    cfg = DRIPCoreConfig(
+    cfg = DRIPHiddenDiagnosticConfig(
         bridge_abs_threshold=0.95,   # extreme: nothing should pass
         bridge_relation_floor=0.01,
         bridge_relation_overlap_weight=0.5,
@@ -116,7 +116,7 @@ def test_absolute_threshold_suppresses_lone_weak_candidate():
 
 def test_degree_one_entity_creates_no_bridge():
     """An entity appearing in only one doc cannot bridge to a second doc."""
-    cfg = DRIPCoreConfig(bridge_abs_threshold=0.01)
+    cfg = DRIPHiddenDiagnosticConfig(bridge_abs_threshold=0.01)
     pool = [
         {"doc_id": "A", "title": "Ada Lovelace",
          "text": "Ada Lovelace was a mathematician."},

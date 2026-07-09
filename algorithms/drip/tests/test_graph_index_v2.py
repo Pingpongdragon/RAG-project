@@ -1,11 +1,11 @@
 """Focused smoke tests for relation-aware GraphIndex bridge scoring."""
 import numpy as np
 
-from algorithms.drip.cache_manager import DRIPCoreConfig, GraphIndex
+from algorithms.drip.cache_manager import DRIPHiddenDiagnosticConfig, GraphIndex
 
 
 def test_relation_path_beats_generic_shared_entity():
-    cfg = DRIPCoreConfig(
+    cfg = DRIPHiddenDiagnosticConfig(
         bridge_abs_threshold=0.01,
         bridge_relation_floor=0.01,
         bridge_relation_overlap_weight=0.5,

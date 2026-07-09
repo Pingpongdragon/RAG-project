@@ -47,12 +47,12 @@ class DRIPCore(BaseStrategy):
         self.drift_detector = None
         self._drift_severity = 0.0
         self._last_drift_result = None
-        if self.config.use_drift_detector:
+        if getattr(self.config, "use_drift_detector", False):
             self.drift_detector = MultiAgentDriftDetector(
-                warmup_windows=self.config.drift_warmup_windows,
-                min_agent_queries=self.config.drift_min_agent_queries,
-                z_threshold=self.config.drift_z_threshold,
-                centroid_threshold=self.config.drift_centroid_threshold,
+                warmup_windows=getattr(self.config, "drift_warmup_windows", 3),
+                min_agent_queries=getattr(self.config, "drift_min_agent_queries", 2),
+                z_threshold=getattr(self.config, "drift_z_threshold", 2.0),
+                centroid_threshold=getattr(self.config, "drift_centroid_threshold", 0.25),
             )
 
     @property
@@ -78,7 +78,8 @@ class DRIPCore(BaseStrategy):
         self._credit_serve(q_kb, kb_idx)
 
         kb_pos = set(int(p) for p in kb_idx)
-        probe_k = max(self.config.direct_topk, self.config.bridge_step1_k)
+        bridge_step1_k = int(getattr(self.config, "bridge_step1_k", 3))
+        probe_k = max(self.config.direct_topk, bridge_step1_k)
         n_under = 0
         under_slots = []
         route_counts = {QUERY_VISIBLE: 0, QUERY_HIDDEN: 0}
@@ -104,7 +105,7 @@ class DRIPCore(BaseStrategy):
 
         for qi, query in enumerate(window_queries):
             dense = self.embedding_index.search_one(nqe[qi], probe_k)
-            first_hops = dense[: self.config.bridge_step1_k]
+            first_hops = dense[:bridge_step1_k]
             first_hop_entities = [
                 self.graph_index.doc_entities(pi)
                 for pi, sim in first_hops
@@ -169,7 +170,7 @@ class DRIPCore(BaseStrategy):
                 updates, mass, gold_updates, gold_mass = self._credit_dense(
                     first_hops,
                     kb_pos,
-                    gamma=self.config.bridge_direct_gamma,
+                    gamma=getattr(self.config, "bridge_direct_gamma", 0.2),
                     gold_pos=gold_pos,
                     top1_bonus=0.0,
                 )
@@ -276,18 +277,18 @@ class DRIPCore(BaseStrategy):
         self.drift_log.append(result.to_log(window_idx))
 
     def _effective_write_cap(self):
-        boost = 1.0 + self.config.drift_write_boost * self._drift_severity
+        boost = 1.0 + getattr(self.config, "drift_write_boost", 0.0) * self._drift_severity
         return int(max(0, np.ceil(float(_P.WRITE_CAP) * boost)))
 
     def _effective_demand_decay(self):
         decay = self.config.demand_decay * (
-            1.0 - self.config.drift_decay_boost * self._drift_severity
+            1.0 - getattr(self.config, "drift_decay_boost", 0.0) * self._drift_severity
         )
         return float(np.clip(decay, 0.0, 1.0))
 
     def _effective_gain_margin(self, base_margin=None):
         margin = self.config.gain_margin if base_margin is None else float(base_margin)
-        discount = 1.0 - self.config.drift_margin_discount * self._drift_severity
+        discount = 1.0 - getattr(self.config, "drift_margin_discount", 0.0) * self._drift_severity
         return float(max(0.05, margin * discount))
 
     def _observe(self, window_query_embs):
@@ -434,9 +435,9 @@ class DRIPCore(BaseStrategy):
 
         def priority(p):
             base = self.serve.get(p, 0.0) + self.demand.get(p, 0.0)
-            penalty = self.config.redundancy_penalty * max(
+            penalty = getattr(self.config, "redundancy_penalty", 0.0) * max(
                 0.0,
-                red_map.get(p, 0.0) - self.config.redundancy_threshold,
+                red_map.get(p, 0.0) - getattr(self.config, "redundancy_threshold", 1.0),
             )
             return base - penalty
 
