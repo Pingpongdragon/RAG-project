@@ -1,25 +1,101 @@
-# Motivation 2 — Static-Corpus Multi-Hop Diagnosis (Fig. 2)
+# Motivation 2 — Controlled Direct-Evidence Topic Drift and Cost Stress
 
-> 对应 `motivation.tex` 的 **Fig.~\ref{fig:motivation1}** —
-> *"Static-corpus diagnosis of query visibility."*
-> 论证 Intro §*Deconstructing the multi-hop bottleneck: Direct vs. bridge evidence*。
+> 当前 CostAwareDRIP direct-topic / cost-churn 实验命令以
+> [../COSTAWARE_RUNBOOK.md](../COSTAWARE_RUNBOOK.md#e2-controlled-direct-evidence-topic-drift)
+> 为准。本文件保留 Motivation 2 的历史叙事和旧实验背景。
 
-## 这一层在叙事中的角色（L2 / L3）
+This directory now carries the main controlled experiment layer for the
+cost-aware cache story:
 
-承接 `motivation_1`（Fig 1）的单跳校准，本层把 static-corpus 多跳拆成两个 regime，
-暴露 query-only 信号的边界，直接 motivate `DRIP-ESC` / `DRIP-ESC-Lease` 的 hidden-support completion：
+```text
+S2: controlled direct-evidence topic drift.
+S3: cost/churn stress under the same visible-evidence setting.
+```
 
-- **L2 — direct evidence（Fig 2a, HotpotQA）**：query embedding 与目标证据天然对齐，
-  `LRU` 已经不错（44.6%），`DRIP-Dense` 靠 soft demand propagation 再 **+9.7pp → 54.3%**。
-  这是 DRIP-Dense 的 *positive evidence*。
-- **L3 — bridge evidence（Fig 2b, 2WikiMultihopQA）**：证据链 `Q → A → B`，query 只暴露 A，
-  桥接文档 B 在 embedding 空间里离 query 很远 → 纯 query 信号触达不到。
-  `DRIP-Dense` 仅 **+7.3pp**，距 Oracle 仍差 **21pp**。这是引出 `DRIP-ESC` / `DRIP-ESC-Lease` 的 *negative evidence*。
+The old direct-vs-bridge diagnosis is still useful, but it is no longer the
+main claim. Hidden/bridge evidence should be read as an appendix diagnostic:
+it shows the boundary of direct-evidence caching, not the problem solved by the
+main method.
 
-> 当前 tex Fig 2 直接采用的两个数据文件（被 `../plotting/plot_motivation_v2.py` 的 `fig2()` 读取）：
-> `data/results_hotpotqa_comp_full_gradual_q2k.json`（2a）、
-> `data/results_2wiki_bc_entity_expand_gradual_q2k.json`（2b）→ 输出 `../paper_figs/intro/fig2_*.pdf`。
-> 下方 100×50 三数据集结果是更早的全景诊断证据，仍然保留。
+## Current Role in the Paper Logic
+
+Following the LogicRAG-style experimental pattern, Motivation 2 should answer
+three questions in order:
+
+1. **Does visible topic/evidence drift require active admission?**
+   Compare Static/LRU/FIFO/ARC/OnDemand against `DRIP-QueryVisible` and
+   `CostAwareDRIP`.
+2. **Does cost-aware admission improve the quality-cost frontier?**
+   Plot H2 quality against writes, evictions, and churn.
+3. **Which module matters?**
+   Use `CostAwareDRIP-NoDrift` and `CostAwareDRIP-NoChurn` as ablations.
+
+The main method here is:
+
+```text
+CostAwareDRIP
+```
+
+The historical hidden branch remains available:
+
+```text
+DRIP-QueryHidden
+```
+
+but should be reported as a diagnostic or future-work boundary unless the paper
+explicitly returns to hidden-evidence discovery.
+
+## Main Commands
+
+Direct-evidence topic drift:
+
+```bash
+cd /data/jyliu/RAG-project
+CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+  --datasets 2wikimultihopqa \
+  --expanded \
+  --q-type comparison \
+  --n-source 2000 \
+  --n-stream-queries 500 \
+  --n-windows 20 \
+  --window-size 25 \
+  --drift full_gradual \
+  --workload cluster_shift \
+  --retrieval graph \
+  --kb-budget 6250 \
+  --strategies ARC LRU FIFO DRIP-QueryVisible CostAwareDRIP CostAwareDRIP-NoDrift CostAwareDRIP-NoChurn OnDemandFetch Oracle \
+  --output costaware_2wiki_direct_topic_20w25_kb6250_graphret.json
+```
+
+Cost/churn stress:
+
+```text
+Repeat the same command with --kb-budget 1250, 2500, and 6250.
+Plot quality vs update_cost / evictions / churn_rate_mean.
+```
+
+Hidden diagnostic, not main:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+  --datasets 2wikimultihopqa \
+  --expanded \
+  --q-type bridge_comparison \
+  --n-source 2000 \
+  --n-stream-queries 500 \
+  --n-windows 20 \
+  --window-size 25 \
+  --drift full_gradual \
+  --workload cluster_shift \
+  --retrieval graph \
+  --kb-budget 6250 \
+  --strategies ARC LRU FIFO DRIP-QueryVisible DRIP-QueryHidden CostAwareDRIP Oracle \
+  --output costaware_hidden_diagnostic_20w25_kb6250_graphret.json
+```
+
+## Historical Direct-vs-Bridge Notes
 
 ---
 

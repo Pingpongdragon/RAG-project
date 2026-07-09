@@ -1,45 +1,14 @@
-"""Algorithm package exports.
+"""算法包导出。
 
-Cache baselines live under ``algorithms.cache``. Canonical DRIP components live
-under ``algorithms.drip``.
+现在 DRIP 对外只暴露两个策略入口，其他旧 prototype 不再从顶层导出。
 """
 
 from .drip import (
-    BaseDriftDetector,
-    DriftResult,
-    DriftLensDetector,
-    DRIPCore,
     DRIP,
-    EmbeddingIndex,
-    GraphIndex,
-    QUERY_HIDDEN,
-    QUERY_VISIBLE,
-    NoDetector,
-    QueryRouter,
-    RouteDecision,
-    ADWINDetector,
-    MMDDetector,
-    AgentDriftSignal,
-    MultiAgentDriftDetector,
-    MultiAgentDriftResult,
+    DRIPNOdetector,
 )
 
 __all__ = [
-    "DRIPCore",
     "DRIP",
-    "QueryRouter",
-    "EmbeddingIndex",
-    "GraphIndex",
-    "RouteDecision",
-    "QUERY_VISIBLE",
-    "QUERY_HIDDEN",
-    "BaseDriftDetector",
-    "DriftResult",
-    "DriftLensDetector",
-    "NoDetector",
-    "ADWINDetector",
-    "MMDDetector",
-    "AgentDriftSignal",
-    "MultiAgentDriftDetector",
-    "MultiAgentDriftResult",
+    "DRIPNOdetector",
 ]

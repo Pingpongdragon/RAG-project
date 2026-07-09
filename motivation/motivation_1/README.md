@@ -1,5 +1,9 @@
 # Motivation 1 — Single-Hop Calibration (Fig. 1)
 
+> 当前 CostAwareDRIP temporal 实验命令以
+> [../COSTAWARE_RUNBOOK.md](../COSTAWARE_RUNBOOK.md#e1-real-temporal-visible-drift)
+> 为准。本文件保留 Fig. 1 / StreamingQA 历史叙事背景。
+
 > 对应 `motivation.tex` 的 **Fig.~\ref{fig:streamingqa}** —
 > *"Single-hop calibration under natural demand drift."*
 > 论证 Intro §*A signal-source audit of existing policies*：在单跳 StreamingQA 上做

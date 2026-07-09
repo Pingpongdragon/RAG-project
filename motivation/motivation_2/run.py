@@ -37,6 +37,8 @@ _P.update(
     EDIT_BATCH=_mo2cfg.EDIT_BATCH, FIFO_BATCH=_mo2cfg.FIFO_BATCH,
     FETCH_TOP_K=_mo2cfg.FETCH_TOP_K, LOG_FIX_TOP_K=_mo2cfg.LOG_FIX_TOP_K,
     LOG_FIX_CAP=_mo2cfg.LOG_FIX_CAP, LOG_LAG_WINDOWS=_mo2cfg.LOG_LAG_WINDOWS,
+    AMAT_HIT_COST=_mo2cfg.AMAT_HIT_COST,
+    AMAT_MISS_PENALTY=_mo2cfg.AMAT_MISS_PENALTY,
 )
 from algorithms.cache.registry import STRATEGY_FACTORIES
 from utils import (compute_embeddings, build_query_stream,
@@ -280,20 +282,43 @@ def run_dataset(ds_name, cfg, strategies_to_run, drift_mode='sudden',
         s['kb_coverage_cumulative_h1'] = round(float(np.mean(cum_vals[:half])) * 100, 1)
         s['kb_coverage_cumulative_h2'] = round(float(np.mean(cum_vals[half:])) * 100, 1)
         s['kb_coverage_cumulative_per_window'] = [round(x * 100, 2) for x in cum_vals]
-        s['update_cost'] = strategies[name].update_cost
+        replacement_count = int(strategies[name].update_cost)
+        total_queries = max(1, int(actual_nw) * int(ws))
+        s['update_cost'] = replacement_count
+        s['cache_writes'] = replacement_count
+        s['replacement_count'] = replacement_count
+        s['cache_replacements'] = replacement_count
+        s['replacement_rate_per_query'] = round(
+            replacement_count / float(total_queries), 6)
+        s['replacement_rate_per_window'] = round(
+            replacement_count / float(max(1, actual_nw)), 3)
+        s['cache_churn_rate'] = round(
+            replacement_count / float(max(1, actual_nw * kb_budget)), 6)
+        s['cache_churn_rate_pct'] = round(
+            s['cache_churn_rate'] * 100, 3)
         s['maint_retrieval_cost'] = strategies[name].maint_retrieval_cost
         s['serve_retrieval_cost'] = strategies[name].serve_retrieval_cost
         s['retrieval_cost'] = strategies[name].retrieval_cost
         s['cost'] = strategies[name].cost
         if hasattr(strategies[name], 'last_admission'):
             s['last_admission'] = strategies[name].last_admission
+        if hasattr(strategies[name], 'cost_log'):
+            cost_log = strategies[name].cost_log
+            s['cost_log'] = cost_log
+            s['evictions'] = int(getattr(strategies[name], 'total_evictions', 0))
+            churn = [float(x.get('churn_rate', 0.0)) for x in cost_log]
+            budgets = [int(x.get('write_budget', 0)) for x in cost_log]
+            s['churn_rate_mean'] = round(float(np.mean(churn)), 6) if churn else 0.0
+            s['write_budget_mean'] = round(float(np.mean(budgets)), 2) if budgets else 0.0
         if hasattr(strategies[name], 'bridge_log'):
             s['bridge_log'] = strategies[name].bridge_log
         if hasattr(strategies[name], 'route_log'):
             s['route_log'] = strategies[name].route_log
         if hasattr(strategies[name], 'drift_log'):
             s['drift_log'] = strategies[name].drift_log
-        s.update(_summarise_residency_metrics(residency_metrics[name]))
+        residency_summary = _summarise_residency_metrics(residency_metrics[name])
+        s.update(residency_summary)
+        s.update(_arc_compatible_metric_fields(strategies[name], residency_summary))
         summary[name] = s
     return {
         'dataset': ds_name,
@@ -593,12 +618,50 @@ def _summarise_residency_metrics(metrics):
     }
 
 
+def _arc_compatible_metric_fields(strategy, residency_summary):
+    """Add ARC-compatible normalized AMAT to the result JSON.
+
+    Classic AMAT is ``T_hot + miss_rate * T_miss``:
+      1. hot-cache access costs ``AMAT_HIT_COST`` (default 1);
+      2. L2/full-index access costs ``AMAT_MISS_PENALTY`` (default 10);
+      3. serve-time full-index fetches, e.g. OnDemandFetch, correct the
+         inferred miss rate with the actual external fetch rate.
+
+    OnDemandFetch stores ``serve_retrieval_cost`` as fetched top-K document
+    count, so divide by ``FETCH_TOP_K`` to recover full-index fetch calls.
+    """
+    n_queries = int(residency_summary.get('has_answer_queries', 0))
+    if n_queries <= 0:
+        miss_rate = 0.0
+        serve_fetches_per_query = 0.0
+    else:
+        has_hits = float(residency_summary.get('has_answer_hits', 0))
+        miss_rate = 1.0 - has_hits / float(n_queries)
+        fetch_k = max(1, int(getattr(_P, 'FETCH_TOP_K', 1)))
+        serve_fetches = float(getattr(strategy, 'serve_retrieval_cost', 0)) / fetch_k
+        serve_fetches_per_query = serve_fetches / float(n_queries)
+
+    l2_accesses_per_query = max(float(miss_rate), float(serve_fetches_per_query))
+    hit_cost = float(getattr(_P, 'AMAT_HIT_COST', 1.0))
+    miss_penalty = float(getattr(_P, 'AMAT_MISS_PENALTY', 10.0))
+    amat = hit_cost + l2_accesses_per_query * miss_penalty
+    return {
+        'amat': round(float(amat), 3),
+        'amat_normalized': round(float(amat), 3),
+        'amat_hit_cost': round(float(hit_cost), 3),
+        'amat_miss_penalty': round(float(miss_penalty), 3),
+        'miss_rate': round(float(miss_rate), 6),
+        'l2_accesses_per_query': round(float(l2_accesses_per_query), 3),
+        'serve_fetches_per_query': round(float(serve_fetches_per_query), 3),
+    }
+
+
 def print_summary(all_results, strategies_to_run):
     ds_labels = {'hotpotqa': 'HotpotQA',
                  '2wikimultihopqa': '2WikiMultihopQA',
                  'musique': 'MuSiQue'}
     print("\n" + "=" * 115)
-    print("  Recall@K Under Query Distribution Drift")
+    print("  ARC-Compatible Cache Metrics Under Query Distribution Drift")
     print("=" * 115)
     for ds, res in all_results.items():
         cfg = res['config']
@@ -609,24 +672,24 @@ def print_summary(all_results, strategies_to_run):
               f"elapsed={res['elapsed']:.0f}s")
         print(f"{'_'*115}")
         hdr = (f"{'Strategy':>18s} |"
-               f" {'R@5 H1':>6s} {'R@5 H2':>6s} {'D':>5s} |"
-               f" {'Cov H1':>6s} {'Cov H2':>6s} {'D':>5s} |"
-               f" {'ColdQ':>6s} {'Reuse':>6s} |"
-               f" {'Writes':>6s} {'MaintR':>7s} {'ServeR':>7s}")
+               f" {'HasAns':>6s} {'AMAT':>6s} |"
+               f" {'R@5 H2':>6s} {'Cov H2':>6s} |"
+               f" {'Reuse':>6s} |"
+               f" {'Repl':>6s} {'MaintR':>7s} {'ServeR':>7s}")
         print(hdr)
         print("-" * len(hdr))
         for name in strategies_to_run:
             if name not in res['summary'] or name == 'Oracle':
                 continue
             s = res['summary'][name]
-            h1 = s['recall@5_h1']; h2 = s['recall@5_h2']
-            c1 = s['kb_coverage_h1']; c2 = s['kb_coverage_h2']
+            h2 = s['recall@5_h2']
+            c2 = s['kb_coverage_h2']
             line = (f"{name:>18s} |"
-                    f" {h1:>5.1f}% {h2:>5.1f}% {h2-h1:>+5.1f} |"
-                    f" {c1:>5.1f}% {c2:>5.1f}% {c2-c1:>+5.1f} |"
-                    f" {s.get('cold_fetches_per_query', 0.0):>6.2f}"
+                    f" {s.get('has_answer_rate', 0.0):>5.1f}%"
+                    f" {s.get('amat', 0.0):>6.2f} |"
+                    f" {h2:>5.1f}% {c2:>5.1f}% |"
                     f" {s.get('reuse_hit_rate', 0.0):>5.1f}% |"
-                    f" {s['update_cost']:>6d}"
+                    f" {s['replacement_count']:>6d}"
                     f" {s['maint_retrieval_cost']:>7d}"
                     f" {s['serve_retrieval_cost']:>7d}")
             print(line)
@@ -669,7 +732,11 @@ def generate_figures(all_results, strategies_to_run, suffix=''):
         'LogDrivenArrival': ('#BCBD22', ':',  'P'),
         'AgentRAGCache':    ('#111827', '-',  'o'),
         'AgentRAGCache_NoHub': ('#6B7280', '--', 'o'),
+        'CostAwareDRIP':    ('#2563EB', '-',  's'),
+        'CostAwareDRIP-NoDrift': ('#60A5FA', '--', 's'),
+        'CostAwareDRIP-NoChurn': ('#1D4ED8', '-.', 'P'),
         'DRIP':             ('#0F766E', '-',  '*'),
+        'DRIPNOdetector':   ('#2563EB', '-',  's'),
         'DRIP-QueryVisible': ('#14B8A6', '--', 'x'),
         'DRIP-QueryHidden':  ('#115E59', '-.', 'D'),
         'Oracle':           ('#D62728', '-',  None),

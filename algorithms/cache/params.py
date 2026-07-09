@@ -33,6 +33,11 @@ class _Params:
     # ── OnDemandFetch (CRAG) ──
     FETCH_TOP_K = 50        # = PROBE_TOPK
 
+    # ── ARC-compatible AMAT model ──
+    # AMAT = AMAT_HIT_COST + L2AccessRate * AMAT_MISS_PENALTY
+    AMAT_HIT_COST = 1.0
+    AMAT_MISS_PENALTY = 10.0
+
     # ── LogDrivenArrival ──
     LOG_FIX_TOP_K   = 50    # = PROBE_TOPK
     LOG_FIX_CAP     = 200   # = WRITE_CAP

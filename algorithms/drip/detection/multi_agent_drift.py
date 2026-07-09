@@ -1,16 +1,18 @@
-"""Multi-agent drift controller for DRIP cache management.
+"""DRIP 的多 agent 漂移 controller。
 
-The detector is deliberately a controller, not a query router.  It observes
-whether each agent's current query window is still aligned with the shared hot
-cache, then returns a drift severity used to tune cache update aggressiveness.
+这个 detector 只回答一个问题：
 
-Signals are derived only from query embeddings and current cache similarities:
+    当前窗口的 query 是否还被共享 hot cache 覆盖？
 
-  - unsupported_rate: fraction of queries below the cache-hit threshold;
-  - misalignment: one minus top-1 / top-k cache similarity;
-  - centroid_shift: movement of the agent's query centroid from its baseline.
+它是 controller，不是 query router；也不判断 visible/hidden evidence。
+输出的 ``severity`` 可以看成论文里的 ``rho_t``，用于调节 cache 更新激进程度。
 
-No qtype, route_hint, support labels, or answer labels are used.
+只使用可观察信号：
+  - unsupported_rate: 低于 cache-hit threshold 的 query 比例；
+  - top1/topk misalignment: query 和当前 KB 的相似度下降；
+  - centroid_shift: 当前 agent query centroid 相对历史 baseline 的移动。
+
+不使用 qtype、route_hint、support labels 或 answer labels。
 """
 from dataclasses import dataclass, field
 import math
@@ -26,7 +28,7 @@ GLOBAL_AGENT = "__global__"
 
 @dataclass
 class AgentDriftSignal:
-    """Drift signal for one global or per-agent window."""
+    """单个 agent 或 global stream 在一个窗口里的漂移信号。"""
 
     agent_id: str
     n_queries: int
@@ -56,7 +58,7 @@ class AgentDriftSignal:
 
 @dataclass
 class MultiAgentDriftResult:
-    """Aggregated controller output for one query window."""
+    """一个窗口的聚合 controller 输出。"""
 
     severity: float
     drifted: bool
@@ -84,7 +86,11 @@ class MultiAgentDriftResult:
 
 
 class _RunningScope:
-    """Running baseline for one agent or global stream."""
+    """某个 agent/global stream 的在线历史 baseline。
+
+    ``mean`` / ``std`` 记录 alignment feature 的历史分布；
+    ``centroid`` 记录 query embedding centroid 的历史方向。
+    """
 
     def __init__(self, feature_dim):
         self.n_windows = 0
@@ -93,6 +99,7 @@ class _RunningScope:
         self.centroid = None
 
     def update(self, features, centroid):
+        """用当前窗口更新在线均值/方差和 centroid baseline。"""
         features = np.asarray(features, dtype=np.float64)
         self.n_windows += 1
         delta = features - self.mean
@@ -120,10 +127,10 @@ class _RunningScope:
 
 
 class MultiAgentDriftDetector:
-    """Online detector for shared-cache multi-agent demand drift.
+    """共享 cache 的多 agent 在线漂移 detector。
 
-    The detector scores a current query window before adding it to the running
-    baseline.  It is intended to run once per cache-maintenance window.
+    detector 会先给当前窗口打分，再把该窗口加入历史 baseline。这样当前窗口
+    如果是异常窗口，不会在打分前污染 baseline。
     """
 
     FEATURE_DIM = 3
@@ -137,16 +144,23 @@ class MultiAgentDriftDetector:
         topk=3,
         agent_id_fields=("agent_id", "user_id", "agent", "user", "client_id"),
     ):
+        # warmup_windows: 前几个窗口只建立 baseline，不报告 drift。
         self.warmup_windows = int(warmup_windows)
+        # min_agent_queries: agent 单独成组所需的最少 query 数。
         self.min_agent_queries = int(min_agent_queries)
+        # z_threshold: alignment feature 超过历史均值多少标准差才算异常压力。
         self.z_threshold = float(z_threshold)
+        # centroid_threshold: query centroid 位移超过多少才产生额外漂移压力。
         self.centroid_threshold = float(centroid_threshold)
+        # topk: 计算 top-k alignment 时使用的 k。
         self.topk = int(topk)
+        # agent_id_fields: 从 query dict 中依次尝试读取 agent/user id 的字段名。
         self.agent_id_fields = tuple(agent_id_fields)
         self._scopes: Dict[str, _RunningScope] = {}
         self._last_result = None
 
     def agent_id(self, query):
+        """从 query dict 中提取 agent id；没有则归到 global stream。"""
         if isinstance(query, dict):
             for field in self.agent_id_fields:
                 value = query.get(field)
@@ -163,7 +177,7 @@ class MultiAgentDriftDetector:
         q_kb_sims: np.ndarray,
         queries: Sequence[object] = (),
     ) -> MultiAgentDriftResult:
-        """Score the current window and update running baselines."""
+        """计算当前窗口的 rho_t/severity，并更新历史 baseline。"""
 
         q = np.asarray(window_query_embs, dtype=np.float64)
         sims = np.asarray(q_kb_sims, dtype=np.float64)
@@ -188,6 +202,7 @@ class MultiAgentDriftDetector:
         for sig in agent_signals.values():
             if sig.warmup:
                 continue
+            # agent 占比越大，它的局部漂移越应该影响全局 severity。
             share = sig.n_queries / max(1.0, float(q.shape[0]))
             weight = min(1.0, 0.5 + share)
             severity = max(severity, weight * sig.severity)
@@ -203,6 +218,7 @@ class MultiAgentDriftDetector:
         return result
 
     def _empty_result(self):
+        """空窗口返回无漂移。"""
         empty = AgentDriftSignal(
             agent_id=GLOBAL_AGENT,
             n_queries=0,
@@ -223,6 +239,7 @@ class MultiAgentDriftDetector:
         )
 
     def _scope(self, agent_id):
+        """获取或创建某个 agent/global 的 running baseline。"""
         scope = self._scopes.get(agent_id)
         if scope is None:
             scope = _RunningScope(self.FEATURE_DIM)
@@ -230,6 +247,11 @@ class MultiAgentDriftDetector:
         return scope
 
     def _score_scope(self, agent_id, query_embs, q_kb_sims):
+        """对某个 agent/global scope 计算漂移强度。
+
+        features = [unsupported_rate, 1-mean_top1, 1-mean_topk]。
+        如果这些特征超过历史均值 + z_threshold * std，就产生 drift pressure。
+        """
         features, centroid, raw = self._features(query_embs, q_kb_sims)
         scope = self._scope(agent_id)
         warmup = scope.n_windows < self.warmup_windows or scope.centroid is None
@@ -256,6 +278,7 @@ class MultiAgentDriftDetector:
                 + 0.10 * excess[2]
                 + 0.10 * centroid_excess
             )
+            # 指数压缩到 [0,1]，避免极端 z-score 让 severity 爆掉。
             severity = float(np.clip(1.0 - math.exp(-pressure), 0.0, 1.0))
             drifted = severity > 0.0
             reason = self._reason(excess, centroid_excess)
@@ -279,6 +302,7 @@ class MultiAgentDriftDetector:
         )
 
     def _features(self, query_embs, q_kb_sims):
+        """把 query-cache 相似度矩阵转成 drift feature。"""
         sims = np.asarray(q_kb_sims, dtype=np.float64)
         top1 = sims.max(axis=1)
         k = min(max(1, self.topk), sims.shape[1])
@@ -308,6 +332,7 @@ class MultiAgentDriftDetector:
 
     @staticmethod
     def _centroid_shift(a, b):
+        """两个 centroid 之间的 cosine distance。"""
         a = np.asarray(a, dtype=np.float64)
         b = np.asarray(b, dtype=np.float64)
         denom = float(np.linalg.norm(a) * np.linalg.norm(b))
@@ -317,6 +342,7 @@ class MultiAgentDriftDetector:
 
     @staticmethod
     def _reason(excess, centroid_excess):
+        """返回最主要的 drift 原因，写入日志用于诊断。"""
         names = ["unsupported_rate", "top1_misalignment", "topk_misalignment"]
         values = list(float(v) for v in excess) + [float(centroid_excess)]
         labels = names + ["centroid_shift"]
@@ -326,6 +352,7 @@ class MultiAgentDriftDetector:
         return labels[best]
 
     def get_state(self):
+        """返回轻量状态，方便实验日志记录。"""
         return {
             "n_scopes": len(self._scopes),
             "warmup_windows": self.warmup_windows,

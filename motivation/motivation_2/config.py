@@ -9,6 +9,7 @@ SF_HIT_THRESH: a document is considered a "hit" for a supporting fact
 
 K_LIST: standard IR recall cutoffs used in HippoRAG evaluation.
 """
+import os
 from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────
@@ -96,6 +97,11 @@ FIFO_BATCH       = 40  # tight cap: ~LogDriven effective rate (200/5 windows); k
 # OnDemandFetch  (CRAG / Agent-style passive search, no KB update)
 FETCH_TOP_K    = PROBE_TOPK
 
+# ARC-compatible AMAT model:
+#   AMAT = AMAT_HIT_COST + L2AccessRate * AMAT_MISS_PENALTY
+AMAT_HIT_COST     = float(os.environ.get('AMAT_HIT_COST', '1.0'))
+AMAT_MISS_PENALTY = float(os.environ.get('AMAT_MISS_PENALTY', '10.0'))
+
 # LogDrivenArrival  (human-in-the-loop, fix previous window's failures)
 LOG_FIX_TOP_K  = PROBE_TOPK
 LOG_FIX_CAP    = WRITE_CAP
@@ -104,54 +110,32 @@ LOG_LAG_WINDOWS = 5    # human review cycle: apply fix every N windows
 
 # ── Strategy registry (display order, labels, plot styles) ──
 STRATEGY_ORDER = [
-    'Static', 'RandomFIFO', 'DocArrival', 'KnowledgeEdit',
-    'LRU', 'GPTCacheStyle', 'MemGPTStyle',
-    'OnDemandFetch', 'LogDrivenArrival', 'DRIP', 'Oracle',
+    'LRU', 'FIFO', 'TinyLFU',
+    'GPTCacheStyle', 'Proximity',
+    'AgentRAGCache',
+    'DRIPNOdetector', 'DRIP',
+    'Oracle',
 ]
 STRATEGY_LABELS = {
-    'Static':           'Static (no update)',
-    'RandomFIFO':       'Random FIFO (blind ingest)',
-    'DocArrival':       'Doc-Arrival (HippoRAG)',
-    'KnowledgeEdit':    'Knowledge-Edit (RECIPE)',
     'LRU':              'LRU Cache',
     'FIFO':             'FIFO Cache',
     'TinyLFU':          'TinyLFU Cache',
     'GPTCacheStyle':    'Semantic Cache (GPTCache)',
-    'MemGPTStyle':      'Importance-Weighted (MemGPT)',
-    'OnDemandFetch':    'On-Demand Fetch (CRAG)',
-    'LogDrivenArrival': 'Log-Driven (lagging)',
+    'Proximity':        'Proximity Cache',
     'AgentRAGCache':    'ARC (DRF+Hubness)',
-    'ARC':              'ARC (DRF+Hubness)',
-    'AgentRAGCache_NoHub': 'ARC w/o Hubness',
     'DRIP':             'DRIP (ours)',
-    'DRIP-Dense':       'DRIP-Dense',
-    'DRIP-ESC':         'DRIP-ESC',
-    'DRIP-ESC-Lease':   'DRIP-ESC-Lease',
-    'DRIP-QueryVisible': 'DRIP-QueryVisible',
-    'DRIP-QueryHidden':  'DRIP-QueryHidden',
+    'DRIPNOdetector':    'DRIP w/o Detector',
     'Oracle':           'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
-    'Static':           {'color': '#9CA3AF', 'marker': 'D', 'ls': '--'},
-    'RandomFIFO':       {'color': '#D97706', 'marker': 'v', 'ls': '-.'},
-    'DocArrival':       {'color': '#059669', 'marker': '^', 'ls': '-'},
-    'KnowledgeEdit':    {'color': '#7C3AED', 'marker': 's', 'ls': '-'},
     'LRU':              {'color': '#F59E0B', 'marker': 'v', 'ls': '-.'},
     'FIFO':             {'color': '#7C3AED', 'marker': '^', 'ls': '--'},
     'TinyLFU':          {'color': '#0284C7', 'marker': 'p', 'ls': ':'},
     'GPTCacheStyle':    {'color': '#0891B2', 'marker': 'P', 'ls': ':'},
-    'MemGPTStyle':      {'color': '#BE185D', 'marker': 'X', 'ls': '-.'},
-    'OnDemandFetch':    {'color': '#1E3A8A', 'marker': 'h', 'ls': ':'},
-    'LogDrivenArrival': {'color': '#9D174D', 'marker': '*', 'ls': '-.'},
+    'Proximity':        {'color': '#06B6D4', 'marker': 'h', 'ls': ':'},
     'AgentRAGCache':    {'color': '#111827', 'marker': 'o', 'ls': '-'},
-    'ARC':              {'color': '#111827', 'marker': 'o', 'ls': '-'},
-    'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o', 'ls': '--'},
     'DRIP':             {'color': '#0F766E', 'marker': '*', 'ls': '-'},
-    'DRIP-Dense':       {'color': '#14B8A6', 'marker': 'x', 'ls': '--'},
-    'DRIP-ESC':         {'color': '#0D9488', 'marker': 'D', 'ls': '-.'},
-    'DRIP-ESC-Lease':   {'color': '#115E59', 'marker': '*', 'ls': '-'},
-    'DRIP-QueryVisible': {'color': '#14B8A6', 'marker': 'x', 'ls': '--'},
-    'DRIP-QueryHidden':  {'color': '#115E59', 'marker': 'D', 'ls': '-.'},
+    'DRIPNOdetector':    {'color': '#2563EB', 'marker': 's', 'ls': '-'},
     'Oracle':           {'color': '#DC2626', 'marker': '*', 'ls': '--'},
 }
 

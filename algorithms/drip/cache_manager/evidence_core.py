@@ -1,13 +1,14 @@
-"""Evidence-conditioned bridge completion for DRIP.
+"""DRIP 的 evidence credit 与 replacement writer。
 
-The paper-facing path is intentionally small:
+这里实现 ``DRIPNOdetector`` 和 hidden diagnostic 共用的 evidence/writer：
 
-  1. Direct evidence keeps query-visible support warm.
-  2. ESC retrieves a missing bridge support B conditioned on resident/easy A.
-  3. Pair lease protects A and B together after bridge evidence appears.
+  1. direct evidence 维持 query-visible support；
+  2. replacement-aware writer 执行 ``Delta_t(c,v) > 0``；
+  3. hidden diagnostic 可选用 ESC 从 resident/easy anchor A 找 missing B；
+  4. bridge evidence 出现后，用 pair lease 一起保护 A+B。
 
-This module contains no random-walk graph propagation; bridge candidates are
-scored by anchor-conditioned semantic evidence plus soft entity consistency.
+这个模块没有 random-walk graph propagation；bridge candidate 的分数来自
+anchor-conditioned semantic evidence 和 soft entity consistency。
 """
 from collections import defaultdict
 import re
@@ -16,19 +17,19 @@ import numpy as np
 
 from algorithms.cache.params import PARAMS as _P
 
-from . import DRIPCore
+from .core import DRIPCore
 
 
 class EvidenceConditionedBridgeEvidence:
-    """Score hidden support B conditioned on a resident/easy anchor A.
+    """给 hidden support B 打分，条件是 resident/easy anchor A。
 
-    Paper formula:
+    诊断公式：
 
         E_ESC(q, B | A) = sim(Encode(q, A), B) * Link(A, B) * Cue(q, B)
 
-    ``Encode(q, A)`` is implemented either by a text encoder over a compact
-    prompt or by a normalized query/anchor embedding mixture when the encoder is
-    unavailable. Entity overlap is a soft consistency bonus, not a hard gate.
+    ``Encode(q, A)`` 优先用 text encoder 编码紧凑 prompt；如果 encoder 不可用，
+    则退化为 query embedding 和 anchor embedding 的归一化混合。实体重合是
+    soft consistency bonus，不是硬 gate。
     """
 
     K_ANCHORS = 5
@@ -174,7 +175,7 @@ class EvidenceConditionedBridgeEvidence:
                     self._target_cache[key] = vec
                     out[key] = vec
             except Exception:
-                # Keep experiments runnable in minimal/offline environments.
+                # 离线/最小环境下保持实验可运行：encoder 失败就退化到 embedding mixture。
                 self.use_text_encoder = False
         return out
 
@@ -308,10 +309,9 @@ class EvidenceConditionedBridgeEvidence:
 
 
 class EvidenceConditionedDRIPCore(DRIPCore):
-    """DRIP core for bridge support completion.
+    """用于 bridge support completion 的旧 DRIP core。
 
-    The implementation deliberately exposes only the conceptual knobs as
-    constants, not a long constructor surface:
+    这里只暴露概念性常量，避免构造函数参数过长：
 
         D_dir(d) <- dense/direct evidence
         D_brg(d) <- E_ESC(q, d) plus support-unit lease credit
@@ -357,6 +357,10 @@ class EvidenceConditionedDRIPCore(DRIPCore):
         self.pair_lease = {}
         self.direct_protect = {}
         self._current_kb_pos = set()
+        self._active_window_idx = -1
+        self._replacement_ema = 0.0
+        self.total_evictions = 0
+        self.cost_log = []
 
     @property
     def _pool_ents(self):
@@ -415,6 +419,7 @@ class EvidenceConditionedDRIPCore(DRIPCore):
         self._esc_installed = True
 
     def step(self, window_queries, window_query_embs, window_idx):
+        self._active_window_idx = int(window_idx)
         self._install_bridge_graph_evidence()
         return super().step(window_queries, window_query_embs, window_idx)
 
@@ -526,12 +531,22 @@ class EvidenceConditionedDRIPCore(DRIPCore):
                     gold_mass += score
             return updates, mass, gold_updates, gold_mass
 
-        for rank, (pi, sim) in enumerate(candidates):
+        # Direct evidence 采用 ARC-style rank/distance 加权：
+        # E(q,d) = sim(q,d) / (rank * (eps + 1 - sim(q,d))^alpha)。
+        # 保留 sim 因子是为了避免低相似度 tail candidate 只凭 rank 被过度加分。
+        alpha = max(0.0, float(getattr(self.config, "direct_evidence_alpha", 0.5)))
+        eps = max(1e-9, float(getattr(self.config, "direct_evidence_epsilon", 0.05)))
+        for rank, (pi, sim) in enumerate(candidates, start=1):
             pi = int(pi)
             if pi in kb_pos:
                 continue
-            score = gamma * max(0.0, float(sim))
-            if rank == 0:
+            sim = max(0.0, float(sim))
+            if sim <= 0.0:
+                continue
+            distance = eps + max(0.0, 1.0 - sim)
+            evidence = sim / (float(rank) * (distance ** alpha))
+            score = gamma * evidence
+            if rank == 1:
                 score += top1_bonus
             if score <= 0.0:
                 continue
@@ -622,12 +637,61 @@ class EvidenceConditionedDRIPCore(DRIPCore):
     def _resident_priority(self, kb_idx, kb_emb):
         return self._priority_for_route(kb_idx, "direct")
 
+    def _replacement_pressure(self, budget):
+        """最近 replacement 压力 phi_t。
+
+        用 EMA(replacements/window) 除以本窗口可用 write budget。这样不同实验的
+        window size / KB size 不同，也能得到可比较的 0 附近压力值。
+        """
+        scale = max(1.0, float(budget or _P.WRITE_CAP or 1))
+        return float(min(4.0, self._replacement_ema / scale))
+
+    def _replacement_penalty(self, budget):
+        """统一替换惩罚 C_t = lambda_replace * (1 + mu * phi_t)。"""
+        base = max(0.0, float(getattr(self.config, "replacement_cost", 0.25)))
+        mu = max(0.0, float(getattr(self.config, "replacement_pressure_mu", 1.0)))
+        return base * (1.0 + mu * self._replacement_pressure(budget))
+
+    def _finalize_write_stats(self, stats, budget, replacement_penalty, net_gains):
+        writes = int(stats.get("writes", 0))
+        decay = float(getattr(self.config, "replacement_ema_decay", 0.75))
+        decay = float(np.clip(decay, 0.0, 1.0))
+        pressure_before = self._replacement_pressure(budget)
+        self._replacement_ema = decay * self._replacement_ema + (1.0 - decay) * writes
+
+        kb_size = max(1, len(self.kb))
+        avg_net_gain = float(np.mean(net_gains)) if net_gains else 0.0
+        stats.update({
+            "evictions": writes,
+            "replacement_pressure": round(float(pressure_before), 6),
+            "replacement_penalty": round(float(replacement_penalty), 6),
+            "avg_net_gain": round(avg_net_gain, 6),
+            "churn_rate": round(float(writes / kb_size), 6),
+        })
+        self.total_evictions += writes
+        self.cost_log.append({
+            "w": int(getattr(self, "_active_window_idx", -1)),
+            "write_budget": int(budget),
+            "writes": writes,
+            "evictions": writes,
+            "churn_rate": stats["churn_rate"],
+            "replacement_pressure": stats["replacement_pressure"],
+            "replacement_penalty": stats["replacement_penalty"],
+            "avg_net_gain": stats["avg_net_gain"],
+            "direct_writes": int(stats.get("direct_writes", 0)),
+            "bridge_writes": int(stats.get("bridge_writes", 0)),
+        })
+        return stats
+
     def _write(self, kb_idx, kb_emb, budget, gold_pos=None):
         gold_pos = gold_pos or set()
         hidden_pos = getattr(self, "_window_hidden_pos", set())
         budget = int(budget)
+        net_gains = []
+        replacement_penalty = self._replacement_penalty(budget)
         if budget <= 0:
-            return self._empty_write_stats()
+            return self._finalize_write_stats(
+                self._empty_write_stats(), budget, replacement_penalty, net_gains)
 
         kb_pos = set(int(p) for p in kb_idx)
         direct_candidates = sorted(
@@ -639,7 +703,8 @@ class EvidenceConditionedDRIPCore(DRIPCore):
             reverse=True,
         )
         if not direct_candidates and not bridge_candidates:
-            return self._empty_write_stats()
+            return self._finalize_write_stats(
+                self._empty_write_stats(), budget, replacement_penalty, net_gains)
 
         direct_budget = budget if direct_candidates else 0
         bridge_budget = 0
@@ -705,7 +770,12 @@ class EvidenceConditionedDRIPCore(DRIPCore):
                 if cp in kb_pos:
                     continue
                 victim = int(victims[victim_i])
-                if float(value) <= margin * priority.get(victim, 0.0):
+                net_gain = (
+                    float(value)
+                    - margin * priority.get(victim, 0.0)
+                    - replacement_penalty
+                )
+                if net_gain <= 0.0:
                     break
                 duplicate = float((self.doc_embs[cp] @ current_kb_emb().T).max())
                 if duplicate > self.config.tau_duplicate:
@@ -721,6 +791,7 @@ class EvidenceConditionedDRIPCore(DRIPCore):
                     bridge_writes += 1
                 else:
                     direct_writes += 1
+                net_gains.append(float(net_gain))
 
         admit_from(
             direct_candidates,
@@ -740,7 +811,7 @@ class EvidenceConditionedDRIPCore(DRIPCore):
         all_candidates = {p for _, p in direct_candidates} | {p for _, p in bridge_candidates}
         gold_candidates = sum(1 for p in all_candidates if p in gold_pos)
         hidden_candidates = sum(1 for p in all_candidates if p in hidden_pos)
-        return {
+        stats = {
             "writes": int(writes),
             "candidates": int(len(all_candidates)),
             "gold_candidates": int(gold_candidates),
@@ -759,6 +830,8 @@ class EvidenceConditionedDRIPCore(DRIPCore):
             "pair_lease_docs": int(len(self.pair_lease)),
             "pair_lease_mass": float(sum(self.pair_lease.values())),
         }
+        return self._finalize_write_stats(
+            stats, budget, replacement_penalty, net_gains)
 
     @staticmethod
     def _empty_write_stats():
@@ -784,7 +857,7 @@ class EvidenceConditionedDRIPCore(DRIPCore):
 
 
 class EmbeddingOnlyDRIPCore(EvidenceConditionedDRIPCore):
-    """Ablation: same writer/router, no hidden-support ESC evidence."""
+    """消融：同样 writer/router，但不使用 hidden-support ESC evidence。"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(

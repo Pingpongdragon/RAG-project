@@ -1,4 +1,46 @@
-# DRIP-Dense (QDC) — Conditions for Effectiveness
+# Motivation 1 — Real Temporal Visible Drift and Recency Boundary
+
+This directory is no longer the main proof that hidden evidence must be solved.
+Its role in the current paper logic is narrower and cleaner:
+
+```text
+S1: real temporal visible evidence drift.
+```
+
+StreamingQA/TREC-COVID style streams test whether a hot RAG cache can follow a
+real time-ordered evidence distribution. Because the required evidence is
+query-visible and temporally local, LRU/FIFO can be very strong. That is the
+expected boundary condition, not a failure of the setup.
+
+Read this layer like the first experimental layer in a LogicRAG-style paper:
+
+1. establish a real-world failure/boundary of vanilla RAG cache management;
+2. show which simple baseline is already strong;
+3. define the cost-aware objective for the next layer.
+
+The relevant new method is `CostAwareDRIP`, not the old hidden-support branch.
+Compare it on quality-cost tradeoff:
+
+```text
+has_answer_h2 / support_coverage_h2 / recall@5_h2
+vs.
+update_cost / evictions / churn_rate_mean / maint_retrieval_cost
+```
+
+Recommended main command:
+
+```bash
+cd /data/jyliu/RAG-project
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_1/run.py \
+  --datasets streamingqa_temporal \
+  --drift temporal \
+  --n-windows 50 \
+  --window-size 100 \
+  --strategies ARC LRU FIFO DRIP-QueryVisible CostAwareDRIP CostAwareDRIP-NoDrift OnDemandFetch Oracle \
+  --output costaware_streamingqa_temporal_50w100.json
+```
+
+## Historical Notes: DRIP-Dense (QDC) Conditions for Effectiveness
 
 QDC shows a **clear advantage over all offline baselines** when all three conditions below hold simultaneously.
 

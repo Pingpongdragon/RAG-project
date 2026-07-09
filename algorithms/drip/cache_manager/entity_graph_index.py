@@ -1,4 +1,4 @@
-"""GraphIndex for DRIP cache manager."""
+"""DRIP hidden-support diagnostic 使用的轻量 GraphIndex。"""
 from collections import Counter, defaultdict
 import math
 import re
@@ -7,11 +7,10 @@ import numpy as np
 
 
 class GraphIndex:
-    """Lightweight evidence graph with relation-aware bridge scoring.
+    """带 relation-aware bridge scoring 的轻量 evidence graph。
 
-    The graph is still intentionally small: document/entity postings plus
-    query-aware local text evidence.  It is not a global KG and it does not call
-    an LLM in the hot path.
+    这里不是全局 KG，也不会在 hot path 调 LLM；只维护 doc/entity postings，
+    再结合 query-aware local text evidence 给 hidden support B 打分。
     """
 
     _STOPWORDS = {
@@ -103,7 +102,7 @@ class GraphIndex:
         return self.doc_to_ents.get(int(pi), ())
 
     def graph_evidence(self, query, first_hops, kb_pos, kb_emb, doc_embs):
-        """Return ``[(B, E_graph(q,B))]`` for one query."""
+        """对一个 query 返回 ``[(B, E_graph(q,B))]`` bridge candidates。"""
         self.build()
         self.last_stats = {
             "bridge_raw_paths": 0,

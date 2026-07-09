@@ -1,9 +1,9 @@
-"""EmbeddingIndex for DRIP cache manager."""
+"""DRIP cache manager 使用的 dense embedding index。"""
 import numpy as np
 
 
 class EmbeddingIndex:
-    """Dense semantic index for direct candidates."""
+    """用于 query-visible direct candidate 的语义检索。"""
 
     def __init__(self, doc_embs):
         self.doc_embs = doc_embs

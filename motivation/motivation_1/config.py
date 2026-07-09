@@ -81,6 +81,8 @@ DATASET_CONFIGS = {
 WRITE_CAP        = 200
 PROBE_TOPK       = 50
 FETCH_TOP_K      = PROBE_TOPK   # OnDemandFetch per-query pool fetch width
+AMAT_HIT_COST    = float(os.environ.get('AMAT_HIT_COST', '1.0'))
+AMAT_MISS_PENALTY = float(os.environ.get('AMAT_MISS_PENALTY', '10.0'))
 
 DOC_ARRIVE       = 80
 DOC_ADD_CAP      = WRITE_CAP
@@ -88,50 +90,32 @@ EDIT_BATCH       = 8           # ~2% of KB(400) per window; fairer RECIPE modeli
 QD_TOP_K         = PROBE_TOPK
 QD_REPLACE_CAP   = WRITE_CAP
 STRATEGY_ORDER = [
-    'Static', 'DocArrival', 'KnowledgeEdit',
-    'LRU', 'GPTCacheStyle', 'MemGPTStyle', 'TemporalAware', 'RecencyTTL',
-    'OnDemandFetch',
-    'DRIP', 'Oracle',
+    'LRU', 'FIFO', 'TinyLFU',
+    'GPTCacheStyle', 'Proximity',
+    'AgentRAGCache',
+    'DRIPNOdetector', 'DRIP',
+    'Oracle',
 ]
 STRATEGY_LABELS = {
-    'Static':             'Static (no update)',
-    'DocArrival':         'Doc-Arrival (HippoRAG/LightRAG)',
-    'KnowledgeEdit':      'Knowledge-Edit (RECIPE)',
     'LRU':                'LRU Cache',
     'FIFO':               'FIFO Cache',
     'TinyLFU':            'TinyLFU Cache',
     'GPTCacheStyle':      'Semantic Cache (GPTCache)',
-    'MemGPTStyle':        'Importance-Weighted (MemGPT)',
-    'TemporalAware':      'Temporal-Aware Cache (Temporal-RAG)',
-    'RecencyTTL':         'Recency-TTL (oracle timestamp)',
-    'OnDemandFetch':      'On-Demand Fetch (per-query)',
+    'Proximity':          'Proximity Cache',
     'AgentRAGCache':      'ARC (DRF+Hubness)',
-    'ARC':                'ARC (DRF+Hubness)',
-    'AgentRAGCache_NoHub': 'ARC w/o Hubness',
-    'RoutedCache':        'Routed Cache (ours)',
-    'DRIP-QueryVisible':  'DRIP-Visible (ours)',
-    'DRIP-QueryHidden':   'DRIP-Hidden (ours)',
     'DRIP':               'DRIP (ours)',
+    'DRIPNOdetector':     'DRIP w/o Detector',
     'Oracle':             'Oracle (upper bound)',
 }
 STRATEGY_STYLES = {
-    'Static':             {'color': '#9CA3AF', 'marker': 'D',  'ls': '--'},
-    'DocArrival':         {'color': '#059669', 'marker': '^',  'ls': '-'},
-    'KnowledgeEdit':      {'color': '#7C3AED', 'marker': 's',  'ls': '-'},
     'LRU':                {'color': '#D97706', 'marker': 'v',  'ls': '-.'},
     'FIFO':               {'color': '#7C3AED', 'marker': '^',  'ls': '--'},
     'TinyLFU':            {'color': '#0284C7', 'marker': 'p',  'ls': ':'},
     'GPTCacheStyle':      {'color': '#0891B2', 'marker': 'P',  'ls': ':'},
-    'MemGPTStyle':        {'color': '#BE185D', 'marker': 'X',  'ls': '-.'},
-    'TemporalAware':      {'color': '#2563EB', 'marker': 'o',  'ls': '-.'},
-    'RecencyTTL':         {'color': '#1E40AF', 'marker': 'h',  'ls': ':'},
+    'Proximity':          {'color': '#06B6D4', 'marker': 'h',  'ls': ':'},
     'AgentRAGCache':      {'color': '#111827', 'marker': 'o',  'ls': '-'},
-    'ARC':                {'color': '#111827', 'marker': 'o',  'ls': '-'},
-    'AgentRAGCache_NoHub': {'color': '#6B7280', 'marker': 'o',  'ls': '--'},
-    'RoutedCache':        {'color': '#2563EB', 'marker': 's',  'ls': '-'},
-    'DRIP-QueryVisible':  {'color': '#0F766E', 'marker': '*',  'ls': '-'},
-    'DRIP-QueryHidden':   {'color': '#0D9488', 'marker': 'X',  'ls': '-.'},
     'DRIP':               {'color': '#0F766E', 'marker': '*',  'ls': '-'},
+    'DRIPNOdetector':     {'color': '#2563EB', 'marker': 's',  'ls': '-'},
     'Oracle':             {'color': '#DC2626', 'marker': '*',  'ls': '--'},
 }
 

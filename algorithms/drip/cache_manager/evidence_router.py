@@ -1,4 +1,4 @@
-"""Query visibility router for the DRIP cache manager."""
+"""DRIP cache manager 的 query evidence visibility router。"""
 from dataclasses import dataclass
 import re
 
@@ -19,12 +19,11 @@ class RouteDecision:
 
 
 class QueryRouter:
-    """Classify whether missing evidence is visible from the query.
+    """判断缺失 evidence 是 query-visible 还是 query-hidden。
 
-    The production path uses only query text, dense similarities against the
-    current cache, and coarse first-hop entity sets. Dataset fields such as
-    ``qtype`` and ``route_hint`` are ignored unless an oracle ablation enables
-    ``use_oracle_route_hint`` in the config.
+    正常路径只使用 query 文本、当前 cache 相似度、first-hop entity set。
+    数据集里的 ``qtype`` / ``route_hint`` 默认不参与决策，只有 oracle
+    route 消融显式打开 ``use_oracle_route_hint`` 时才使用。
     """
 
     _COMPARISON_CUES = (
@@ -93,7 +92,7 @@ class QueryRouter:
         return RouteDecision(QUERY_VISIBLE, target_slots, "visible_dense_fallback")
 
     def _route_from_oracle_hint(self, query):
-        """Use qtype/route_hint only in an explicit oracle-router ablation."""
+        """只在 oracle-router 消融中使用 qtype/route_hint。"""
 
         if not getattr(self.config, "use_oracle_route_hint", False):
             return None

@@ -1,66 +1,61 @@
-# algorithms/ - cache policies and detector utilities
+# algorithms/
 
-This directory now has one canonical DRIP implementation.
+这里放所有 cache policy 与 DRIP 方法。
 
-## Canonical Method
+## 当前 DRIP 方法
 
-The paper method is the DRIP cache manager support-cache policy:
+当前主实验入口是：
 
-- `algorithms/drip/cache_manager/__init__.py` - DRIPCore cache manager.
-- `algorithms/drip/detection/multi_agent_drift.py` - multi-agent drift detector/controller.
-- `algorithms/drip/cache_manager/query_router.py` - query-visible/query-hidden route decisions.
-- `algorithms/drip/cache_manager/embedding_index.py` - dense/direct evidence.
-- `algorithms/drip/cache_manager/graph_index.py` - entity metadata/index used by hidden-support completion.
-- `algorithms/drip/cache_manager/support_completion.py` - hidden-support completion and pair lease.
-- `algorithms/drip/cache_manager/config.py` - DRIP cache-manager hyperparameters.
+```text
+DRIPNOdetector
+```
 
-Experiments should instantiate DRIP through:
+含义：不依赖 drift detector，只使用 query-visible direct evidence、
+serve/demand 账本和 replacement-aware admission。
+
+实验从统一 registry 取策略：
 
 ```python
 from algorithms.cache.registry import STRATEGY_FACTORIES
-strategy = STRATEGY_FACTORIES["DRIP"](doc_pool, doc_embs, title_to_idx)
+
+strategy = STRATEGY_FACTORIES["DRIPNOdetector"](
+    doc_pool, doc_embs, title_to_idx
+)
 ```
 
-## Retired Cache/Ours Implementations
+## DRIP 文件
 
-The standalone direct-demand baseline has been folded into DRIP's direct path.
-Old bridge, direct-only, and detector-wrapped variants were removed to avoid
-confusing them with the current DRIP path. Use `STRATEGY_FACTORIES["DRIP"]` for
-the paper method.
+DRIP 代码在 `algorithms/drip/`。当前文件分工见：
 
-## Detector Library
+```text
+algorithms/drip/README.md
+algorithms/drip/PARAMETER_MAPPING.md
+```
 
-`algorithms/drip/` also keeps detector interfaces and detector baselines:
+核心文件：
 
-- `algorithms/drip/interfaces.py`
-- `algorithms/drip/detection/multi_agent_drift.py`
-- `algorithms/drip/detection/drift_detector.py`
-- `algorithms/drip/detection/baseline_detectors.py`
+```text
+algorithms/drip/cache_manager/core.py
+  cache manager 主窗口循环。
 
-The old `DRIPPipeline`, `KBUpdateAgent`, `DRIPKBCurator`, interest-model
-pipeline, and cache/ours variants were removed because they represented retired
-or simplified designs.
+algorithms/drip/cache_manager/policies.py
+  DRIP / DRIPNOdetector 策略入口。
+
+algorithms/drip/cache_manager/evidence_core.py
+  direct evidence、hidden diagnostic、replacement writer。
+
+algorithms/drip/cache_manager/drip_config.py
+  当前唯一 active config。
+```
 
 ## Baselines
 
-Cache baselines live under `algorithms/cache/`:
-
-- `recency/` — LRU, FIFO, temporal variants.
-- `frequency/` — TinyLFU.
-- `semantic/` — GPTCache-style semantic cache.
-- `paradigm_ref/` — Static, DocArrival, KnowledgeEdit, AgentRAGCache, etc.
-- `oracle/` — Belady-style upper bound.
-
-## Current DRIP Algorithm
-
-The current algorithm is:
+cache baseline 在 `algorithms/cache/`：
 
 ```text
-Detect multi-agent query-cache drift severity
-  -> adjust demand decay, write cap, and admission margin
-  -> route each query as QUERY_VISIBLE or QUERY_HIDDEN
-  -> accumulate dense or hidden-support evidence into demand
-  -> maintain serve evidence for resident documents
-  -> protect completed A+B support pairs with pair lease
-  -> admit candidate c over resident e iff demand gain beats support priority
+recency/        LRU, FIFO, temporal variants
+frequency/      TinyLFU
+semantic/       GPTCache-style / Proximity
+paradigm_ref/   AgentRAGCache 等参考方法
+oracle/         Belady-style upper bound
 ```
