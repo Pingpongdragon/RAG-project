@@ -139,8 +139,8 @@ DRIP reduces repeated cold-tier work after reasoning/retrieval exposes reusable 
 | Routing | `algorithms/drip/cache_manager/query_router.py` | Keep | Router is not the bottleneck in 2Wiki rerun. |
 | Config knobs | `algorithms/drip/cache_manager/config.py` | Extend | Add relation/path thresholds and caps. |
 | Logs | `bridge_log`, `route_log`, `last_admission` | Extend | Add candidate precision diagnostics. |
-| Bench runner | `motivation/motivation_2/run.py` | Extend | Already records bridge and route logs. |
-| Multi-hop loaders | `motivation/motivation_2/loaders.py` | Extend | Existing HotpotQA, 2Wiki, MuSiQue loaders are enough for primary eval. |
+| Bench runner | `experiments/hidden/run.py` | Extend | Already records bridge and route logs. |
+| Multi-hop loaders | `experiments/hidden/loaders.py` | Extend | Existing HotpotQA, 2Wiki, MuSiQue loaders are enough for primary eval. |
 
 ## 3. Current Formula and Failure
 
@@ -551,7 +551,7 @@ Files:
 
 - `algorithms/drip/cache_manager/graph_index.py`
 - `algorithms/drip/cache_manager/__init__.py`
-- `motivation/motivation_2/run.py`
+- `experiments/hidden/run.py`
 
 Tasks:
 
@@ -626,8 +626,8 @@ StreamingQA and HotpotQA direct do not regress beyond a small tolerance.
 
 Files:
 
-- `motivation/motivation_2/loaders.py`
-- `motivation/motivation_2/run.py`
+- `experiments/hidden/loaders.py`
+- `experiments/hidden/run.py`
 - optional `motivation/motivation_3_locom_cache/`
 
 Tasks:
@@ -747,7 +747,7 @@ python -m compileall -q algorithms/drip/cache_manager algorithms/cache/registry.
 Primary bridge run:
 
 ```bash
-python motivation/motivation_2/run.py \
+python experiments/hidden/run.py \
   --expanded \
   --datasets 2wikimultihopqa \
   --q-type bridge_comparison \
@@ -761,7 +761,7 @@ python motivation/motivation_2/run.py \
 Regression run:
 
 ```bash
-python motivation/motivation_2/run.py \
+python experiments/hidden/run.py \
   --expanded \
   --datasets hotpotqa \
   --q-type comparison \

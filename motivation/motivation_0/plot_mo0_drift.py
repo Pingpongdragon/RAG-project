@@ -1,9 +1,8 @@
-"""
-Motivation 0: LLM 用户查询主题随时间显著漂移
+"""Draw the first motivation figure: aggregate domain mixtures can change.
 
-(a) WildChat-1M 真实用户 query 的 topic 分布变化 (2023.4-2024.4)
-(b) 应用需求重加权示意图
-底部共享: 月间 Jensen-Shannon Divergence
+The figure preserves the original WildChat and Google Trends evidence.  It is
+descriptive evidence for a realistic operating condition, not a claim that
+every RAG deployment must drift.
 """
 import json
 import re
@@ -212,7 +211,8 @@ def _reorder_topics(topics, prop, preferred_order):
 
 
 def _stacked_share_panel(ax, x, topics, prop, title, xlabel, x_pad=1.6,
-                         label_threshold=6.0, min_gap=6.2, force_labels=None):
+                         label_threshold=6.0, min_gap=6.2, force_labels=None,
+                         right_pad=3.0):
     colors = [AREA_COLORS.get(topic, '#999999') for topic in topics]
     values = prop.T * 100.0
     ax.stackplot(x, values, colors=colors, alpha=0.94, linewidth=0)
@@ -243,17 +243,29 @@ def _stacked_share_panel(ax, x, topics, prop, title, xlabel, x_pad=1.6,
     for topic, y, color, share in placed:
         topic_label = topic.replace('AI ', '').replace('Creative Writing', 'Creative writing')
         ax.plot([x[-1], label_x - 0.12], [y, y], color=color, lw=1.2, alpha=0.95, zorder=4)
-        ax.text(label_x, y, topic_label, fontsize=8.6, color=color,
+        ax.text(label_x, y, topic_label, fontsize=8.0, color=color,
                 fontweight='bold', ha='left', va='center', zorder=5)
 
     ax.set_ylabel('Share (%)')
     ax.set_ylim(0, 100)
-    ax.set_xlim(x[0], x[-1] + x_pad + 0.9)
-    ax.set_xlabel(xlabel, fontsize=9.8)
-    ax.set_title(title, fontsize=12.5, fontweight='bold', pad=12)
+    ax.set_xlim(x[0], x[-1] + x_pad + right_pad)
+    ax.set_xlabel(xlabel, fontsize=8.5)
+    ax.set_title(title, fontsize=8.5, fontweight='bold', pad=5)
     ax.grid(axis='y', alpha=0.22)
     ax.grid(axis='x', alpha=0.0)
     ax.set_axisbelow(True)
+
+
+def _set_month_ticks(ax, months, stride):
+    """Label the data region with calendar months, excluding annotation space."""
+    tick_idx = list(range(0, len(months), stride))
+    if tick_idx[-1] != len(months) - 1:
+        if len(months) - 1 - tick_idx[-1] < stride / 2:
+            tick_idx[-1] = len(months) - 1
+        else:
+            tick_idx.append(len(months) - 1)
+    labels = [pd.to_datetime(months[idx]).strftime("%b '%y") for idx in tick_idx]
+    ax.set_xticks(tick_idx, labels)
 
 
 def make_figure(wc, gt):
@@ -262,17 +274,19 @@ def make_figure(wc, gt):
 
     setup_style()
     plt.rcParams.update({
-        'font.size': 11, 'axes.titlesize': 12.5, 'axes.labelsize': 11,
-        'xtick.labelsize': 9.5, 'ytick.labelsize': 9.5,
-        'legend.fontsize': 9, 'axes.linewidth': 1.0,
+        'font.family': 'DejaVu Sans',
+        'font.size': 8.5, 'axes.titlesize': 8.5, 'axes.labelsize': 8.5,
+        'xtick.labelsize': 8.0, 'ytick.labelsize': 8.0,
+        'legend.fontsize': 8.0, 'axes.linewidth': 0.8,
         'grid.linewidth': 0.6, 'grid.alpha': 0.4, 'grid.color': '#D3D3D3',
         'grid.linestyle': '--',
         'lines.linewidth': 2.0, 'lines.markersize': 5.5,
+        'pdf.fonttype': 42, 'ps.fonttype': 42,
     })
 
-    fig = plt.figure(figsize=(13.6, 5.8))
-    gs = fig.add_gridspec(1, 2, hspace=0.08, wspace=0.24,
-                          left=0.07, right=0.98, top=0.88, bottom=0.12)
+    fig = plt.figure(figsize=(3.35, 3.45))
+    gs = fig.add_gridspec(2, 1, hspace=0.45,
+                          left=0.16, right=0.98, top=0.95, bottom=0.12)
 
     wc_topics, wc_prop = _reorder_topics(wc_topics, wc_prop, WC_ORDER)
     gt_topics, gt_prop = _reorder_topics(gt_topics, gt_prop, GT_ORDER)
@@ -281,23 +295,28 @@ def make_figure(wc, gt):
     x_wc = np.arange(len(wc_months))
     _stacked_share_panel(
         ax_a, x_wc, wc_topics, wc_prop,
-        '(a) Real User Query Topics (WildChat-1M, English)',
-        'Month index (Apr 2023 → Apr 2024)',
-        x_pad=2.5,
+        '(a) WildChat query-topic mixture',
+        'Month',
+        x_pad=2.4,
+        right_pad=7.5,
         label_threshold=3.0,
-        min_gap=4.4,
+        min_gap=8.2,
         force_labels=['Coding', 'Creative Writing', 'Image Gen.', 'Education',
                       'Knowledge QA', 'Business', 'Entertainment', 'Other'],
     )
+    _set_month_ticks(ax_a, wc_months, stride=4)
 
-    ax_b = fig.add_subplot(gs[0, 1])
+    ax_b = fig.add_subplot(gs[1, 0])
     x_gt = np.arange(len(gt_months))
     _stacked_share_panel(
         ax_b, x_gt, gt_topics, gt_prop,
-        '(b) LLM Application Interest (Google Trends, real data, 2022–2026)',
-        'Month index (Jan 2022 → Mar 2026)',
-        x_pad=2.8,
+        '(b) Google Trends application mixture',
+        'Month',
+        x_pad=5.0,
+        right_pad=15.0,
+        min_gap=9.5,
     )
+    _set_month_ticks(ax_b, gt_months, stride=12)
 
     out_dir = os.path.join(BASE_DIR, 'figures')
     save_fig(fig, os.path.join(out_dir, 'user_query_topic_drift.png'))

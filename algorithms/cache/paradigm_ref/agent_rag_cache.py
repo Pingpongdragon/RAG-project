@@ -101,55 +101,82 @@ class AgentRAGCache(BaseStrategy):
         if not self.kb:
             return
         budget = len(self.kb)   # fixed cache capacity (= init KB size)
-        norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
-        nqe = window_query_embs / np.clip(norms, 1e-10, None)
-
         admission_candidates = set()
-        for qi in range(nqe.shape[0]):
-            q = nqe[qi]
+        observed_accesses = self._observed_access_positions(window_queries)
+        if observed_accesses is not None:
+            # Exact evidence traces already reveal the fetched key after the
+            # request.  Avoid an irrelevant O(|Q||K|d) semantic scan: every
+            # occurrence contributes the same rank-1 exact-access DRF update,
+            # while non-residents become end-of-window admission candidates.
+            exact_increment = 1.0 / (1e-6 ** self.ALPHA)
+            for access_pos in observed_accesses:
+                access_pos = int(access_pos)
+                self.drf[access_pos] = (
+                    self.drf.get(access_pos, 0.0) + exact_increment
+                )
+                if self.p2d[access_pos] not in self.kb:
+                    self.maint_retrieval_cost += 1
+                    admission_candidates.add(access_pos)
+        else:
+            norms = np.linalg.norm(window_query_embs, axis=1, keepdims=True)
+            nqe = window_query_embs / np.clip(norms, 1e-10, None)
+            for qi in range(nqe.shape[0]):
+                q = nqe[qi]
+                access_pos = None
 
-            # --- 1. retrieve top-k from cache; escalate only on a shared miss ---
-            kb_list = sorted(self.kb)
-            if not kb_list:
-                break
-            kb_idx = np.array([self.d2p[d] for d in kb_list])
-            kb_emb = self.doc_embs[kb_idx]
-            sims = kb_emb @ q
-            k = min(self.TOP_K, len(kb_idx))
-            top = np.argpartition(sims, -k)[-k:]
-            top = top[np.argsort(sims[top])[::-1]]
-            top1_sim = float(sims[top[0]]) if len(top) else -1.0
+                # --- 1. retrieve top-k from cache; escalate only on a shared miss ---
+                kb_list = sorted(self.kb)
+                if not kb_list:
+                    break
+                kb_idx = np.array([self.d2p[d] for d in kb_list])
+                kb_emb = self.doc_embs[kb_idx]
+                sims = kb_emb @ q
+                k = min(self.TOP_K, len(kb_idx))
+                top = np.argpartition(sims, -k)[-k:]
+                top = top[np.argsort(sims[top])[::-1]]
+                top1_sim = float(sims[top[0]]) if len(top) else -1.0
 
-            if top1_sim >= _P.SF_HIT_THRESH:
-                # cache already serves this query well: only refresh DRF of the
-                # cache hits, no escalation, no churn.
-                for rank, (pi, s) in enumerate(zip(kb_idx[top], sims[top]), start=1):
+                semantic_hit = top1_sim >= _P.SF_HIT_THRESH
+                if semantic_hit:
+                    # cache already serves this query well: only refresh DRF of the
+                    # cache hits, no escalation, no churn.
+                    for rank, (pi, s) in enumerate(
+                        zip(kb_idx[top], sims[top]), start=1
+                    ):
+                        pi = int(pi)
+                        dist = max(1.0 - float(s), 1e-6)
+                        self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (
+                            rank * (dist ** self.ALPHA)
+                        )
+                    continue
+
+                # Ordinary QA needs a full-pool Top-K escalation.
+                self.maint_retrieval_cost += 1
+                pool_sims = self.doc_embs @ q
+                kp = min(self.TOP_K, pool_sims.shape[0])
+                ptop = np.argpartition(pool_sims, -kp)[-kp:]
+                ptop = ptop[np.argsort(pool_sims[ptop])[::-1]]
+                selected_sims = {
+                    int(pi): float(pool_sims[int(pi)]) for pi in ptop
+                }
+
+                # --- 2. update DRF for all escalated results (accumulate demand) ---
+                for rank, pi in enumerate(ptop, start=1):
                     pi = int(pi)
-                    dist = max(1.0 - float(s), 1e-6)
-                    self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
-                continue
+                    dist = max(1.0 - selected_sims[pi], 1e-6)
+                    self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (
+                        rank * (dist ** self.ALPHA)
+                    )
 
-            # escalate to full pool (one pool retrieval -> maintenance cost)
-            pool_sims = self.doc_embs @ q
-            self.maint_retrieval_cost += 1
-            kp = min(self.TOP_K, pool_sims.shape[0])
-            ptop = np.argpartition(pool_sims, -kp)[-kp:]
-            ptop = ptop[np.argsort(pool_sims[ptop])[::-1]]
-
-            # --- 2. update DRF for all escalated results (accumulate demand) ---
-            for rank, pi in enumerate(ptop, start=1):
-                pi = int(pi)
-                dist = max(1.0 - float(pool_sims[pi]), 1e-6)
-                self.drf[pi] = self.drf.get(pi, 0.0) + 1.0 / (rank * (dist ** self.ALPHA))
-
-            admission_candidates.update(
-                int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb)
+                admission_candidates.update(
+                    int(pi) for pi in ptop if self.p2d[int(pi)] not in self.kb
+                )
 
         # --- 3. window-level priority-gated admission (bounded writes) ---
         if not admission_candidates:
             return
         import heapq
-        current_idx = [self.d2p[d] for d in self.kb]
+        current_idx = [self.d2p[d] for d in sorted(self.kb)]
         self._refresh_hubness_for(current_idx, admission_candidates)
         ranked_candidates = sorted(
             admission_candidates,

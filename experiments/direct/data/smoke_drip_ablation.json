@@ -1,0 +1,2612 @@
+{
+  "hotpotqa_comparison": {
+    "dataset": "hotpotqa_comparison",
+    "config": {
+      "kb_budget": 194,
+      "pool_size": 1935,
+      "kb_pool_ratio": 0.100258,
+      "n_windows": 4,
+      "window_size": 10,
+      "n_queries_available": 40,
+      "drift": "full_gradual",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "DRIP-Full": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 21,
+        "cache_writes": 21,
+        "replacement_count": 21,
+        "cache_replacements": 21,
+        "replacement_rate_per_query": 0.525,
+        "replacement_rate_per_window": 5.25,
+        "cache_churn_rate": 0.027062,
+        "cache_churn_rate_pct": 2.706,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 277,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.75,
+        "retrieval_latency_per_window": [
+          0.861,
+          0.711,
+          0.711,
+          0.717
+        ],
+        "query_latency_mean_ms": 0.751,
+        "query_latency_per_window": [
+          0.862,
+          0.712,
+          0.712,
+          0.718
+        ],
+        "per_query_latency_mean_ms": 0.0751,
+        "per_query_latency_per_window": [
+          0.0862,
+          0.0712,
+          0.0712,
+          0.0718
+        ],
+        "step_latency_mean_ms": 4.661,
+        "step_latency_per_window": [
+          3.113,
+          2.301,
+          3.021,
+          10.21
+        ],
+        "update_latency_mean_ms": 4.661,
+        "update_latency_per_window": [
+          3.113,
+          2.301,
+          3.021,
+          10.21
+        ],
+        "step_overhead_mean": 5.25,
+        "step_overhead_per_window": [
+          1,
+          3,
+          5,
+          12
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 12,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.253906,
+            "avg_net_gain": 2.022071,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.025773,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.264648,
+            "avg_net_gain": 1.681347,
+            "direct_writes": 5,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.061856,
+            "replacement_pressure": 0.097656,
+            "replacement_penalty": 0.274414,
+            "avg_net_gain": 1.076042,
+            "direct_writes": 12,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 21,
+        "churn_rate_mean": 0.027062,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoDetector": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 21,
+        "cache_writes": 21,
+        "replacement_count": 21,
+        "cache_replacements": 21,
+        "replacement_rate_per_query": 0.525,
+        "replacement_rate_per_window": 5.25,
+        "cache_churn_rate": 0.027062,
+        "cache_churn_rate_pct": 2.706,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 277,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.72,
+        "retrieval_latency_per_window": [
+          0.708,
+          0.742,
+          0.686,
+          0.745
+        ],
+        "query_latency_mean_ms": 0.721,
+        "query_latency_per_window": [
+          0.709,
+          0.743,
+          0.687,
+          0.746
+        ],
+        "per_query_latency_mean_ms": 0.0721,
+        "per_query_latency_per_window": [
+          0.0709,
+          0.0743,
+          0.0687,
+          0.0746
+        ],
+        "step_latency_mean_ms": 2.176,
+        "step_latency_per_window": [
+          1.815,
+          2.127,
+          2.192,
+          2.57
+        ],
+        "update_latency_mean_ms": 2.176,
+        "update_latency_per_window": [
+          1.815,
+          2.127,
+          2.192,
+          2.57
+        ],
+        "step_overhead_mean": 5.25,
+        "step_overhead_per_window": [
+          1,
+          3,
+          5,
+          12
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 12,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0
+        },
+        "drift_log": [],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.253906,
+            "avg_net_gain": 2.022071,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.025773,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.264648,
+            "avg_net_gain": 1.681347,
+            "direct_writes": 5,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.061856,
+            "replacement_pressure": 0.097656,
+            "replacement_penalty": 0.274414,
+            "avg_net_gain": 0.969255,
+            "direct_writes": 12,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 21,
+        "churn_rate_mean": 0.027062,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoServe": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 20.0,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          10.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 20.0,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          10.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 20.0,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          10.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 27.7,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          12.5
+        ],
+        "update_cost": 39,
+        "cache_writes": 39,
+        "replacement_count": 39,
+        "cache_replacements": 39,
+        "replacement_rate_per_query": 0.975,
+        "replacement_rate_per_window": 9.75,
+        "cache_churn_rate": 0.050258,
+        "cache_churn_rate_pct": 5.026,
+        "maint_retrieval_cost": 232,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 232,
+        "cost": 271,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.706,
+        "retrieval_latency_per_window": [
+          0.706,
+          0.687,
+          0.718,
+          0.713
+        ],
+        "query_latency_mean_ms": 0.707,
+        "query_latency_per_window": [
+          0.707,
+          0.688,
+          0.718,
+          0.714
+        ],
+        "per_query_latency_mean_ms": 0.0707,
+        "per_query_latency_per_window": [
+          0.0707,
+          0.0688,
+          0.0718,
+          0.0714
+        ],
+        "step_latency_mean_ms": 4.36,
+        "step_latency_per_window": [
+          2.31,
+          2.671,
+          2.732,
+          9.725
+        ],
+        "update_latency_mean_ms": 4.36,
+        "update_latency_per_window": [
+          2.31,
+          2.671,
+          2.732,
+          9.725
+        ],
+        "step_overhead_mean": 9.75,
+        "step_overhead_per_window": [
+          4,
+          11,
+          9,
+          15
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 16,
+          "under_covered": 8,
+          "write_budget": 16,
+          "writes": 15,
+          "write_gold": 10,
+          "write_gold_candidates": 11,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.065508,
+              "effect_size": 0.255945,
+              "threshold": 0.012579,
+              "mean_support_gap": 0.3331,
+              "reference_support_gap": 0.0342,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 4,
+            "evictions": 4,
+            "churn_rate": 0.020619,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.498612,
+            "direct_writes": 4,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 11,
+            "evictions": 11,
+            "churn_rate": 0.056701,
+            "replacement_pressure": 0.0625,
+            "replacement_penalty": 0.265625,
+            "avg_net_gain": 0.892811,
+            "direct_writes": 11,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 14,
+            "writes": 9,
+            "evictions": 9,
+            "churn_rate": 0.046392,
+            "replacement_pressure": 0.25,
+            "replacement_penalty": 0.3125,
+            "avg_net_gain": 1.271939,
+            "direct_writes": 9,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 16,
+            "writes": 15,
+            "evictions": 15,
+            "churn_rate": 0.07732,
+            "replacement_pressure": 0.304688,
+            "replacement_penalty": 0.326172,
+            "avg_net_gain": 0.90955,
+            "direct_writes": 15,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 39,
+        "churn_rate_mean": 0.050258,
+        "write_budget_mean": 14.5,
+        "cold_fetches_per_query": 1.05,
+        "support_coverage_rate": 47.5,
+        "has_answer_rate": 47.5,
+        "has_answer_queries": 40,
+        "has_answer_hits": 19,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 20.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          10.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 20.0,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          10.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.6,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.8
+        ],
+        "amat": 6.25,
+        "amat_normalized": 6.25,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.525,
+        "l2_accesses_per_query": 0.525,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoDirect": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 7.5,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          0.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 15.0,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          0.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 15.0,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          0.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 15.0,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          0.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 21.4,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          0.0
+        ],
+        "update_cost": 0,
+        "cache_writes": 0,
+        "replacement_count": 0,
+        "cache_replacements": 0,
+        "replacement_rate_per_query": 0.0,
+        "replacement_rate_per_window": 0.0,
+        "cache_churn_rate": 0.0,
+        "cache_churn_rate_pct": 0.0,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 256,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.714,
+        "retrieval_latency_per_window": [
+          0.714,
+          0.708,
+          0.705,
+          0.727
+        ],
+        "query_latency_mean_ms": 0.715,
+        "query_latency_per_window": [
+          0.715,
+          0.709,
+          0.706,
+          0.728
+        ],
+        "per_query_latency_mean_ms": 0.0715,
+        "per_query_latency_per_window": [
+          0.0715,
+          0.0709,
+          0.0706,
+          0.0728
+        ],
+        "step_latency_mean_ms": 3.169,
+        "step_latency_per_window": [
+          1.634,
+          1.386,
+          1.562,
+          8.092
+        ],
+        "update_latency_mean_ms": 3.169,
+        "update_latency_per_window": [
+          1.634,
+          1.386,
+          1.562,
+          8.092
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 0,
+          "write_gold": 0,
+          "write_gold_candidates": 0,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.3806,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.01,
+              "significance": 0.05,
+              "mmd2": 0.050248,
+              "effect_size": 0.224161,
+              "threshold": 0.02747,
+              "mean_support_gap": 0.4599,
+              "reference_support_gap": 0.2304,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 0,
+            "evictions": 0,
+            "churn_rate": 0.0,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.0,
+            "direct_writes": 0,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 0,
+            "evictions": 0,
+            "churn_rate": 0.0,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.0,
+            "direct_writes": 0,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 0,
+            "evictions": 0,
+            "churn_rate": 0.0,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.0,
+            "direct_writes": 0,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 0,
+            "evictions": 0,
+            "churn_rate": 0.0,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.0,
+            "direct_writes": 0,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 0,
+        "churn_rate_mean": 0.0,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.1,
+        "support_coverage_rate": 45.0,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 15.0,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.7,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          2.0
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoHidden": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 21,
+        "cache_writes": 21,
+        "replacement_count": 21,
+        "cache_replacements": 21,
+        "replacement_rate_per_query": 0.525,
+        "replacement_rate_per_window": 5.25,
+        "cache_churn_rate": 0.027062,
+        "cache_churn_rate_pct": 2.706,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 277,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.704,
+        "retrieval_latency_per_window": [
+          0.696,
+          0.711,
+          0.713,
+          0.697
+        ],
+        "query_latency_mean_ms": 0.705,
+        "query_latency_per_window": [
+          0.697,
+          0.712,
+          0.713,
+          0.698
+        ],
+        "per_query_latency_mean_ms": 0.0705,
+        "per_query_latency_per_window": [
+          0.0697,
+          0.0712,
+          0.0713,
+          0.0698
+        ],
+        "step_latency_mean_ms": 4.27,
+        "step_latency_per_window": [
+          2.193,
+          2.325,
+          2.618,
+          9.946
+        ],
+        "update_latency_mean_ms": 4.27,
+        "update_latency_per_window": [
+          2.193,
+          2.325,
+          2.618,
+          9.946
+        ],
+        "step_overhead_mean": 5.25,
+        "step_overhead_per_window": [
+          1,
+          3,
+          5,
+          12
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 12,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.253906,
+            "avg_net_gain": 2.022071,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.025773,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.264648,
+            "avg_net_gain": 1.681347,
+            "direct_writes": 5,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.061856,
+            "replacement_pressure": 0.097656,
+            "replacement_penalty": 0.274414,
+            "avg_net_gain": 1.076042,
+            "direct_writes": 12,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 21,
+        "churn_rate_mean": 0.027062,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoPairLease": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 21,
+        "cache_writes": 21,
+        "replacement_count": 21,
+        "cache_replacements": 21,
+        "replacement_rate_per_query": 0.525,
+        "replacement_rate_per_window": 5.25,
+        "cache_churn_rate": 0.027062,
+        "cache_churn_rate_pct": 2.706,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 277,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.711,
+        "retrieval_latency_per_window": [
+          0.724,
+          0.693,
+          0.697,
+          0.731
+        ],
+        "query_latency_mean_ms": 0.712,
+        "query_latency_per_window": [
+          0.725,
+          0.693,
+          0.697,
+          0.732
+        ],
+        "per_query_latency_mean_ms": 0.0712,
+        "per_query_latency_per_window": [
+          0.0725,
+          0.0693,
+          0.0697,
+          0.0732
+        ],
+        "step_latency_mean_ms": 4.217,
+        "step_latency_per_window": [
+          2.2,
+          2.287,
+          2.654,
+          9.728
+        ],
+        "update_latency_mean_ms": 4.217,
+        "update_latency_per_window": [
+          2.2,
+          2.287,
+          2.654,
+          9.728
+        ],
+        "step_overhead_mean": 5.25,
+        "step_overhead_per_window": [
+          1,
+          3,
+          5,
+          12
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 12,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.253906,
+            "avg_net_gain": 2.022071,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.025773,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.264648,
+            "avg_net_gain": 1.681347,
+            "direct_writes": 5,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.061856,
+            "replacement_pressure": 0.097656,
+            "replacement_penalty": 0.274414,
+            "avg_net_gain": 1.076042,
+            "direct_writes": 12,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 21,
+        "churn_rate_mean": 0.027062,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoReplacement": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 28,
+        "cache_writes": 28,
+        "replacement_count": 28,
+        "cache_replacements": 28,
+        "replacement_rate_per_query": 0.7,
+        "replacement_rate_per_window": 7.0,
+        "cache_churn_rate": 0.036082,
+        "cache_churn_rate_pct": 3.608,
+        "maint_retrieval_cost": 240,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 240,
+        "cost": 268,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.7,
+        "retrieval_latency_per_window": [
+          0.695,
+          0.675,
+          0.684,
+          0.745
+        ],
+        "query_latency_mean_ms": 0.701,
+        "query_latency_per_window": [
+          0.696,
+          0.676,
+          0.684,
+          0.746
+        ],
+        "per_query_latency_mean_ms": 0.0701,
+        "per_query_latency_per_window": [
+          0.0696,
+          0.0676,
+          0.0684,
+          0.0746
+        ],
+        "step_latency_mean_ms": 4.395,
+        "step_latency_per_window": [
+          2.644,
+          2.4,
+          2.756,
+          9.778
+        ],
+        "update_latency_mean_ms": 4.395,
+        "update_latency_per_window": [
+          2.644,
+          2.4,
+          2.756,
+          9.778
+        ],
+        "step_overhead_mean": 7.0,
+        "step_overhead_per_window": [
+          1,
+          4,
+          7,
+          16
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 16,
+          "under_covered": 8,
+          "write_budget": 16,
+          "writes": 16,
+          "write_gold": 9,
+          "write_gold_candidates": 12,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.032631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 4,
+            "evictions": 4,
+            "churn_rate": 0.020619,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.732057,
+            "direct_writes": 4,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 7,
+            "evictions": 7,
+            "churn_rate": 0.036082,
+            "replacement_pressure": 0.074219,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.418203,
+            "direct_writes": 7,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 16,
+            "writes": 16,
+            "evictions": 16,
+            "churn_rate": 0.082474,
+            "replacement_pressure": 0.165039,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 0.904263,
+            "direct_writes": 16,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 28,
+        "churn_rate_mean": 0.036083,
+        "write_budget_mean": 15.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoPressure": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 21,
+        "cache_writes": 21,
+        "replacement_count": 21,
+        "cache_replacements": 21,
+        "replacement_rate_per_query": 0.525,
+        "replacement_rate_per_window": 5.25,
+        "cache_churn_rate": 0.027062,
+        "cache_churn_rate_pct": 2.706,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 277,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.708,
+        "retrieval_latency_per_window": [
+          0.699,
+          0.709,
+          0.702,
+          0.722
+        ],
+        "query_latency_mean_ms": 0.709,
+        "query_latency_per_window": [
+          0.7,
+          0.71,
+          0.703,
+          0.723
+        ],
+        "per_query_latency_mean_ms": 0.0709,
+        "per_query_latency_per_window": [
+          0.07,
+          0.071,
+          0.0703,
+          0.0723
+        ],
+        "step_latency_mean_ms": 4.186,
+        "step_latency_per_window": [
+          2.18,
+          2.309,
+          2.655,
+          9.598
+        ],
+        "update_latency_mean_ms": 4.186,
+        "update_latency_per_window": [
+          2.18,
+          2.309,
+          2.655,
+          9.598
+        ],
+        "step_overhead_mean": 5.25,
+        "step_overhead_per_window": [
+          1,
+          3,
+          5,
+          12
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 12,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 2.025977,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.025773,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 1.695995,
+            "direct_writes": 5,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.061856,
+            "replacement_pressure": 0.097656,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 1.100456,
+            "direct_writes": 12,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 21,
+        "churn_rate_mean": 0.027062,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP-NoDecay": {
+        "recall@1_h1": 37.5,
+        "recall@1_h2": 10.0,
+        "recall@1_per_window": [
+          45.0,
+          30.0,
+          15.0,
+          5.0
+        ],
+        "recall@5_h1": 70.0,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@10_h1": 70.0,
+        "recall@10_h2": 17.5,
+        "recall@10_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 17.5,
+        "recall@20_per_window": [
+          85.0,
+          55.0,
+          30.0,
+          5.0
+        ],
+        "cov_h1": 81.9,
+        "cov_h2": 24.6,
+        "cov_per_window": [
+          88.89,
+          75.0,
+          42.86,
+          6.25
+        ],
+        "update_cost": 23,
+        "cache_writes": 23,
+        "replacement_count": 23,
+        "cache_replacements": 23,
+        "replacement_rate_per_query": 0.575,
+        "replacement_rate_per_window": 5.75,
+        "cache_churn_rate": 0.029639,
+        "cache_churn_rate_pct": 2.964,
+        "maint_retrieval_cost": 256,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 256,
+        "cost": 279,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.71,
+        "retrieval_latency_per_window": [
+          0.719,
+          0.72,
+          0.674,
+          0.726
+        ],
+        "query_latency_mean_ms": 0.711,
+        "query_latency_per_window": [
+          0.719,
+          0.721,
+          0.675,
+          0.727
+        ],
+        "per_query_latency_mean_ms": 0.0711,
+        "per_query_latency_per_window": [
+          0.0719,
+          0.0721,
+          0.0675,
+          0.0727
+        ],
+        "step_latency_mean_ms": 4.268,
+        "step_latency_per_window": [
+          2.166,
+          2.264,
+          3.002,
+          9.642
+        ],
+        "update_latency_mean_ms": 4.268,
+        "update_latency_per_window": [
+          2.166,
+          2.264,
+          3.002,
+          9.642
+        ],
+        "step_overhead_mean": 5.75,
+        "step_overhead_per_window": [
+          1,
+          3,
+          6,
+          13
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 13,
+          "write_gold": 9,
+          "write_gold_candidates": 13,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 1.0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 10,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.0444,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 20,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.2663,
+              "reference_support_gap": 0.0,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.05,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.317,
+              "reference_support_gap": 0.0,
+              "bandwidth": 1.32937,
+              "warmup": true,
+              "reason": "warming_reference"
+            },
+            "agent_contributions": {}
+          },
+          {
+            "w": 3,
+            "severity": 1.0,
+            "drifted": true,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 10,
+              "n_reference": 30,
+              "severity": 1.0,
+              "drifted": true,
+              "p_value": 0.005,
+              "significance": 0.05,
+              "mmd2": 0.072422,
+              "effect_size": 0.269113,
+              "threshold": 0.010271,
+              "mean_support_gap": 0.3299,
+              "reference_support_gap": 0.0117,
+              "bandwidth": 1.32937,
+              "warmup": false,
+              "reason": "support_weighted_mmd_reject"
+            },
+            "agent_contributions": {}
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 12,
+            "writes": 1,
+            "evictions": 1,
+            "churn_rate": 0.005155,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.782631,
+            "direct_writes": 1,
+            "bridge_writes": 0
+          },
+          {
+            "w": 1,
+            "write_budget": 16,
+            "writes": 3,
+            "evictions": 3,
+            "churn_rate": 0.015464,
+            "replacement_pressure": 0.015625,
+            "replacement_penalty": 0.253906,
+            "avg_net_gain": 2.022071,
+            "direct_writes": 3,
+            "bridge_writes": 0
+          },
+          {
+            "w": 2,
+            "write_budget": 16,
+            "writes": 6,
+            "evictions": 6,
+            "churn_rate": 0.030928,
+            "replacement_pressure": 0.058594,
+            "replacement_penalty": 0.264648,
+            "avg_net_gain": 1.405371,
+            "direct_writes": 6,
+            "bridge_writes": 0
+          },
+          {
+            "w": 3,
+            "write_budget": 20,
+            "writes": 13,
+            "evictions": 13,
+            "churn_rate": 0.06701,
+            "replacement_pressure": 0.110156,
+            "replacement_penalty": 0.277539,
+            "avg_net_gain": 1.005459,
+            "direct_writes": 13,
+            "bridge_writes": 0
+          }
+        ],
+        "evictions": 23,
+        "churn_rate_mean": 0.029639,
+        "write_budget_mean": 16.0,
+        "cold_fetches_per_query": 1.075,
+        "support_coverage_rate": 46.2,
+        "has_answer_rate": 45.0,
+        "has_answer_queries": 40,
+        "has_answer_hits": 18,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 15.0,
+        "has_answer_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 17.5,
+        "support_coverage_per_window": [
+          90.0,
+          60.0,
+          30.0,
+          5.0
+        ],
+        "cold_fetches_h1": 0.5,
+        "cold_fetches_h2": 1.65,
+        "cold_fetches_per_window": [
+          0.2,
+          0.8,
+          1.4,
+          1.9
+        ],
+        "amat": 6.5,
+        "amat_normalized": 6.5,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.55,
+        "l2_accesses_per_query": 0.55,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 32.5
+  }
+}

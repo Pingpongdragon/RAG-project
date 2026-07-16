@@ -11,8 +11,8 @@
 
 # Datasets (大文件不上传)
 /datasets
-benchmark/datasets/
-benchmark/results/
+benchmarks/archive_legacy/datasets/
+benchmarks/archive_legacy/results/
 
 # Models (HuggingFace cache)
 models/models--*/
@@ -49,6 +49,12 @@ motivation/**/figures/*.png
 motivation/paper_figs/**/*.pdf
 motivation/paper_figs/**/*.png
 
+# Formal experiment runtime artifacts. Source code and curated data/figures stay
+# visible to Git; embeddings and interpreter caches are machine-local.
+experiments/**/cache/
+experiments/**/__pycache__/
+experiments/**/*.bak
+
 # Generated talk decks
 DRIP_TALK_BEAMER*.pdf
 docs/design/DRIP_TALK_BEAMER*.pdf
@@ -66,6 +72,8 @@ motivation/motivation_1/data/wildchat_sampled.json
 /HippoRAG/
 /LightRAG/
 /RECIPE/
+# Overleaf paper is a separate Git repository cloned inside this workspace.
+/overleaf-paper/
 # baseline source mirrors (GPTCache / MemGPT) kept for reference only
 experiments/baselines_src/
 motivation/baselines_src/

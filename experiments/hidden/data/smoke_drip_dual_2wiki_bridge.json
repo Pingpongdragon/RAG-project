@@ -1,0 +1,660 @@
+{
+  "2wikimultihopqa": {
+    "dataset": "2wikimultihopqa",
+    "config": {
+      "kb_budget": 1050,
+      "pool_size": 10809,
+      "n_windows": 8,
+      "window_size": 25,
+      "n_queries_available": 200,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "RoutedCache": {
+        "recall@1_h1": 23.8,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          23.0,
+          23.0,
+          24.0,
+          25.0,
+          1.0,
+          2.0,
+          1.0,
+          24.0
+        ],
+        "recall@5_h1": 61.3,
+        "recall@5_h2": 17.2,
+        "recall@5_per_window": [
+          65.0,
+          63.0,
+          56.0,
+          61.0,
+          3.0,
+          6.0,
+          2.0,
+          58.0
+        ],
+        "recall@10_h1": 75.2,
+        "recall@10_h2": 20.8,
+        "recall@10_per_window": [
+          80.0,
+          73.0,
+          74.0,
+          74.0,
+          5.0,
+          7.0,
+          2.0,
+          69.0
+        ],
+        "recall@20_h1": 83.5,
+        "recall@20_h2": 22.8,
+        "recall@20_per_window": [
+          89.0,
+          82.0,
+          84.0,
+          79.0,
+          7.0,
+          7.0,
+          2.0,
+          75.0
+        ],
+        "kb_coverage_h1": 97.2,
+        "kb_coverage_h2": 31.3,
+        "kb_coverage_per_window": [
+          100.0,
+          95.96,
+          95.96,
+          97.0,
+          11.46,
+          18.0,
+          6.0,
+          89.9
+        ],
+        "kb_coverage_cumulative_h1": 98.3,
+        "kb_coverage_cumulative_h2": 72.4,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          97.96,
+          97.61,
+          97.68,
+          80.75,
+          73.01,
+          65.29,
+          70.57
+        ],
+        "update_cost": 76,
+        "maint_retrieval_cost": 768,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 768,
+        "cost": 844,
+        "last_admission": {
+          "w": 7,
+          "weak_queries": 5,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 1
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "failed": 4,
+            "bridge_updates": 80,
+            "bridge_mass": 3.167
+          },
+          {
+            "w": 1,
+            "failed": 2,
+            "bridge_updates": 40,
+            "bridge_mass": 1.7057
+          },
+          {
+            "w": 2,
+            "failed": 7,
+            "bridge_updates": 140,
+            "bridge_mass": 4.7841
+          },
+          {
+            "w": 3,
+            "failed": 6,
+            "bridge_updates": 120,
+            "bridge_mass": 5.235
+          },
+          {
+            "w": 4,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 21.4319
+          },
+          {
+            "w": 5,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 19.3478
+          },
+          {
+            "w": 6,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 21.8296
+          },
+          {
+            "w": 7,
+            "failed": 5,
+            "bridge_updates": 100,
+            "bridge_mass": 4.1495
+          }
+        ]
+      },
+      "DRIP": {
+        "recall@1_h1": 23.8,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          23.0,
+          23.0,
+          24.0,
+          25.0,
+          1.0,
+          2.0,
+          1.0,
+          24.0
+        ],
+        "recall@5_h1": 61.3,
+        "recall@5_h2": 18.0,
+        "recall@5_per_window": [
+          65.0,
+          63.0,
+          56.0,
+          61.0,
+          3.0,
+          6.0,
+          2.0,
+          61.0
+        ],
+        "recall@10_h1": 75.2,
+        "recall@10_h2": 21.2,
+        "recall@10_per_window": [
+          80.0,
+          73.0,
+          74.0,
+          74.0,
+          5.0,
+          7.0,
+          2.0,
+          71.0
+        ],
+        "recall@20_h1": 83.5,
+        "recall@20_h2": 23.5,
+        "recall@20_per_window": [
+          89.0,
+          82.0,
+          84.0,
+          79.0,
+          7.0,
+          7.0,
+          2.0,
+          78.0
+        ],
+        "kb_coverage_h1": 97.2,
+        "kb_coverage_h2": 32.3,
+        "kb_coverage_per_window": [
+          100.0,
+          95.96,
+          95.96,
+          97.0,
+          11.46,
+          18.0,
+          7.0,
+          92.93
+        ],
+        "kb_coverage_cumulative_h1": 98.3,
+        "kb_coverage_cumulative_h2": 70.8,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          97.96,
+          97.61,
+          97.68,
+          80.54,
+          72.32,
+          62.63,
+          67.84
+        ],
+        "update_cost": 52,
+        "maint_retrieval_cost": 768,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 768,
+        "cost": 820,
+        "last_admission": {
+          "w": 7,
+          "weak_queries": 5,
+          "write_budget": 5,
+          "write_price": 0.6,
+          "writes": 0
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "failed": 4,
+            "bridge_updates": 80,
+            "bridge_mass": 3.167
+          },
+          {
+            "w": 1,
+            "failed": 2,
+            "bridge_updates": 40,
+            "bridge_mass": 1.7057
+          },
+          {
+            "w": 2,
+            "failed": 7,
+            "bridge_updates": 140,
+            "bridge_mass": 4.7841
+          },
+          {
+            "w": 3,
+            "failed": 6,
+            "bridge_updates": 120,
+            "bridge_mass": 5.235
+          },
+          {
+            "w": 4,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 21.4319
+          },
+          {
+            "w": 5,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 19.3478
+          },
+          {
+            "w": 6,
+            "failed": 24,
+            "bridge_updates": 480,
+            "bridge_mass": 21.8296
+          },
+          {
+            "w": 7,
+            "failed": 5,
+            "bridge_updates": 100,
+            "bridge_mass": 4.1495
+          }
+        ],
+        "drift_log": [
+          {
+            "w": 0,
+            "epoch": 0,
+            "gap": 0.3533,
+            "fid": null,
+            "fid_threshold": null,
+            "fid_drift": null,
+            "action": "Stable",
+            "weak_queries": 4,
+            "write_budget": 4,
+            "write_target": 2.0,
+            "write_price_before": 0.0,
+            "write_price_after": 0.0,
+            "writes": 0
+          },
+          {
+            "w": 1,
+            "epoch": 0,
+            "gap": 0.3445,
+            "fid": null,
+            "fid_threshold": null,
+            "fid_drift": null,
+            "action": "Stable",
+            "weak_queries": 2,
+            "write_budget": 2,
+            "write_target": 1.0,
+            "write_price_before": 0.0,
+            "write_price_after": 0.0,
+            "writes": 1
+          },
+          {
+            "w": 2,
+            "epoch": 0,
+            "gap": 0.3624,
+            "fid": 0.0005,
+            "fid_threshold": 0.0011,
+            "fid_drift": false,
+            "action": "Stable",
+            "weak_queries": 7,
+            "write_budget": 7,
+            "write_target": 3.5,
+            "write_price_before": 0.0,
+            "write_price_after": 0.0,
+            "writes": 1
+          },
+          {
+            "w": 3,
+            "epoch": 1,
+            "gap": 0.356,
+            "fid": 0.0011,
+            "fid_threshold": 0.0011,
+            "fid_drift": true,
+            "action": "EpochReset",
+            "weak_queries": 6,
+            "write_budget": 6,
+            "write_target": 3.0,
+            "write_price_before": 0.0,
+            "write_price_after": 0.0,
+            "writes": 3
+          },
+          {
+            "w": 4,
+            "epoch": 1,
+            "gap": 0.445,
+            "fid": 0.0167,
+            "fid_threshold": 0.0012,
+            "fid_drift": true,
+            "action": "Stable",
+            "weak_queries": 24,
+            "write_budget": 24,
+            "write_target": 12.0,
+            "write_price_before": 0.0,
+            "write_price_after": 0.55,
+            "writes": 23
+          },
+          {
+            "w": 5,
+            "epoch": 1,
+            "gap": 0.448,
+            "fid": 0.0147,
+            "fid_threshold": 0.001,
+            "fid_drift": true,
+            "action": "Stable",
+            "weak_queries": 24,
+            "write_budget": 24,
+            "write_target": 12.0,
+            "write_price_before": 0.55,
+            "write_price_after": 0.0,
+            "writes": 0
+          },
+          {
+            "w": 6,
+            "epoch": 1,
+            "gap": 0.4471,
+            "fid": 0.0154,
+            "fid_threshold": 0.001,
+            "fid_drift": true,
+            "action": "Stable",
+            "weak_queries": 24,
+            "write_budget": 24,
+            "write_target": 12.0,
+            "write_price_before": 0.0,
+            "write_price_after": 0.6,
+            "writes": 24
+          },
+          {
+            "w": 7,
+            "epoch": 1,
+            "gap": 0.3584,
+            "fid": 0.0052,
+            "fid_threshold": 0.0009,
+            "fid_drift": true,
+            "action": "Stable",
+            "weak_queries": 5,
+            "write_budget": 5,
+            "write_target": 2.5,
+            "write_price_before": 0.6,
+            "write_price_after": 0.475,
+            "writes": 0
+          }
+        ]
+      },
+      "AgentRAGCache": {
+        "recall@1_h1": 19.8,
+        "recall@1_h2": 4.0,
+        "recall@1_per_window": [
+          23.0,
+          23.0,
+          21.0,
+          12.0,
+          3.0,
+          3.0,
+          4.0,
+          6.0
+        ],
+        "recall@5_h1": 45.2,
+        "recall@5_h2": 5.8,
+        "recall@5_per_window": [
+          65.0,
+          54.0,
+          41.0,
+          21.0,
+          5.0,
+          4.0,
+          5.0,
+          9.0
+        ],
+        "recall@10_h1": 55.8,
+        "recall@10_h2": 6.0,
+        "recall@10_per_window": [
+          80.0,
+          66.0,
+          51.0,
+          26.0,
+          5.0,
+          4.0,
+          5.0,
+          10.0
+        ],
+        "recall@20_h1": 60.8,
+        "recall@20_h2": 7.3,
+        "recall@20_per_window": [
+          89.0,
+          73.0,
+          54.0,
+          27.0,
+          7.0,
+          5.0,
+          5.0,
+          12.0
+        ],
+        "kb_coverage_h1": 77.2,
+        "kb_coverage_h2": 17.0,
+        "kb_coverage_per_window": [
+          100.0,
+          88.89,
+          71.72,
+          48.0,
+          19.79,
+          14.0,
+          12.0,
+          22.22
+        ],
+        "kb_coverage_cumulative_h1": 87.2,
+        "kb_coverage_cumulative_h2": 57.2,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          92.86,
+          83.96,
+          72.16,
+          63.35,
+          58.13,
+          54.51,
+          52.99
+        ],
+        "update_cost": 1130,
+        "maint_retrieval_cost": 128,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 128,
+        "cost": 1258
+      },
+      "Oracle": {
+        "recall@1_h1": 24.8,
+        "recall@1_h2": 25.0,
+        "recall@1_per_window": [
+          25.0,
+          24.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "recall@5_h1": 67.2,
+        "recall@5_h2": 65.5,
+        "recall@5_per_window": [
+          70.0,
+          70.0,
+          63.0,
+          66.0,
+          61.0,
+          70.0,
+          65.0,
+          66.0
+        ],
+        "recall@10_h1": 79.8,
+        "recall@10_h2": 78.8,
+        "recall@10_per_window": [
+          84.0,
+          81.0,
+          76.0,
+          78.0,
+          76.0,
+          85.0,
+          75.0,
+          79.0
+        ],
+        "recall@20_h1": 85.8,
+        "recall@20_h2": 84.7,
+        "recall@20_per_window": [
+          89.0,
+          86.0,
+          87.0,
+          81.0,
+          82.0,
+          88.0,
+          85.0,
+          84.0
+        ],
+        "kb_coverage_h1": 100.0,
+        "kb_coverage_h2": 100.0,
+        "kb_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "kb_coverage_cumulative_h1": 62.0,
+        "kb_coverage_cumulative_h2": 31.6,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          61.73,
+          45.73,
+          40.72,
+          33.54,
+          34.43,
+          29.84,
+          28.52
+        ],
+        "update_cost": 2549,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 2549
+      },
+      "SemFlow": {
+        "recall@1_h1": 23.8,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          23.0,
+          23.0,
+          24.0,
+          25.0,
+          1.0,
+          2.0,
+          1.0,
+          24.0
+        ],
+        "recall@5_h1": 61.3,
+        "recall@5_h2": 17.5,
+        "recall@5_per_window": [
+          65.0,
+          63.0,
+          56.0,
+          61.0,
+          3.0,
+          6.0,
+          2.0,
+          59.0
+        ],
+        "recall@10_h1": 75.2,
+        "recall@10_h2": 21.0,
+        "recall@10_per_window": [
+          80.0,
+          73.0,
+          74.0,
+          74.0,
+          5.0,
+          7.0,
+          2.0,
+          70.0
+        ],
+        "recall@20_h1": 83.5,
+        "recall@20_h2": 23.0,
+        "recall@20_per_window": [
+          89.0,
+          82.0,
+          84.0,
+          79.0,
+          7.0,
+          7.0,
+          2.0,
+          76.0
+        ],
+        "kb_coverage_h1": 97.2,
+        "kb_coverage_h2": 31.6,
+        "kb_coverage_per_window": [
+          100.0,
+          95.96,
+          95.96,
+          97.0,
+          11.46,
+          18.0,
+          7.0,
+          89.9
+        ],
+        "kb_coverage_cumulative_h1": 98.3,
+        "kb_coverage_cumulative_h2": 72.1,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          97.96,
+          97.61,
+          97.68,
+          80.75,
+          72.66,
+          64.99,
+          70.05
+        ],
+        "update_cost": 76,
+        "maint_retrieval_cost": 480,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 480,
+        "cost": 556,
+        "last_admission": {
+          "w": 7,
+          "weak_queries": 5,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 1
+        }
+      }
+    },
+    "elapsed": 19.0
+  }
+}

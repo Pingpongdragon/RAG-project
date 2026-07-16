@@ -2,12 +2,13 @@
 
 All cache strategies read their constants from this module's ``PARAMS`` object
 instead of hard-coding them or importing from a specific experiment's config.
-Each experiment (motivation_1 / motivation_2 / benchmark) calls
+Each experiment (experiments/direct, experiments/hidden, experiments/agent,
+or benchmark) calls
 ``params.update(**overrides)`` at startup to inject its own values, so the
 *same* strategy code reproduces each experiment's numbers without forking.
 
-Defaults below are the motivation_2 (multi-hop / BGE-large) values. The
-motivation_1 (StreamingQA / MiniLM) experiment overrides SF_HIT_THRESH etc.
+Defaults below are the hidden/multi-hop BGE-large values. The direct
+StreamingQA/MiniLM experiment overrides SF_HIT_THRESH and related values.
 """
 
 

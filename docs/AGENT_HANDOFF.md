@@ -64,7 +64,7 @@ pip install sentence-transformers ir_datasets torch numpy matplotlib tqdm
 
 ### 4.1 冒烟测试（优先）
 ```bash
-cd RAG-project/motivation/motivation_1
+cd RAG-project/experiments/direct
 python3 run.py \
   --datasets fever \
   --n-windows 4 --window-size 20 \
@@ -88,7 +88,7 @@ motivation_2 是 mo2 实验（KB retrieval 覆盖率 vs 漂移），需做相同
 ### 4.3 全量实验运行（❌ 未做）
 ```bash
 # mo1 全量（gradual drift，主要数据集）
-cd motivation/motivation_1
+cd experiments/direct
 python3 run.py \
   --datasets fever 2wiki hotpot musique \
   --n-windows 50 --window-size 100 \
@@ -105,7 +105,7 @@ python3 run.py \
 
 ### 4.4 重新生成图表（❌ 未做）
 ```bash
-cd motivation/motivation_1
+cd experiments/direct
 python3 plot.py   # 生成 figures/mo1_gradual.pdf/png 等
 ```
 
@@ -140,7 +140,7 @@ EMBED_MODEL   = 'all-MiniLM-L6-v2'
 ## 7. 文件结构（motivation_1）
 
 ```
-motivation/motivation_1/
+experiments/direct/
 ├── run.py              # 主运行脚本
 ├── strategies.py       # 所有 KB 更新策略
 ├── config.py           # 常量 + 可视化配置

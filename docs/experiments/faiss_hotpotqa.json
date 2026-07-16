@@ -1,0 +1,31 @@
+{
+  "pool_size": 30454,
+  "hot_size": 3045,
+  "hot_ratio": 0.09998686543639587,
+  "dimension": 384,
+  "queries": 1000,
+  "top_k": 5,
+  "threads": 1,
+  "cold_build_ms": 29.861,
+  "hot_build_ms": 3.223,
+  "cold_search": {
+    "mean_ms": 3.177203,
+    "p50_ms": 3.067513,
+    "p95_ms": 4.958272,
+    "p99_ms": 5.084869
+  },
+  "hot_search": {
+    "mean_ms": 0.178926,
+    "p50_ms": 0.177978,
+    "p95_ms": 0.18441,
+    "p99_ms": 0.188789
+  },
+  "replacement": {
+    "mean_ms": 0.259644,
+    "p50_ms": 0.258537,
+    "p95_ms": 0.269652,
+    "p99_ms": 0.278378,
+    "count": 200,
+    "payload_bytes_per_write": 1536
+  }
+}

@@ -1,61 +1,41 @@
-# algorithms/
+# Algorithms
 
-这里放所有 cache policy 与 DRIP 方法。
+## 论文主方法
 
-## 当前 DRIP 方法
-
-当前主实验入口是：
-
-```text
-DRIPNOdetector
-```
-
-含义：不依赖 drift detector，只使用 query-visible direct evidence、
-serve/demand 账本和 replacement-aware admission。
-
-实验从统一 registry 取策略：
+唯一 DRIP 入口是：
 
 ```python
-from algorithms.cache.registry import STRATEGY_FACTORIES
-
-strategy = STRATEGY_FACTORIES["DRIPNOdetector"](
-    doc_pool, doc_embs, title_to_idx
-)
+from algorithms.drip import DRIP, DRIPConfig
 ```
 
-## DRIP 文件
-
-DRIP 代码在 `algorithms/drip/`。当前文件分工见：
+代码阅读顺序：
 
 ```text
-algorithms/drip/README.md
+algorithms/drip/config.py
+algorithms/drip/controller.py
+algorithms/drip/index.py
+algorithms/drip/topic_partition.py
+algorithms/drip/topic_dynamics.py
+algorithms/drip/policy.py
+```
+
+完整公式与代码映射见：
+
+```text
 algorithms/drip/PARAMETER_MAPPING.md
-```
-
-核心文件：
-
-```text
-algorithms/drip/cache_manager/core.py
-  cache manager 主窗口循环。
-
-algorithms/drip/cache_manager/policies.py
-  DRIP / DRIPNOdetector 策略入口。
-
-algorithms/drip/cache_manager/evidence_core.py
-  direct evidence、hidden diagnostic、replacement writer。
-
-algorithms/drip/cache_manager/drip_config.py
-  当前唯一 active config。
 ```
 
 ## Baselines
 
-cache baseline 在 `algorithms/cache/`：
-
 ```text
-recency/        LRU, FIFO, temporal variants
-frequency/      TinyLFU
-semantic/       GPTCache-style / Proximity
-paradigm_ref/   AgentRAGCache 等参考方法
-oracle/         Belady-style upper bound
+algorithms/cache/recency/       LRU, FIFO
+algorithms/cache/frequency/     TinyLFU
+algorithms/cache/semantic/      GPTCacheStyle, Proximity
+algorithms/cache/paradigm_ref/  AgentRAGCache
+algorithms/cache/oracle/        Oracle upper bound
 ```
+
+统一策略注册表位于 `algorithms/cache/registry.py`。其中 `DRIP` 默认使用
+evidence-only placement；TopicDynamics 由 runner 显式传入冷库分区配置。LRU 是独立
+baseline，不参与 DRIP utility。旧 hard-state、Fixed-Share、hidden bridge 与 ablation
+prototype 不再作为 active 策略注册。

@@ -1,0 +1,425 @@
+{
+  "2wikimultihopqa": {
+    "dataset": "2wikimultihopqa",
+    "config": {
+      "kb_budget": 350,
+      "pool_size": 2604,
+      "n_windows": 4,
+      "window_size": 20,
+      "n_queries_available": 400,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "DRIP": {
+        "recall@1_h1": 22.5,
+        "recall@1_h2": 1.2,
+        "recall@1_per_window": [
+          22.5,
+          22.5,
+          1.25,
+          1.25
+        ],
+        "recall@5_h1": 50.6,
+        "recall@5_h2": 1.9,
+        "recall@5_per_window": [
+          52.5,
+          48.75,
+          1.25,
+          2.5
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 1.9,
+        "recall@10_per_window": [
+          55.0,
+          53.75,
+          1.25,
+          2.5
+        ],
+        "recall@20_h1": 56.2,
+        "recall@20_h2": 1.9,
+        "recall@20_per_window": [
+          56.25,
+          56.25,
+          1.25,
+          2.5
+        ],
+        "kb_coverage_h1": 95.0,
+        "kb_coverage_h2": 6.2,
+        "kb_coverage_per_window": [
+          95.0,
+          94.94,
+          5.0,
+          7.5
+        ],
+        "kb_coverage_cumulative_h1": 95.0,
+        "kb_coverage_cumulative_h2": 59.6,
+        "kb_coverage_cumulative_per_window": [
+          95.0,
+          94.97,
+          65.13,
+          54.09
+        ],
+        "update_cost": 83,
+        "maint_retrieval_cost": 496,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 496,
+        "cost": 579,
+        "last_admission": {
+          "w": 3,
+          "target_slots": 40,
+          "under_covered": 20,
+          "write_budget": 40,
+          "writes": 40
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "under_covered": 10,
+            "bridge_updates": 141,
+            "bridge_mass": 18.8377,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.3209,
+            "bridge_direct_updates": 3,
+            "bridge_direct_mass": 0.3726,
+            "bridge_direct_gold_updates": 1,
+            "bridge_direct_gold_mass": 0.122,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 6614,
+            "graph_after_degree_gate": 945,
+            "graph_after_relation_gate": 702,
+            "graph_after_threshold": 141,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "british",
+                136
+              ],
+              [
+                "italian",
+                103
+              ],
+              [
+                "french",
+                96
+              ],
+              [
+                "argentine",
+                41
+              ],
+              [
+                "spanish",
+                41
+              ]
+            ]
+          },
+          {
+            "w": 1,
+            "under_covered": 12,
+            "bridge_updates": 221,
+            "bridge_mass": 28.6353,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.6,
+            "bridge_direct_updates": 6,
+            "bridge_direct_mass": 0.6818,
+            "bridge_direct_gold_updates": 2,
+            "bridge_direct_gold_mass": 0.2585,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 8086,
+            "graph_after_degree_gate": 2399,
+            "graph_after_relation_gate": 1904,
+            "graph_after_threshold": 221,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "british",
+                680
+              ],
+              [
+                "italian",
+                412
+              ],
+              [
+                "german",
+                332
+              ],
+              [
+                "english",
+                158
+              ],
+              [
+                "indian",
+                134
+              ]
+            ]
+          },
+          {
+            "w": 2,
+            "under_covered": 20,
+            "bridge_updates": 372,
+            "bridge_mass": 73.1106,
+            "bridge_gold_updates": 33,
+            "bridge_gold_mass": 18.2111,
+            "bridge_direct_updates": 55,
+            "bridge_direct_mass": 6.6453,
+            "bridge_direct_gold_updates": 40,
+            "bridge_direct_gold_mass": 4.9424,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 14989,
+            "graph_after_degree_gate": 3714,
+            "graph_after_relation_gate": 3005,
+            "graph_after_threshold": 372,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "italian",
+                712
+              ],
+              [
+                "british",
+                405
+              ],
+              [
+                "indian",
+                394
+              ],
+              [
+                "french",
+                378
+              ],
+              [
+                "german",
+                246
+              ]
+            ]
+          },
+          {
+            "w": 3,
+            "under_covered": 20,
+            "bridge_updates": 369,
+            "bridge_mass": 70.2514,
+            "bridge_gold_updates": 33,
+            "bridge_gold_mass": 17.4986,
+            "bridge_direct_updates": 55,
+            "bridge_direct_mass": 6.6769,
+            "bridge_direct_gold_updates": 39,
+            "bridge_direct_gold_mass": 4.9124,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 16782,
+            "graph_after_degree_gate": 3960,
+            "graph_after_relation_gate": 3286,
+            "graph_after_threshold": 369,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "indian",
+                1040
+              ],
+              [
+                "german",
+                320
+              ],
+              [
+                "italian",
+                301
+              ],
+              [
+                "english",
+                234
+              ],
+              [
+                "french",
+                190
+              ]
+            ]
+          }
+        ],
+        "route_log": [
+          {
+            "w": 0,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 10,
+            "target_slots": 20
+          },
+          {
+            "w": 1,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 12,
+            "target_slots": 24
+          },
+          {
+            "w": 2,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          },
+          {
+            "w": 3,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          }
+        ]
+      },
+      "Oracle": {
+        "recall@1_h1": 25.0,
+        "recall@1_h2": 25.0,
+        "recall@1_per_window": [
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "recall@5_h1": 51.9,
+        "recall@5_h2": 54.4,
+        "recall@5_per_window": [
+          53.75,
+          50.0,
+          53.75,
+          55.0
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 56.2,
+        "recall@10_per_window": [
+          57.5,
+          51.25,
+          57.5,
+          55.0
+        ],
+        "recall@20_h1": 56.9,
+        "recall@20_h2": 57.5,
+        "recall@20_per_window": [
+          57.5,
+          56.25,
+          58.75,
+          56.25
+        ],
+        "kb_coverage_h1": 100.0,
+        "kb_coverage_h2": 100.0,
+        "kb_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "kb_coverage_cumulative_h1": 79.9,
+        "kb_coverage_cumulative_h2": 43.2,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          59.75,
+          48.32,
+          38.05
+        ],
+        "update_cost": 607,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 607
+      },
+      "SemFlow": {
+        "recall@1_h1": 22.5,
+        "recall@1_h2": 0.6,
+        "recall@1_per_window": [
+          22.5,
+          22.5,
+          0.0,
+          1.25
+        ],
+        "recall@5_h1": 50.6,
+        "recall@5_h2": 1.2,
+        "recall@5_per_window": [
+          52.5,
+          48.75,
+          0.0,
+          2.5
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 1.2,
+        "recall@10_per_window": [
+          55.0,
+          53.75,
+          0.0,
+          2.5
+        ],
+        "recall@20_h1": 56.2,
+        "recall@20_h2": 1.2,
+        "recall@20_per_window": [
+          56.25,
+          56.25,
+          0.0,
+          2.5
+        ],
+        "kb_coverage_h1": 95.0,
+        "kb_coverage_h2": 5.6,
+        "kb_coverage_per_window": [
+          95.0,
+          94.94,
+          3.75,
+          7.5
+        ],
+        "kb_coverage_cumulative_h1": 95.0,
+        "kb_coverage_cumulative_h2": 59.4,
+        "kb_coverage_cumulative_per_window": [
+          95.0,
+          94.97,
+          64.71,
+          54.09
+        ],
+        "update_cost": 41,
+        "maint_retrieval_cost": 220,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 220,
+        "cost": 261,
+        "last_admission": {
+          "w": 3,
+          "weak_queries": 19,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 19
+        }
+      }
+    },
+    "elapsed": 192.6
+  }
+}

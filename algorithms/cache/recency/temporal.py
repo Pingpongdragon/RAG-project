@@ -1,4 +1,4 @@
-"""Time-aware recency policies (timestamp/freshness baselines, from motivation_1).
+"""Time-aware recency policies (timestamp/freshness baselines).
 
 Self-contained: no injectable params, only the shared _ArrivalCacheBase.
 """

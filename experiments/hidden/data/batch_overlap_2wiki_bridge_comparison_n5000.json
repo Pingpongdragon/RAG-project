@@ -1,0 +1,1833 @@
+{
+  "dataset": "2wikimultihopqa",
+  "loader": "2wiki_expanded",
+  "q_type": "bridge_comparison",
+  "n_source": 5000,
+  "n_queries": 5000,
+  "batch_size": 100,
+  "n_batches": 200,
+  "seed": 42,
+  "definition": {
+    "agent": "one concurrent multi-hop QA request",
+    "hidden_sf": "supporting title not appearing verbatim in the question",
+    "agents_with_shared_hidden_sf": "fraction of agents in a batch whose hidden support title is also needed by at least one other agent"
+  },
+  "summary": {
+    "agents_with_shared_sf": 0.1338,
+    "agents_with_shared_hidden_sf": 0.1338,
+    "pairwise_sf_overlap": 0.0015,
+    "pairwise_hidden_sf_overlap": 0.0015,
+    "duplicate_sf_ref_rate": 0.019,
+    "duplicate_hidden_sf_ref_rate": 0.0358,
+    "mean_hidden_sf_per_agent": 2.0,
+    "agents_with_shared_sf_std": 0.0499,
+    "agents_with_shared_hidden_sf_std": 0.0498,
+    "pairwise_sf_overlap_std": 0.0006,
+    "pairwise_hidden_sf_overlap_std": 0.0006,
+    "duplicate_sf_ref_rate_std": 0.008,
+    "duplicate_hidden_sf_ref_rate_std": 0.0141,
+    "mean_hidden_sf_per_agent_std": 0.0
+  },
+  "batches": [
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.22,
+      "agents_with_shared_hidden_sf": 0.22,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.07,
+      "agents_with_shared_hidden_sf": 0.07,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.22,
+      "agents_with_shared_hidden_sf": 0.22,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.05,
+      "agents_with_shared_hidden_sf": 0.05,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.2,
+      "agents_with_shared_hidden_sf": 0.2,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.05,
+      "agents_with_shared_hidden_sf": 0.05,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.2,
+      "agents_with_shared_hidden_sf": 0.2,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.22,
+      "agents_with_shared_hidden_sf": 0.22,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.23,
+      "agents_with_shared_hidden_sf": 0.23,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.22,
+      "agents_with_shared_hidden_sf": 0.22,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.23,
+      "agents_with_shared_hidden_sf": 0.23,
+      "pairwise_sf_overlap": 0.0032323232323232323,
+      "pairwise_hidden_sf_overlap": 0.0032323232323232323,
+      "duplicate_sf_ref_rate": 0.0425,
+      "duplicate_hidden_sf_ref_rate": 0.075,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.04,
+      "agents_with_shared_hidden_sf": 0.04,
+      "pairwise_sf_overlap": 0.00040404040404040404,
+      "pairwise_hidden_sf_overlap": 0.00040404040404040404,
+      "duplicate_sf_ref_rate": 0.005,
+      "duplicate_hidden_sf_ref_rate": 0.01,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.2,
+      "agents_with_shared_hidden_sf": 0.2,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.035,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.04,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.07,
+      "agents_with_shared_hidden_sf": 0.07,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.23,
+      "agents_with_shared_hidden_sf": 0.23,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.25,
+      "agents_with_shared_hidden_sf": 0.25,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.035,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.24,
+      "agents_with_shared_hidden_sf": 0.24,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.2,
+      "agents_with_shared_hidden_sf": 0.2,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.02,
+      "agents_with_shared_hidden_sf": 0.02,
+      "pairwise_sf_overlap": 0.00020202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00020202020202020202,
+      "duplicate_sf_ref_rate": 0.0025,
+      "duplicate_hidden_sf_ref_rate": 0.005,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.25,
+      "agents_with_shared_hidden_sf": 0.25,
+      "pairwise_sf_overlap": 0.0032323232323232323,
+      "pairwise_hidden_sf_overlap": 0.0032323232323232323,
+      "duplicate_sf_ref_rate": 0.0375,
+      "duplicate_hidden_sf_ref_rate": 0.07,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.09,
+      "agents_with_shared_hidden_sf": 0.09,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.16,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0016161616161616162,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.15,
+      "agents_with_shared_hidden_sf": 0.15,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.23,
+      "agents_with_shared_hidden_sf": 0.23,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.17,
+      "agents_with_shared_hidden_sf": 0.17,
+      "pairwise_sf_overlap": 0.00202020202020202,
+      "pairwise_hidden_sf_overlap": 0.00202020202020202,
+      "duplicate_sf_ref_rate": 0.0225,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.25,
+      "agents_with_shared_hidden_sf": 0.25,
+      "pairwise_sf_overlap": 0.0026262626262626263,
+      "pairwise_hidden_sf_overlap": 0.0026262626262626263,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.19,
+      "agents_with_shared_hidden_sf": 0.19,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.16,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0016161616161616162,
+      "duplicate_sf_ref_rate": 0.03,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.0125,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.0275,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.06,
+      "agents_with_shared_hidden_sf": 0.06,
+      "pairwise_sf_overlap": 0.0006060606060606061,
+      "pairwise_hidden_sf_overlap": 0.0006060606060606061,
+      "duplicate_sf_ref_rate": 0.0075,
+      "duplicate_hidden_sf_ref_rate": 0.015,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.02,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.21,
+      "agents_with_shared_hidden_sf": 0.21,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.0325,
+      "duplicate_hidden_sf_ref_rate": 0.055,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.24,
+      "agents_with_shared_hidden_sf": 0.24,
+      "pairwise_sf_overlap": 0.0028282828282828283,
+      "pairwise_hidden_sf_overlap": 0.0028282828282828283,
+      "duplicate_sf_ref_rate": 0.035,
+      "duplicate_hidden_sf_ref_rate": 0.065,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.12,
+      "agents_with_shared_hidden_sf": 0.12,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0018181818181818182,
+      "pairwise_hidden_sf_overlap": 0.0018181818181818182,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.045,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.11,
+      "agents_with_shared_hidden_sf": 0.11,
+      "pairwise_sf_overlap": 0.0012121212121212121,
+      "pairwise_hidden_sf_overlap": 0.0012121212121212121,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.03,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.2,
+      "agents_with_shared_hidden_sf": 0.2,
+      "pairwise_sf_overlap": 0.0024242424242424242,
+      "pairwise_hidden_sf_overlap": 0.0024242424242424242,
+      "duplicate_sf_ref_rate": 0.035,
+      "duplicate_hidden_sf_ref_rate": 0.06,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.1,
+      "agents_with_shared_hidden_sf": 0.1,
+      "pairwise_sf_overlap": 0.00101010101010101,
+      "pairwise_hidden_sf_overlap": 0.00101010101010101,
+      "duplicate_sf_ref_rate": 0.015,
+      "duplicate_hidden_sf_ref_rate": 0.025,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.08,
+      "agents_with_shared_hidden_sf": 0.08,
+      "pairwise_sf_overlap": 0.0008080808080808081,
+      "pairwise_hidden_sf_overlap": 0.0008080808080808081,
+      "duplicate_sf_ref_rate": 0.01,
+      "duplicate_hidden_sf_ref_rate": 0.02,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.14,
+      "agents_with_shared_hidden_sf": 0.14,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.04,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.13,
+      "agents_with_shared_hidden_sf": 0.13,
+      "pairwise_sf_overlap": 0.0014141414141414141,
+      "pairwise_hidden_sf_overlap": 0.0014141414141414141,
+      "duplicate_sf_ref_rate": 0.0175,
+      "duplicate_hidden_sf_ref_rate": 0.035,
+      "mean_hidden_sf_per_agent": 2.0
+    },
+    {
+      "agents_with_shared_sf": 0.18,
+      "agents_with_shared_hidden_sf": 0.18,
+      "pairwise_sf_overlap": 0.0022222222222222222,
+      "pairwise_hidden_sf_overlap": 0.0022222222222222222,
+      "duplicate_sf_ref_rate": 0.025,
+      "duplicate_hidden_sf_ref_rate": 0.05,
+      "mean_hidden_sf_per_agent": 2.0
+    }
+  ]
+}

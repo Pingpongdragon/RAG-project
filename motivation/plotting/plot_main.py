@@ -13,10 +13,10 @@ ROOT  = Path(__file__).parent.parent  # motivation/ root
 FIGS  = ROOT / 'paper_figs'
 FIGS.mkdir(exist_ok=True)
 
-MO1_SUDDEN  = ROOT / 'motivation_1/data/results_100w_sudden_v3.json'
-MO1_GRADUAL = ROOT / 'motivation_1/data/results_100w_gradual_v3_instrumented.json'
-MO2_SUDDEN  = ROOT / 'motivation_2/data/results_50w_sudden_v3.json'
-MO2_GRADUAL = ROOT / 'motivation_2/data/results_50w_gradual_v3.json'
+MO1_SUDDEN  = ROOT.parent / 'experiments/direct/data/results_100w_sudden_v3.json'
+MO1_GRADUAL = ROOT.parent / 'experiments/direct/data/results_100w_gradual_v3_instrumented.json'
+MO2_SUDDEN  = ROOT.parent / 'experiments/hidden/data/results_50w_sudden_v3.json'
+MO2_GRADUAL = ROOT.parent / 'experiments/hidden/data/results_50w_gradual_v3.json'
 
 plt.rcParams.update({
     'font.family':'DejaVu Sans','font.size':11,
@@ -216,7 +216,7 @@ mo1s=load(MO1_SUDDEN); mo1g=load(MO1_GRADUAL)
 # Hot-tier cache framing: replace HotpotQA-comp with the realistic
 # pool=200k experiment so pool/KB ratio (~10x) matches a production
 # hot-tier semantic cache fronting a much larger cold-tier vector store.
-MO1_GRADUAL_HOTPOT_HOTTIER = ROOT / 'motivation_1/data/results_hotpotqa_comp_gradual_pool200k.json'
+MO1_GRADUAL_HOTPOT_HOTTIER = ROOT.parent / 'experiments/direct/data/results_hotpotqa_comp_gradual_pool200k.json'
 if MO1_GRADUAL_HOTPOT_HOTTIER.exists():
     _hot = load(MO1_GRADUAL_HOTPOT_HOTTIER)
     if 'hotpotqa_comparison' in _hot:
@@ -228,7 +228,7 @@ for _ds_key, _fname in [
     ('triviaqa_wikipedia', 'results_triviaqa_gradual_pool40k.json'),
     ('2wiki_simple',       'results_2wiki_simple_gradual_pool140k.json'),
 ]:
-    _p = ROOT / f'motivation_1/data/{_fname}'
+    _p = ROOT.parent / f'experiments/direct/data/{_fname}'
     if _p.exists():
         _d = load(_p)
         if _ds_key in _d:
@@ -245,7 +245,7 @@ for _ds_key, _fname in [
     ('triviaqa_wikipedia',  'results_triviaqa_sudden_pool40k.json'),
     ('2wiki_simple',        'results_2wiki_simple_sudden_pool140k.json'),
 ]:
-    _p = ROOT / f'motivation_1/data/{_fname}'
+    _p = ROOT.parent / f'experiments/direct/data/{_fname}'
     if _p.exists():
         _d = load(_p)
         if _ds_key in _d:
@@ -256,7 +256,7 @@ mo2s=load(MO2_SUDDEN); mo2g=load(MO2_GRADUAL)
 # Multi-hop hot-tier override: replace 2WikiMultihopQA with the larger-pool
 # (pool=67k / KB=6.7k = 10x ratio) gradual run so fig2(b) matches the
 # production hot-tier framing used for fig2(a).
-MO2_GRADUAL_2WIKI_HOTTIER = ROOT / 'motivation_2/data/results_100w_2wiki_gradual_pool67k.json'
+MO2_GRADUAL_2WIKI_HOTTIER = ROOT.parent / 'experiments/hidden/data/results_100w_2wiki_gradual_pool67k.json'
 if MO2_GRADUAL_2WIKI_HOTTIER.exists():
     _hot2 = load(MO2_GRADUAL_2WIKI_HOTTIER)
     if '2wikimultihopqa' in _hot2:
@@ -271,7 +271,7 @@ for _ds_key, _fname in [
     ('hotpotqa',        'results_100w_hotpot_bridge_sudden_pool33k.json'),
     ('musique',         'results_100w_musique_sudden_pool70k.json'),
 ]:
-    _p = ROOT / f'motivation_2/data/{_fname}'
+    _p = ROOT.parent / f'experiments/hidden/data/{_fname}'
     if _p.exists():
         _d = load(_p)
         if _ds_key in _d:
@@ -586,7 +586,7 @@ import shutil
 # FT/WSJ/etc.  We bin the 4.8K dated test queries into 5 year-rounds and
 # track per-window Recall@5 against the round-specific gold articles.
 print('\nBuilding StreamingQA temporal recall@5 figure…')
-TREC_TEMPORAL = ROOT / 'motivation_1/data/results_streamingqa_temporal.json'
+TREC_TEMPORAL = ROOT.parent / 'experiments/direct/data/results_streamingqa_temporal.json'
 if TREC_TEMPORAL.exists():
     tc = load(TREC_TEMPORAL)
     ds_key = list(tc.keys())[0]
@@ -650,16 +650,16 @@ print('\nBuilding Mo2 dense-vs-graph ablation figure…')
 ENC_BGE = 'Encoder: BAAI/bge-large-en-v1.5'
 DG_FILES = {
     'hotpotqa_bridge': (
-        ROOT / 'motivation_2/data/results_100w_hotpot_bridge_sudden_dense_bge_v2.json',
-        ROOT / 'motivation_2/data/results_100w_hotpot_bridge_sudden_graph_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_hotpot_bridge_sudden_dense_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_hotpot_bridge_sudden_graph_bge_v2.json',
         'hotpotqa_expanded'),
     '2wiki': (
-        ROOT / 'motivation_2/data/results_100w_2wiki_sudden_dense_bge_v2.json',
-        ROOT / 'motivation_2/data/results_100w_2wiki_sudden_graph_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_2wiki_sudden_dense_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_2wiki_sudden_graph_bge_v2.json',
         '2wikimultihopqa'),
     'musique': (
-        ROOT / 'motivation_2/data/results_100w_musique_sudden_dense_bge_v2.json',
-        ROOT / 'motivation_2/data/results_100w_musique_sudden_graph_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_musique_sudden_dense_bge_v2.json',
+        ROOT.parent / 'experiments/hidden/data/results_100w_musique_sudden_graph_bge_v2.json',
         'musique'),
 }
 DG_LABELS = {'hotpotqa_bridge': 'HotpotQA-Bridge',

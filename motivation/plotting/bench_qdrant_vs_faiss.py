@@ -26,12 +26,15 @@ COLD_POOL    = 5_000
 DIM          = 384
 BATCH_UPSERT = 256
 
-sys.path.insert(0, str(Path(__file__).parent.parent / 'motivation_1'))
+sys.path.insert(
+    0,
+    str(Path(__file__).resolve().parents[2] / "experiments" / "direct"),
+)
 
 print("=" * 64)
 print("Loading StreamingQA docs …")
-from loaders_temporal import load_streamingqa_temporal
-doc_pool, queries, _ = load_streamingqa_temporal(n_distractors=5000)
+from loaders_temporal import load_streamingqa_official
+doc_pool, queries, _ = load_streamingqa_official()
 doc_pool = doc_pool[:COLD_POOL]
 queries  = queries[:N_QUERIES + WARMUP]
 

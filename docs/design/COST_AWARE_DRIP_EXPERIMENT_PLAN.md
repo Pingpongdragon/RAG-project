@@ -159,7 +159,7 @@ evaluate quality per write.
 
 ```bash
 cd /data/jyliu/RAG-project
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_1/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/direct/run.py \
   --datasets streamingqa_temporal \
   --drift temporal \
   --n-windows 50 \
@@ -183,7 +183,7 @@ completion.
 ```bash
 cd /data/jyliu/RAG-project
 CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type comparison \
@@ -241,7 +241,7 @@ Use existing bridge workloads only as diagnostics:
 
 ```bash
 CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type bridge_comparison \

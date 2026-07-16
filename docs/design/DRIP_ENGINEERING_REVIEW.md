@@ -28,8 +28,8 @@ We should add a lightweight graph-backed bridge module. Not a big LLM-built glob
 
 | Sub-problem | Existing code | Reuse? | Notes |
 |---|---|---|---|
-| Entity extraction | [graph_retrieval.py](../../motivation/motivation_2/graph_retrieval.py) `extract_pool_entities`, `extract_query_entities` | Yes | Already cached, spaCy-based, good enough for first version. |
-| Entity graph retrieval | [LightGraphRAG](../../motivation/motivation_2/graph_retrieval.py) | Partially | Has passage-entity graph, IDF, co-occurrence edges, PPR. Useful reference, but retrieval-time graph is not the same as write-time admission. |
+| Entity extraction | [graph_retrieval.py](../../experiments/hidden/graph_retrieval.py) `extract_pool_entities`, `extract_query_entities` | Yes | Already cached, spaCy-based, good enough for first version. |
+| Entity graph retrieval | [LightGraphRAG](../../experiments/hidden/graph_retrieval.py) | Partially | Has passage-entity graph, IDF, co-occurrence edges, PPR. Useful reference, but retrieval-time graph is not the same as write-time admission. |
 | Direct demand ledger | [cache_manager/__init__.py](../../algorithms/drip/cache_manager/__init__.py) | Yes | Keep, but split evidence by channel. |
 | Bridge candidate generation | [support_completion.py](../../algorithms/drip/cache_manager/support_completion.py) | Replace internals | Current bridge chain has recall but poor precision. |
 | Budgeted admission | [cache_manager/__init__.py](../../algorithms/drip/cache_manager/__init__.py) | Modify | Needs typed budgets and typed evidence, not one scalar demand. |

@@ -19,7 +19,7 @@ behavior, and the exact commands to reproduce the numbers in the paper.
 We use **`bg51717/streamingqa`** (Hugging Face); the dataset is binned into 5
 historical eras by the publication year carried by every passage and dated
 question. The mapping lives in
-`motivation/motivation_1/loaders_temporal.py` (constant `YEAR_TO_ROUND`):
+`experiments/direct/loaders_temporal.py` (constant `YEAR_TO_ROUND`):
 
 | Round | Years | News theme | # dated queries |
 |------:|:------|:-----------|----------------:|
@@ -32,7 +32,7 @@ question. The mapping lives in
 
 Each era owns **20 consecutive windows of 50 queries**, in chronological order
 (`R1 = windows 0..19`, `R2 = windows 20..39`, …, `R5 = windows 80..99`).
-Stream construction is in `motivation/motivation_1/utils.py ::
+Stream construction is in `experiments/direct/utils.py ::
 cluster_and_build_stream()` (`drift == "temporal"` branch). There is **no
 synthetic flip** — drift is whatever the news data carries from era to era.
 
@@ -58,7 +58,7 @@ Pool / hot KB:
 Dropped (family-redundant): `KnowledgeEdit`, `LRU`, `MemGPTStyle`,
 `TemporalAware`. Each dropped item has a stronger sibling already plotted.
 
-All strategies live in `motivation/motivation_1/strategies.py` and are
+All strategies live in `experiments/direct/strategies.py` and are
 registered in the global `STRATEGIES` dict. `RecencyTTL` is around
 lines 711–760; `OnDemandFetch` (with the
 `serve_retrieval_cost` accumulator that drives Fig.~1c) is around
@@ -70,7 +70,7 @@ lines 423–475; `DRIP-Dense` is around line 200.
 
 ```bash
 source ~/miniconda3/etc/profile.d/conda.sh && conda activate ljy_rag_ft
-cd /data/jyliu/RAG-project/motivation/motivation_1
+cd /data/jyliu/RAG-project/experiments/direct
 
 CUDA_VISIBLE_DEVICES=1 EMBED_MODEL=BAAI/bge-base-en-v1.5 python run.py \
     --datasets   streamingqa_temporal \
@@ -83,7 +83,7 @@ CUDA_VISIBLE_DEVICES=1 EMBED_MODEL=BAAI/bge-base-en-v1.5 python run.py \
 ```
 
 Wall-clock: ~20 min on a single L40-class GPU.
-Result file lands at `motivation/motivation_1/data/results_streamingqa_temporal.json`.
+Result file lands at `experiments/direct/data/results_streamingqa_temporal.json`.
 Plotting:
 
 ```bash
@@ -163,11 +163,11 @@ This is exactly the cost/quality trade-off Fig.~1b and Fig.~1c quantify.
 
 | File | What to inspect |
 |------|-----------------|
-| `motivation/motivation_1/loaders_temporal.py` | `YEAR_TO_ROUND` mapping, dated-query filter |
-| `motivation/motivation_1/utils.py`            | `cluster_and_build_stream()` (`temporal` branch — natural 5×20 round stream, no synthetic flip) |
-| `motivation/motivation_1/strategies.py`       | `DRIP-Dense`, `RecencyTTL`, `OnDemandFetch` definitions |
-| `motivation/motivation_1/run.py`              | top-level experiment driver (`--strategies`, `--drift`) |
-| `motivation/motivation_1/data/results_streamingqa_temporal.json` | raw per-window metrics |
+| `experiments/direct/loaders_temporal.py` | `YEAR_TO_ROUND` mapping, dated-query filter |
+| `experiments/direct/utils.py`            | `cluster_and_build_stream()` (`temporal` branch — natural 5×20 round stream, no synthetic flip) |
+| `experiments/direct/strategies.py`       | `DRIP-Dense`, `RecencyTTL`, `OnDemandFetch` definitions |
+| `experiments/direct/run.py`              | top-level experiment driver (`--strategies`, `--drift`) |
+| `experiments/direct/data/results_streamingqa_temporal.json` | raw per-window metrics |
 | `motivation/plotting/plot_motivation_v2.py`   | `fig1()` produces the integrated 3-panel figure |
 | `motivation/paper_figs/intro/fig1_intro_streamingqa_signal_audit.pdf` | final figure |
 | `motivation/motivation.tex`                   | §1 audit paragraph + Fig.~1 (`\label{fig:streamingqa}`) |

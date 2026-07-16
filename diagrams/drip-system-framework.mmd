@@ -1,0 +1,75 @@
+flowchart LR
+    Q[Query Window Q_t]
+    K[(Hot Cache K_t)]
+    C[(Cold Corpus D)]
+
+    subgraph OBS[Online Observation]
+        SR[Serve and Cache Coverage]
+        UE[Under-covered Queries U_t]
+        SL[Serve Ledger S_t]
+    end
+
+    subgraph DET[Support-Weighted Drift Detection]
+        REF[Frozen Warmup Reference]
+        GAP[Support Gap u_t q]
+        MMD[SW-MMD with RBF Kernel]
+        TEST[Permutation Test p_t]
+        CTRL[Drift Alarm rho_t]
+    end
+
+    subgraph EVI[Evidence Acquisition]
+        ROUTE{Evidence Visibility}
+        DIRECT[Direct Dense Evidence]
+        HIDDEN[Hidden Graph Completion]
+        DL[Demand Ledger D_t]
+    end
+
+    subgraph ADM[Replacement-Aware Cache Control]
+        GAIN[Net Gain Delta_t c v]
+        REP[Replacement Pressure C_t]
+        UPDATE[Admit Candidate and Evict Victim]
+    end
+
+    KN[(Updated Hot Cache K_t+1)]
+
+    Q --> SR
+    K --> SR
+    SR -->|resident hits| SL
+    SR -->|support failure| UE
+
+    Q --> GAP
+    K --> GAP
+    REF --> GAP
+    GAP --> MMD
+    MMD --> TEST
+    TEST -->|p_t <= alpha| CTRL
+
+    UE --> ROUTE
+    C --> DIRECT
+    C --> HIDDEN
+    ROUTE -->|query-visible| DIRECT
+    ROUTE -.->|query-hidden optional| HIDDEN
+    DIRECT --> DL
+    HIDDEN -.-> DL
+
+    DL --> GAIN
+    SL --> GAIN
+    CTRL -->|relax admission margin| GAIN
+    REP --> GAIN
+    GAIN -->|Delta_t > 0| UPDATE
+    K --> UPDATE
+    UPDATE --> KN
+    KN -.->|next window| K
+    UPDATE -->|replacement EMA| REP
+
+    classDef storage fill:#E8F0FE,stroke:#315A9A,stroke-width:2px,color:#102A43
+    classDef observe fill:#E8F5E9,stroke:#3C7A57,stroke-width:1.5px,color:#163D26
+    classDef detector fill:#FFF4D6,stroke:#B7791F,stroke-width:1.5px,color:#5F370E
+    classDef evidence fill:#F3E8FF,stroke:#7A4EAB,stroke-width:1.5px,color:#3B1F5E
+    classDef control fill:#FCE8E6,stroke:#B44B43,stroke-width:1.5px,color:#5A1E1A
+
+    class K,C,KN storage
+    class SR,UE,SL observe
+    class REF,GAP,MMD,TEST,CTRL detector
+    class ROUTE,DIRECT,HIDDEN,DL evidence
+    class GAIN,REP,UPDATE control

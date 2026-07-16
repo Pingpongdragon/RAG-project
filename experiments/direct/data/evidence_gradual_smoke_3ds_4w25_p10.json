@@ -1,0 +1,5501 @@
+{
+  "squad": {
+    "dataset": "squad",
+    "config": {
+      "kb_budget": 120,
+      "pool_size": 1200,
+      "kb_pool_ratio": 0.1,
+      "n_windows": 4,
+      "window_size": 25,
+      "n_queries_available": 5554,
+      "seed": 42,
+      "data_seed": 42,
+      "workload": "factorized_gradual",
+      "initialization": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 100,
+        "unique": 100,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 100,
+        "support_occurrences": 100,
+        "unique_supports": 50,
+        "repeated_support_occurrences": 50,
+        "repeated_support_rate": 0.5,
+        "queries_answerable_from_past": 50,
+        "past_answerable_query_rate": 0.5,
+        "adjacent_window_jaccard_mean": 0.666667,
+        "max_support_frequency": 2
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.387678,
+        "regime_js_divergence": 1.0,
+        "adjacent_centroid_shift_mean": 0.241939,
+        "adjacent_centroid_shift_max": 0.373356
+      },
+      "workload_factors": {
+        "windows": 4,
+        "regimes": 2,
+        "cross_regime_transitions": 1,
+        "cross_regime_evidence_jaccard_mean": 0.0,
+        "drift_magnitude": 1.0,
+        "within_regime_repeated_support_rate": 0.5,
+        "causal_transition_accuracy": 0.0,
+        "recurrent_transition_rate": 0.0,
+        "labeled_visibility_rate": 1.0
+      },
+      "factorized_construction": {
+        "representation": "sparse-evidence-tfidf",
+        "latent_topics": 8,
+        "regimes": 4,
+        "requested_queries": 100,
+        "selected_queries": 100,
+        "warmup_queries": 25,
+        "available_queries": 5554,
+        "eligible_queries": 5554,
+        "exact_query_duplicates": 0,
+        "min_support_frequency": 1,
+        "family_mode": "auto",
+        "support_families": 1200,
+        "regime_counts": {
+          "1": 24,
+          "0": 26,
+          "3": 24,
+          "2": 26
+        }
+      },
+      "warmup_audit": {
+        "requested": 25,
+        "actual": 25,
+        "unique": 25,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "temporal_sampling": null,
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 76.0,
+        "recall@1_h2": 46.0,
+        "recall@1_per_window": [
+          68.0,
+          84.0,
+          12.0,
+          80.0
+        ],
+        "recall@5_h1": 86.0,
+        "recall@5_h2": 46.0,
+        "recall@5_per_window": [
+          76.0,
+          96.0,
+          12.0,
+          80.0
+        ],
+        "recall@10_h1": 86.0,
+        "recall@10_h2": 46.0,
+        "recall@10_per_window": [
+          76.0,
+          96.0,
+          12.0,
+          80.0
+        ],
+        "recall@20_h1": 86.0,
+        "recall@20_h2": 48.0,
+        "recall@20_per_window": [
+          76.0,
+          96.0,
+          12.0,
+          84.0
+        ],
+        "cov_h1": 88.0,
+        "cov_h2": 48.0,
+        "cov_per_window": [
+          80.0,
+          96.0,
+          12.0,
+          84.0
+        ],
+        "update_cost": 37,
+        "cache_writes": 37,
+        "replacement_count": 37,
+        "cache_replacements": 37,
+        "replacement_rate_per_query": 0.37,
+        "replacement_rate_per_window": 9.25,
+        "cache_churn_rate": 0.077083,
+        "cache_churn_rate_pct": 7.708,
+        "maint_retrieval_cost": 64,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 64,
+        "cost": 101,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.99,
+        "retrieval_latency_per_window": [
+          1.116,
+          0.941,
+          0.968,
+          0.934
+        ],
+        "query_latency_mean_ms": 0.991,
+        "query_latency_per_window": [
+          1.118,
+          0.942,
+          0.968,
+          0.935
+        ],
+        "per_query_latency_mean_ms": 0.0396,
+        "per_query_latency_per_window": [
+          0.0447,
+          0.0377,
+          0.0387,
+          0.0374
+        ],
+        "step_latency_mean_ms": 0.959,
+        "step_latency_per_window": [
+          1.111,
+          0.574,
+          1.474,
+          0.677
+        ],
+        "update_latency_mean_ms": 0.959,
+        "update_latency_per_window": [
+          1.111,
+          0.574,
+          1.474,
+          0.677
+        ],
+        "step_overhead_mean": 9.25,
+        "step_overhead_per_window": [
+          7,
+          3,
+          22,
+          5
+        ],
+        "cold_fetches_per_query": 0.32,
+        "support_coverage_rate": 68.0,
+        "arc_item_hit_rate": 68.0,
+        "has_answer_rate": 68.0,
+        "strict_has_answer_rate": 68.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 68,
+        "has_answer_h1": 88.0,
+        "has_answer_h2": 48.0,
+        "has_answer_per_window": [
+          80.0,
+          96.0,
+          12.0,
+          84.0
+        ],
+        "support_coverage_h1": 88.0,
+        "support_coverage_h2": 48.0,
+        "support_coverage_per_window": [
+          80.0,
+          96.0,
+          12.0,
+          84.0
+        ],
+        "cold_fetches_h1": 0.12,
+        "cold_fetches_h2": 0.52,
+        "cold_fetches_per_window": [
+          0.2,
+          0.04,
+          0.88,
+          0.16
+        ],
+        "amat": 4.2,
+        "amat_normalized": 4.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.32,
+        "l2_accesses_per_query": 0.32,
+        "serve_fetches_per_query": 0.0
+      },
+      "FIFO": {
+        "recall@1_h1": 76.0,
+        "recall@1_h2": 46.0,
+        "recall@1_per_window": [
+          68.0,
+          84.0,
+          12.0,
+          80.0
+        ],
+        "recall@5_h1": 84.0,
+        "recall@5_h2": 46.0,
+        "recall@5_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          80.0
+        ],
+        "recall@10_h1": 84.0,
+        "recall@10_h2": 46.0,
+        "recall@10_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          80.0
+        ],
+        "recall@20_h1": 84.0,
+        "recall@20_h2": 48.0,
+        "recall@20_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "cov_h1": 86.0,
+        "cov_h2": 48.0,
+        "cov_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "update_cost": 38,
+        "cache_writes": 38,
+        "replacement_count": 38,
+        "cache_replacements": 38,
+        "replacement_rate_per_query": 0.38,
+        "replacement_rate_per_window": 9.5,
+        "cache_churn_rate": 0.079167,
+        "cache_churn_rate_pct": 7.917,
+        "maint_retrieval_cost": 64,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 64,
+        "cost": 102,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.979,
+        "retrieval_latency_per_window": [
+          0.975,
+          0.997,
+          0.973,
+          0.973
+        ],
+        "query_latency_mean_ms": 0.98,
+        "query_latency_per_window": [
+          0.976,
+          0.997,
+          0.974,
+          0.974
+        ],
+        "per_query_latency_mean_ms": 0.0392,
+        "per_query_latency_per_window": [
+          0.039,
+          0.0399,
+          0.039,
+          0.039
+        ],
+        "step_latency_mean_ms": 0.423,
+        "step_latency_per_window": [
+          0.497,
+          0.355,
+          0.444,
+          0.393
+        ],
+        "update_latency_mean_ms": 0.423,
+        "update_latency_per_window": [
+          0.497,
+          0.355,
+          0.444,
+          0.393
+        ],
+        "step_overhead_mean": 9.5,
+        "step_overhead_per_window": [
+          7,
+          3,
+          23,
+          5
+        ],
+        "cold_fetches_per_query": 0.33,
+        "support_coverage_rate": 67.0,
+        "arc_item_hit_rate": 67.0,
+        "has_answer_rate": 67.0,
+        "strict_has_answer_rate": 67.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 67,
+        "has_answer_h1": 86.0,
+        "has_answer_h2": 48.0,
+        "has_answer_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "support_coverage_h1": 86.0,
+        "support_coverage_h2": 48.0,
+        "support_coverage_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "cold_fetches_h1": 0.14,
+        "cold_fetches_h2": 0.52,
+        "cold_fetches_per_window": [
+          0.2,
+          0.08,
+          0.88,
+          0.16
+        ],
+        "amat": 4.3,
+        "amat_normalized": 4.3,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.33,
+        "l2_accesses_per_query": 0.33,
+        "serve_fetches_per_query": 0.0
+      },
+      "TinyLFU": {
+        "recall@1_h1": 74.0,
+        "recall@1_h2": 46.0,
+        "recall@1_per_window": [
+          68.0,
+          80.0,
+          12.0,
+          80.0
+        ],
+        "recall@5_h1": 84.0,
+        "recall@5_h2": 46.0,
+        "recall@5_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          80.0
+        ],
+        "recall@10_h1": 84.0,
+        "recall@10_h2": 46.0,
+        "recall@10_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          80.0
+        ],
+        "recall@20_h1": 84.0,
+        "recall@20_h2": 48.0,
+        "recall@20_per_window": [
+          76.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "cov_h1": 86.0,
+        "cov_h2": 48.0,
+        "cov_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "update_cost": 38,
+        "cache_writes": 38,
+        "replacement_count": 38,
+        "cache_replacements": 38,
+        "replacement_rate_per_query": 0.38,
+        "replacement_rate_per_window": 9.5,
+        "cache_churn_rate": 0.079167,
+        "cache_churn_rate_pct": 7.917,
+        "maint_retrieval_cost": 64,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 64,
+        "cost": 102,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.0,
+          0.0,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.978,
+        "retrieval_latency_per_window": [
+          0.972,
+          0.977,
+          0.98,
+          0.983
+        ],
+        "query_latency_mean_ms": 0.979,
+        "query_latency_per_window": [
+          0.973,
+          0.978,
+          0.981,
+          0.984
+        ],
+        "per_query_latency_mean_ms": 0.0392,
+        "per_query_latency_per_window": [
+          0.0389,
+          0.0391,
+          0.0392,
+          0.0394
+        ],
+        "step_latency_mean_ms": 0.893,
+        "step_latency_per_window": [
+          0.872,
+          0.573,
+          1.467,
+          0.659
+        ],
+        "update_latency_mean_ms": 0.893,
+        "update_latency_per_window": [
+          0.872,
+          0.573,
+          1.467,
+          0.659
+        ],
+        "step_overhead_mean": 9.5,
+        "step_overhead_per_window": [
+          7,
+          4,
+          22,
+          5
+        ],
+        "cold_fetches_per_query": 0.33,
+        "support_coverage_rate": 67.0,
+        "arc_item_hit_rate": 67.0,
+        "has_answer_rate": 67.0,
+        "strict_has_answer_rate": 67.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 67,
+        "has_answer_h1": 86.0,
+        "has_answer_h2": 48.0,
+        "has_answer_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "support_coverage_h1": 86.0,
+        "support_coverage_h2": 48.0,
+        "support_coverage_per_window": [
+          80.0,
+          92.0,
+          12.0,
+          84.0
+        ],
+        "cold_fetches_h1": 0.14,
+        "cold_fetches_h2": 0.52,
+        "cold_fetches_per_window": [
+          0.2,
+          0.08,
+          0.88,
+          0.16
+        ],
+        "amat": 4.3,
+        "amat_normalized": 4.3,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.33,
+        "l2_accesses_per_query": 0.33,
+        "serve_fetches_per_query": 0.0
+      },
+      "GPTCacheStyle": {
+        "recall@1_h1": 56.0,
+        "recall@1_h2": 20.0,
+        "recall@1_per_window": [
+          68.0,
+          44.0,
+          16.0,
+          24.0
+        ],
+        "recall@5_h1": 62.0,
+        "recall@5_h2": 20.0,
+        "recall@5_per_window": [
+          76.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "recall@10_h1": 62.0,
+        "recall@10_h2": 20.0,
+        "recall@10_per_window": [
+          76.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "recall@20_h1": 62.0,
+        "recall@20_h2": 20.0,
+        "recall@20_per_window": [
+          76.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "cov_h1": 64.0,
+        "cov_h2": 20.0,
+        "cov_per_window": [
+          80.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "update_cost": 128,
+        "cache_writes": 128,
+        "replacement_count": 128,
+        "cache_replacements": 128,
+        "replacement_rate_per_query": 1.28,
+        "replacement_rate_per_window": 32.0,
+        "cache_churn_rate": 0.266667,
+        "cache_churn_rate_pct": 26.667,
+        "maint_retrieval_cost": 320,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 320,
+        "cost": 448,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 1.023,
+        "retrieval_latency_per_window": [
+          0.963,
+          1.006,
+          0.974,
+          1.147
+        ],
+        "query_latency_mean_ms": 1.023,
+        "query_latency_per_window": [
+          0.965,
+          1.007,
+          0.975,
+          1.147
+        ],
+        "per_query_latency_mean_ms": 0.0409,
+        "per_query_latency_per_window": [
+          0.0386,
+          0.0403,
+          0.039,
+          0.0459
+        ],
+        "step_latency_mean_ms": 1.414,
+        "step_latency_per_window": [
+          1.394,
+          1.403,
+          1.379,
+          1.481
+        ],
+        "update_latency_mean_ms": 1.414,
+        "update_latency_per_window": [
+          1.394,
+          1.403,
+          1.379,
+          1.481
+        ],
+        "step_overhead_mean": 32.0,
+        "step_overhead_per_window": [
+          34,
+          29,
+          32,
+          33
+        ],
+        "cold_fetches_per_query": 0.58,
+        "support_coverage_rate": 42.0,
+        "arc_item_hit_rate": 42.0,
+        "has_answer_rate": 42.0,
+        "strict_has_answer_rate": 42.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 42,
+        "has_answer_h1": 64.0,
+        "has_answer_h2": 20.0,
+        "has_answer_per_window": [
+          80.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "support_coverage_h1": 64.0,
+        "support_coverage_h2": 20.0,
+        "support_coverage_per_window": [
+          80.0,
+          48.0,
+          16.0,
+          24.0
+        ],
+        "cold_fetches_h1": 0.36,
+        "cold_fetches_h2": 0.8,
+        "cold_fetches_per_window": [
+          0.2,
+          0.52,
+          0.84,
+          0.76
+        ],
+        "amat": 6.8,
+        "amat_normalized": 6.8,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.58,
+        "l2_accesses_per_query": 0.58,
+        "serve_fetches_per_query": 0.0
+      },
+      "Proximity": {
+        "recall@1_h1": 68.0,
+        "recall@1_h2": 12.0,
+        "recall@1_per_window": [
+          68.0,
+          68.0,
+          12.0,
+          12.0
+        ],
+        "recall@5_h1": 78.0,
+        "recall@5_h2": 12.0,
+        "recall@5_per_window": [
+          76.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "recall@10_h1": 78.0,
+        "recall@10_h2": 12.0,
+        "recall@10_per_window": [
+          76.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "recall@20_h1": 78.0,
+        "recall@20_h2": 12.0,
+        "recall@20_per_window": [
+          76.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "cov_h1": 80.0,
+        "cov_h2": 12.0,
+        "cov_per_window": [
+          80.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "update_cost": 56,
+        "cache_writes": 56,
+        "replacement_count": 56,
+        "cache_replacements": 56,
+        "replacement_rate_per_query": 0.56,
+        "replacement_rate_per_window": 14.0,
+        "cache_churn_rate": 0.116667,
+        "cache_churn_rate_pct": 11.667,
+        "maint_retrieval_cost": 96,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 96,
+        "cost": 152,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.981,
+        "retrieval_latency_per_window": [
+          0.976,
+          0.975,
+          0.968,
+          1.004
+        ],
+        "query_latency_mean_ms": 0.981,
+        "query_latency_per_window": [
+          0.977,
+          0.975,
+          0.969,
+          1.004
+        ],
+        "per_query_latency_mean_ms": 0.0392,
+        "per_query_latency_per_window": [
+          0.0391,
+          0.039,
+          0.0388,
+          0.0402
+        ],
+        "step_latency_mean_ms": 1.115,
+        "step_latency_per_window": [
+          0.978,
+          0.976,
+          1.186,
+          1.322
+        ],
+        "update_latency_mean_ms": 1.115,
+        "update_latency_per_window": [
+          0.978,
+          0.976,
+          1.186,
+          1.322
+        ],
+        "step_overhead_mean": 14.0,
+        "step_overhead_per_window": [
+          7,
+          7,
+          22,
+          20
+        ],
+        "cold_fetches_per_query": 0.54,
+        "support_coverage_rate": 46.0,
+        "arc_item_hit_rate": 46.0,
+        "has_answer_rate": 46.0,
+        "strict_has_answer_rate": 46.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 46,
+        "has_answer_h1": 80.0,
+        "has_answer_h2": 12.0,
+        "has_answer_per_window": [
+          80.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "support_coverage_h1": 80.0,
+        "support_coverage_h2": 12.0,
+        "support_coverage_per_window": [
+          80.0,
+          80.0,
+          12.0,
+          12.0
+        ],
+        "cold_fetches_h1": 0.2,
+        "cold_fetches_h2": 0.88,
+        "cold_fetches_per_window": [
+          0.2,
+          0.2,
+          0.88,
+          0.88
+        ],
+        "amat": 6.4,
+        "amat_normalized": 6.4,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.54,
+        "l2_accesses_per_query": 0.54,
+        "serve_fetches_per_query": 0.0
+      },
+      "AgentRAGCache": {
+        "recall@1_h1": 78.0,
+        "recall@1_h2": 52.0,
+        "recall@1_per_window": [
+          68.0,
+          88.0,
+          12.0,
+          92.0
+        ],
+        "recall@5_h1": 84.0,
+        "recall@5_h2": 54.0,
+        "recall@5_per_window": [
+          76.0,
+          92.0,
+          16.0,
+          92.0
+        ],
+        "recall@10_h1": 84.0,
+        "recall@10_h2": 54.0,
+        "recall@10_per_window": [
+          76.0,
+          92.0,
+          16.0,
+          92.0
+        ],
+        "recall@20_h1": 84.0,
+        "recall@20_h2": 56.0,
+        "recall@20_per_window": [
+          76.0,
+          92.0,
+          16.0,
+          96.0
+        ],
+        "cov_h1": 86.0,
+        "cov_h2": 56.0,
+        "cov_per_window": [
+          80.0,
+          92.0,
+          16.0,
+          96.0
+        ],
+        "update_cost": 96,
+        "cache_writes": 96,
+        "replacement_count": 96,
+        "cache_replacements": 96,
+        "replacement_rate_per_query": 0.96,
+        "replacement_rate_per_window": 24.0,
+        "cache_churn_rate": 0.2,
+        "cache_churn_rate_pct": 20.0,
+        "maint_retrieval_cost": 64,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 64,
+        "cost": 160,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.954,
+        "retrieval_latency_per_window": [
+          0.974,
+          0.949,
+          0.946,
+          0.948
+        ],
+        "query_latency_mean_ms": 0.955,
+        "query_latency_per_window": [
+          0.976,
+          0.95,
+          0.947,
+          0.949
+        ],
+        "per_query_latency_mean_ms": 0.0382,
+        "per_query_latency_per_window": [
+          0.039,
+          0.038,
+          0.0379,
+          0.038
+        ],
+        "step_latency_mean_ms": 13.687,
+        "step_latency_per_window": [
+          12.834,
+          11.774,
+          17.363,
+          12.776
+        ],
+        "update_latency_mean_ms": 13.687,
+        "update_latency_per_window": [
+          12.834,
+          11.774,
+          17.363,
+          12.776
+        ],
+        "step_overhead_mean": 24.0,
+        "step_overhead_per_window": [
+          43,
+          18,
+          29,
+          6
+        ],
+        "cold_fetches_per_query": 0.29,
+        "support_coverage_rate": 71.0,
+        "arc_item_hit_rate": 71.0,
+        "has_answer_rate": 71.0,
+        "strict_has_answer_rate": 71.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 71,
+        "has_answer_h1": 86.0,
+        "has_answer_h2": 56.0,
+        "has_answer_per_window": [
+          80.0,
+          92.0,
+          16.0,
+          96.0
+        ],
+        "support_coverage_h1": 86.0,
+        "support_coverage_h2": 56.0,
+        "support_coverage_per_window": [
+          80.0,
+          92.0,
+          16.0,
+          96.0
+        ],
+        "cold_fetches_h1": 0.14,
+        "cold_fetches_h2": 0.44,
+        "cold_fetches_per_window": [
+          0.2,
+          0.08,
+          0.84,
+          0.04
+        ],
+        "amat": 3.9,
+        "amat_normalized": 3.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.29,
+        "l2_accesses_per_query": 0.29,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIPNOdetector": {
+        "recall@1_h1": 78.0,
+        "recall@1_h2": 42.0,
+        "recall@1_per_window": [
+          68.0,
+          88.0,
+          4.0,
+          80.0
+        ],
+        "recall@5_h1": 86.0,
+        "recall@5_h2": 42.0,
+        "recall@5_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          80.0
+        ],
+        "recall@10_h1": 86.0,
+        "recall@10_h2": 42.0,
+        "recall@10_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          80.0
+        ],
+        "recall@20_h1": 86.0,
+        "recall@20_h2": 44.0,
+        "recall@20_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "cov_h1": 88.0,
+        "cov_h2": 44.0,
+        "cov_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "update_cost": 46,
+        "cache_writes": 46,
+        "replacement_count": 46,
+        "cache_replacements": 46,
+        "replacement_rate_per_query": 0.46,
+        "replacement_rate_per_window": 11.5,
+        "cache_churn_rate": 0.095833,
+        "cache_churn_rate_pct": 9.583,
+        "maint_retrieval_cost": 656,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 656,
+        "cost": 702,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.0,
+          0.002,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.969,
+        "retrieval_latency_per_window": [
+          0.968,
+          0.953,
+          1.002,
+          0.955
+        ],
+        "query_latency_mean_ms": 0.971,
+        "query_latency_per_window": [
+          0.969,
+          0.953,
+          1.004,
+          0.956
+        ],
+        "per_query_latency_mean_ms": 0.0388,
+        "per_query_latency_per_window": [
+          0.0388,
+          0.0381,
+          0.0402,
+          0.0382
+        ],
+        "step_latency_mean_ms": 10.981,
+        "step_latency_per_window": [
+          7.914,
+          9.139,
+          12.505,
+          14.364
+        ],
+        "update_latency_mean_ms": 10.981,
+        "update_latency_per_window": [
+          7.914,
+          9.139,
+          12.505,
+          14.364
+        ],
+        "step_overhead_mean": 11.5,
+        "step_overhead_per_window": [
+          7,
+          4,
+          26,
+          9
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 35,
+          "under_covered": 22,
+          "write_budget": 35,
+          "reactive_write_budget": 35,
+          "writes": 9,
+          "write_gold": 4,
+          "write_gold_candidates": 4,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 29,
+            "writes": 7,
+            "evictions": 7,
+            "churn_rate": 0.058333,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.694009,
+            "direct_writes": 7,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.241379,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 29,
+            "control_budget": 29
+          },
+          {
+            "w": 1,
+            "write_budget": 26,
+            "writes": 4,
+            "evictions": 4,
+            "churn_rate": 0.033333,
+            "replacement_pressure": 0.067308,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 0.743984,
+            "direct_writes": 4,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.153846,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 26,
+            "control_budget": 26
+          },
+          {
+            "w": 2,
+            "write_budget": 38,
+            "writes": 26,
+            "evictions": 26,
+            "churn_rate": 0.216667,
+            "replacement_pressure": 0.060855,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.303354,
+            "direct_writes": 26,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.106354,
+            "replacement_load": 0.684211,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 38,
+            "control_budget": 38
+          },
+          {
+            "w": 3,
+            "write_budget": 35,
+            "writes": 9,
+            "evictions": 9,
+            "churn_rate": 0.075,
+            "replacement_pressure": 0.235268,
+            "replacement_penalty": 0.106354,
+            "avg_net_gain": 1.183452,
+            "direct_writes": 9,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.106354,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.257143,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 35,
+            "control_budget": 35
+          }
+        ],
+        "evictions": 46,
+        "churn_rate_mean": 0.095833,
+        "write_budget_mean": 32.0,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 12,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 11,
+            "semantic_loss": 0.209702,
+            "recency_loss": 0.21314,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 1,
+            "semantic_loss": 0.609244,
+            "recency_loss": 0.609244,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 11,
+            "semantic_loss": 0.143621,
+            "recency_loss": 0.109244,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 0.34,
+        "support_coverage_rate": 66.0,
+        "arc_item_hit_rate": 66.0,
+        "has_answer_rate": 66.0,
+        "strict_has_answer_rate": 66.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 66,
+        "has_answer_h1": 88.0,
+        "has_answer_h2": 44.0,
+        "has_answer_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "support_coverage_h1": 88.0,
+        "support_coverage_h2": 44.0,
+        "support_coverage_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "cold_fetches_h1": 0.12,
+        "cold_fetches_h2": 0.56,
+        "cold_fetches_per_window": [
+          0.2,
+          0.04,
+          0.96,
+          0.16
+        ],
+        "amat": 4.4,
+        "amat_normalized": 4.4,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.34,
+        "l2_accesses_per_query": 0.34,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP": {
+        "recall@1_h1": 78.0,
+        "recall@1_h2": 42.0,
+        "recall@1_per_window": [
+          68.0,
+          88.0,
+          4.0,
+          80.0
+        ],
+        "recall@5_h1": 86.0,
+        "recall@5_h2": 42.0,
+        "recall@5_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          80.0
+        ],
+        "recall@10_h1": 86.0,
+        "recall@10_h2": 42.0,
+        "recall@10_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          80.0
+        ],
+        "recall@20_h1": 86.0,
+        "recall@20_h2": 44.0,
+        "recall@20_per_window": [
+          76.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "cov_h1": 88.0,
+        "cov_h2": 44.0,
+        "cov_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "update_cost": 46,
+        "cache_writes": 46,
+        "replacement_count": 46,
+        "cache_replacements": 46,
+        "replacement_rate_per_query": 0.46,
+        "replacement_rate_per_window": 11.5,
+        "cache_churn_rate": 0.095833,
+        "cache_churn_rate_pct": 9.583,
+        "maint_retrieval_cost": 656,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 656,
+        "cost": 702,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.993,
+        "retrieval_latency_per_window": [
+          0.986,
+          1.013,
+          0.979,
+          0.992
+        ],
+        "query_latency_mean_ms": 0.994,
+        "query_latency_per_window": [
+          0.988,
+          1.014,
+          0.98,
+          0.994
+        ],
+        "per_query_latency_mean_ms": 0.0398,
+        "per_query_latency_per_window": [
+          0.0395,
+          0.0406,
+          0.0392,
+          0.0398
+        ],
+        "step_latency_mean_ms": 46.926,
+        "step_latency_per_window": [
+          7.869,
+          9.604,
+          154.844,
+          15.39
+        ],
+        "update_latency_mean_ms": 46.926,
+        "update_latency_per_window": [
+          7.869,
+          9.604,
+          154.844,
+          15.39
+        ],
+        "step_overhead_mean": 11.5,
+        "step_overhead_per_window": [
+          7,
+          4,
+          26,
+          9
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 35,
+          "under_covered": 22,
+          "write_budget": 35,
+          "reactive_write_budget": 35,
+          "writes": 9,
+          "write_gold": 4,
+          "write_gold_candidates": 4,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 25,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.62,
+              "reference_support_gap": 0.62,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.5,
+              "resident_obsolescence": 0.62,
+              "expected_miss_reduction": 0.28,
+              "reference_expected_miss_reduction": 0.28
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 50,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.64,
+              "reference_support_gap": 0.63,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.421053,
+              "resident_obsolescence": 0.64,
+              "expected_miss_reduction": 0.16,
+              "reference_expected_miss_reduction": 0.22
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 2.97522,
+              "mean_support_gap": 0.96,
+              "reference_support_gap": 0.64,
+              "bandwidth": 1.397671,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 100.078,
+              "change_evidence": 0.0,
+              "actionability": 0.774194,
+              "resident_obsolescence": 0.96,
+              "expected_miss_reduction": 0.96,
+              "reference_expected_miss_reduction": 0.28
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 3,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 0.976654,
+              "significance": 0.01,
+              "mmd2": 0.018299,
+              "effect_size": 0.135275,
+              "threshold": 2.97522,
+              "mean_support_gap": 0.72,
+              "reference_support_gap": 0.64,
+              "bandwidth": 1.397671,
+              "warmup": false,
+              "reason": "within_support_working_set_control_limit",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 100.078,
+              "change_evidence": 0.0,
+              "actionability": 0.5,
+              "resident_obsolescence": 0.72,
+              "expected_miss_reduction": 0.28,
+              "reference_expected_miss_reduction": 0.28
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 29,
+            "writes": 7,
+            "evictions": 7,
+            "churn_rate": 0.058333,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.694009,
+            "direct_writes": 7,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.241379,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 29,
+            "control_budget": 29
+          },
+          {
+            "w": 1,
+            "write_budget": 26,
+            "writes": 4,
+            "evictions": 4,
+            "churn_rate": 0.033333,
+            "replacement_pressure": 0.067308,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 0.743984,
+            "direct_writes": 4,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.153846,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 26,
+            "control_budget": 26
+          },
+          {
+            "w": 2,
+            "write_budget": 38,
+            "writes": 26,
+            "evictions": 26,
+            "churn_rate": 0.216667,
+            "replacement_pressure": 0.060855,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.303354,
+            "direct_writes": 26,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.106354,
+            "replacement_load": 0.684211,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 38,
+            "control_budget": 38
+          },
+          {
+            "w": 3,
+            "write_budget": 35,
+            "writes": 9,
+            "evictions": 9,
+            "churn_rate": 0.075,
+            "replacement_pressure": 0.235268,
+            "replacement_penalty": 0.106354,
+            "avg_net_gain": 1.183452,
+            "direct_writes": 9,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.106354,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.257143,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 35,
+            "control_budget": 35
+          }
+        ],
+        "evictions": 46,
+        "churn_rate_mean": 0.095833,
+        "write_budget_mean": 32.0,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 12,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 11,
+            "semantic_loss": 0.209702,
+            "recency_loss": 0.21314,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 1,
+            "semantic_loss": 0.609244,
+            "recency_loss": 0.609244,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 11,
+            "semantic_loss": 0.143621,
+            "recency_loss": 0.109244,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 0.34,
+        "support_coverage_rate": 66.0,
+        "arc_item_hit_rate": 66.0,
+        "has_answer_rate": 66.0,
+        "strict_has_answer_rate": 66.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 66,
+        "has_answer_h1": 88.0,
+        "has_answer_h2": 44.0,
+        "has_answer_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "support_coverage_h1": 88.0,
+        "support_coverage_h2": 44.0,
+        "support_coverage_per_window": [
+          80.0,
+          96.0,
+          4.0,
+          84.0
+        ],
+        "cold_fetches_h1": 0.12,
+        "cold_fetches_h2": 0.56,
+        "cold_fetches_per_window": [
+          0.2,
+          0.04,
+          0.96,
+          0.16
+        ],
+        "amat": 4.4,
+        "amat_normalized": 4.4,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.34,
+        "l2_accesses_per_query": 0.34,
+        "serve_fetches_per_query": 0.0
+      },
+      "Oracle": {
+        "recall@1_h1": 84.0,
+        "recall@1_h2": 92.0,
+        "recall@1_per_window": [
+          84.0,
+          84.0,
+          92.0,
+          92.0
+        ],
+        "recall@5_h1": 98.0,
+        "recall@5_h2": 98.0,
+        "recall@5_per_window": [
+          96.0,
+          100.0,
+          100.0,
+          96.0
+        ],
+        "recall@10_h1": 98.0,
+        "recall@10_h2": 98.0,
+        "recall@10_per_window": [
+          96.0,
+          100.0,
+          100.0,
+          96.0
+        ],
+        "recall@20_h1": 98.0,
+        "recall@20_h2": 98.0,
+        "recall@20_per_window": [
+          96.0,
+          100.0,
+          100.0,
+          96.0
+        ],
+        "cov_h1": 100.0,
+        "cov_h2": 100.0,
+        "cov_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "update_cost": 256,
+        "cache_writes": 256,
+        "replacement_count": 256,
+        "cache_replacements": 256,
+        "replacement_rate_per_query": 2.56,
+        "replacement_rate_per_window": 64.0,
+        "cache_churn_rate": 0.533333,
+        "cache_churn_rate_pct": 53.333,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 256,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.002,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 1.023,
+        "retrieval_latency_per_window": [
+          0.989,
+          0.998,
+          1.095,
+          1.01
+        ],
+        "query_latency_mean_ms": 1.024,
+        "query_latency_per_window": [
+          0.99,
+          0.999,
+          1.097,
+          1.011
+        ],
+        "per_query_latency_mean_ms": 0.041,
+        "per_query_latency_per_window": [
+          0.0396,
+          0.04,
+          0.0439,
+          0.0404
+        ],
+        "step_latency_mean_ms": 0.0,
+        "step_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "update_latency_mean_ms": 0.0,
+        "update_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "cold_fetches_per_query": 0.0,
+        "support_coverage_rate": 100.0,
+        "arc_item_hit_rate": 100.0,
+        "has_answer_rate": 100.0,
+        "strict_has_answer_rate": 100.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 100,
+        "has_answer_h1": 100.0,
+        "has_answer_h2": 100.0,
+        "has_answer_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "support_coverage_h1": 100.0,
+        "support_coverage_h2": 100.0,
+        "support_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "cold_fetches_h1": 0.0,
+        "cold_fetches_h2": 0.0,
+        "cold_fetches_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "amat": 1.0,
+        "amat_normalized": 1.0,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.0,
+        "l2_accesses_per_query": 0.0,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 20.5
+  },
+  "hotpotqa_comparison": {
+    "dataset": "hotpotqa_comparison",
+    "config": {
+      "kb_budget": 1075,
+      "pool_size": 10750,
+      "kb_pool_ratio": 0.1,
+      "n_windows": 4,
+      "window_size": 25,
+      "n_queries_available": 1200,
+      "seed": 42,
+      "data_seed": 42,
+      "workload": "factorized_gradual",
+      "initialization": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 100,
+        "unique": 100,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 100,
+        "support_occurrences": 200,
+        "unique_supports": 166,
+        "repeated_support_occurrences": 34,
+        "repeated_support_rate": 0.17,
+        "queries_answerable_from_past": 1,
+        "past_answerable_query_rate": 0.01,
+        "adjacent_window_jaccard_mean": 0.140415,
+        "max_support_frequency": 2
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.303991,
+        "regime_js_divergence": 1.0,
+        "adjacent_centroid_shift_mean": 0.173797,
+        "adjacent_centroid_shift_max": 0.262075
+      },
+      "workload_factors": {
+        "windows": 4,
+        "regimes": 2,
+        "cross_regime_transitions": 1,
+        "cross_regime_evidence_jaccard_mean": 0.0,
+        "drift_magnitude": 1.0,
+        "within_regime_repeated_support_rate": 0.17,
+        "causal_transition_accuracy": 0.0,
+        "recurrent_transition_rate": 0.0,
+        "labeled_visibility_rate": 1.0
+      },
+      "factorized_construction": {
+        "representation": "sparse-evidence-tfidf",
+        "latent_topics": 8,
+        "regimes": 4,
+        "requested_queries": 100,
+        "selected_queries": 100,
+        "warmup_queries": 25,
+        "available_queries": 1200,
+        "eligible_queries": 1200,
+        "exact_query_duplicates": 0,
+        "min_support_frequency": 1,
+        "family_mode": "auto",
+        "support_families": 1030,
+        "regime_counts": {
+          "1": 24,
+          "0": 26,
+          "2": 26,
+          "3": 24
+        }
+      },
+      "warmup_audit": {
+        "requested": 25,
+        "actual": 25,
+        "unique": 25,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "temporal_sampling": null,
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 14.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          26.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 16.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 16.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 16.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 16.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          28.0
+        ],
+        "update_cost": 52,
+        "cache_writes": 52,
+        "replacement_count": 52,
+        "cache_replacements": 52,
+        "replacement_rate_per_query": 0.52,
+        "replacement_rate_per_window": 13.0,
+        "cache_churn_rate": 0.012093,
+        "cache_churn_rate_pct": 1.209,
+        "maint_retrieval_cost": 60,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 60,
+        "cost": 112,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.001,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 4.52,
+        "retrieval_latency_per_window": [
+          6.539,
+          3.637,
+          3.667,
+          4.235
+        ],
+        "query_latency_mean_ms": 4.521,
+        "query_latency_per_window": [
+          6.541,
+          3.638,
+          3.669,
+          4.237
+        ],
+        "per_query_latency_mean_ms": 0.1808,
+        "per_query_latency_per_window": [
+          0.2616,
+          0.1455,
+          0.1468,
+          0.1695
+        ],
+        "step_latency_mean_ms": 8.51,
+        "step_latency_per_window": [
+          3.522,
+          7.642,
+          14.066,
+          8.811
+        ],
+        "update_latency_mean_ms": 8.51,
+        "update_latency_per_window": [
+          3.522,
+          7.642,
+          14.066,
+          8.811
+        ],
+        "step_overhead_mean": 13.0,
+        "step_overhead_per_window": [
+          3,
+          11,
+          24,
+          14
+        ],
+        "cold_fetches_per_query": 1.26,
+        "support_coverage_rate": 37.0,
+        "arc_item_hit_rate": 37.0,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 16.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.68,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.44
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "FIFO": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 14.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          26.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 16.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 16.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 16.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 16.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          28.0
+        ],
+        "update_cost": 52,
+        "cache_writes": 52,
+        "replacement_count": 52,
+        "cache_replacements": 52,
+        "replacement_rate_per_query": 0.52,
+        "replacement_rate_per_window": 13.0,
+        "cache_churn_rate": 0.012093,
+        "cache_churn_rate_pct": 1.209,
+        "maint_retrieval_cost": 60,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 60,
+        "cost": 112,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 3.931,
+        "retrieval_latency_per_window": [
+          3.814,
+          3.863,
+          3.864,
+          4.184
+        ],
+        "query_latency_mean_ms": 3.933,
+        "query_latency_per_window": [
+          3.816,
+          3.865,
+          3.865,
+          4.186
+        ],
+        "per_query_latency_mean_ms": 0.1573,
+        "per_query_latency_per_window": [
+          0.1526,
+          0.1546,
+          0.1546,
+          0.1674
+        ],
+        "step_latency_mean_ms": 1.797,
+        "step_latency_per_window": [
+          1.561,
+          1.727,
+          2.136,
+          1.764
+        ],
+        "update_latency_mean_ms": 1.797,
+        "update_latency_per_window": [
+          1.561,
+          1.727,
+          2.136,
+          1.764
+        ],
+        "step_overhead_mean": 13.0,
+        "step_overhead_per_window": [
+          3,
+          11,
+          24,
+          14
+        ],
+        "cold_fetches_per_query": 1.26,
+        "support_coverage_rate": 37.0,
+        "arc_item_hit_rate": 37.0,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 16.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.68,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.44
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "TinyLFU": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 14.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          26.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 16.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 16.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          28.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 16.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 16.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          28.0
+        ],
+        "update_cost": 52,
+        "cache_writes": 52,
+        "replacement_count": 52,
+        "cache_replacements": 52,
+        "replacement_rate_per_query": 0.52,
+        "replacement_rate_per_window": 13.0,
+        "cache_churn_rate": 0.012093,
+        "cache_churn_rate_pct": 1.209,
+        "maint_retrieval_cost": 60,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 60,
+        "cost": 112,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 3.805,
+        "retrieval_latency_per_window": [
+          3.695,
+          3.692,
+          4.086,
+          3.747
+        ],
+        "query_latency_mean_ms": 3.806,
+        "query_latency_per_window": [
+          3.697,
+          3.693,
+          4.088,
+          3.748
+        ],
+        "per_query_latency_mean_ms": 0.1522,
+        "per_query_latency_per_window": [
+          0.1479,
+          0.1477,
+          0.1635,
+          0.1499
+        ],
+        "step_latency_mean_ms": 7.75,
+        "step_latency_per_window": [
+          3.047,
+          6.651,
+          13.212,
+          8.089
+        ],
+        "update_latency_mean_ms": 7.75,
+        "update_latency_per_window": [
+          3.047,
+          6.651,
+          13.212,
+          8.089
+        ],
+        "step_overhead_mean": 13.0,
+        "step_overhead_per_window": [
+          3,
+          11,
+          24,
+          14
+        ],
+        "cold_fetches_per_query": 1.26,
+        "support_coverage_rate": 37.0,
+        "arc_item_hit_rate": 37.0,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 16.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          28.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.68,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.44
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "GPTCacheStyle": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 4.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          6.0
+        ],
+        "recall@5_h1": 52.0,
+        "recall@5_h2": 5.0,
+        "recall@5_per_window": [
+          60.0,
+          44.0,
+          4.0,
+          6.0
+        ],
+        "recall@10_h1": 54.0,
+        "recall@10_h2": 5.0,
+        "recall@10_per_window": [
+          64.0,
+          44.0,
+          4.0,
+          6.0
+        ],
+        "recall@20_h1": 57.0,
+        "recall@20_h2": 5.0,
+        "recall@20_per_window": [
+          68.0,
+          46.0,
+          4.0,
+          6.0
+        ],
+        "cov_h1": 57.5,
+        "cov_h2": 5.0,
+        "cov_per_window": [
+          68.0,
+          46.94,
+          4.0,
+          6.0
+        ],
+        "update_cost": 249,
+        "cache_writes": 249,
+        "replacement_count": 249,
+        "cache_replacements": 249,
+        "replacement_rate_per_query": 2.49,
+        "replacement_rate_per_window": 62.25,
+        "cache_churn_rate": 0.057907,
+        "cache_churn_rate_pct": 5.791,
+        "maint_retrieval_cost": 320,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 320,
+        "cost": 569,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 3.858,
+        "retrieval_latency_per_window": [
+          3.781,
+          3.673,
+          3.972,
+          4.006
+        ],
+        "query_latency_mean_ms": 3.859,
+        "query_latency_per_window": [
+          3.782,
+          3.674,
+          3.974,
+          4.007
+        ],
+        "per_query_latency_mean_ms": 0.1544,
+        "per_query_latency_per_window": [
+          0.1513,
+          0.147,
+          0.159,
+          0.1603
+        ],
+        "step_latency_mean_ms": 7.13,
+        "step_latency_per_window": [
+          7.228,
+          7.051,
+          7.197,
+          7.043
+        ],
+        "update_latency_mean_ms": 7.13,
+        "update_latency_per_window": [
+          7.228,
+          7.051,
+          7.197,
+          7.043
+        ],
+        "step_overhead_mean": 62.25,
+        "step_overhead_per_window": [
+          65,
+          64,
+          64,
+          56
+        ],
+        "cold_fetches_per_query": 1.38,
+        "support_coverage_rate": 31.0,
+        "arc_item_hit_rate": 31.0,
+        "has_answer_rate": 17.0,
+        "strict_has_answer_rate": 17.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 17,
+        "has_answer_h1": 34.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          32.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 57.0,
+        "support_coverage_h2": 5.0,
+        "support_coverage_per_window": [
+          68.0,
+          46.0,
+          4.0,
+          6.0
+        ],
+        "cold_fetches_h1": 0.86,
+        "cold_fetches_h2": 1.9,
+        "cold_fetches_per_window": [
+          0.64,
+          1.08,
+          1.92,
+          1.88
+        ],
+        "amat": 9.3,
+        "amat_normalized": 9.3,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.83,
+        "l2_accesses_per_query": 0.83,
+        "serve_fetches_per_query": 0.0
+      },
+      "Proximity": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 2.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          2.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 3.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          2.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 3.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          2.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 3.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          2.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 3.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          2.0
+        ],
+        "update_cost": 68,
+        "cache_writes": 68,
+        "replacement_count": 68,
+        "cache_replacements": 68,
+        "replacement_rate_per_query": 0.68,
+        "replacement_rate_per_window": 17.0,
+        "cache_churn_rate": 0.015814,
+        "cache_churn_rate_pct": 1.581,
+        "maint_retrieval_cost": 99,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 99,
+        "cost": 167,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.002,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 4.114,
+        "retrieval_latency_per_window": [
+          3.917,
+          3.977,
+          3.873,
+          4.689
+        ],
+        "query_latency_mean_ms": 4.116,
+        "query_latency_per_window": [
+          3.919,
+          3.978,
+          3.875,
+          4.69
+        ],
+        "per_query_latency_mean_ms": 0.1646,
+        "per_query_latency_per_window": [
+          0.1568,
+          0.1591,
+          0.155,
+          0.1876
+        ],
+        "step_latency_mean_ms": 1.61,
+        "step_latency_per_window": [
+          1.368,
+          1.61,
+          1.796,
+          1.666
+        ],
+        "update_latency_mean_ms": 1.61,
+        "update_latency_per_window": [
+          1.368,
+          1.61,
+          1.796,
+          1.666
+        ],
+        "step_overhead_mean": 17.0,
+        "step_overhead_per_window": [
+          5,
+          14,
+          25,
+          24
+        ],
+        "cold_fetches_per_query": 1.39,
+        "support_coverage_rate": 30.5,
+        "arc_item_hit_rate": 30.5,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 3.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          2.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.94,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.96
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "AgentRAGCache": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 16.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          30.0
+        ],
+        "recall@5_h1": 52.0,
+        "recall@5_h2": 22.0,
+        "recall@5_per_window": [
+          60.0,
+          44.0,
+          4.0,
+          40.0
+        ],
+        "recall@10_h1": 54.0,
+        "recall@10_h2": 24.0,
+        "recall@10_per_window": [
+          64.0,
+          44.0,
+          4.0,
+          44.0
+        ],
+        "recall@20_h1": 57.0,
+        "recall@20_h2": 24.0,
+        "recall@20_per_window": [
+          68.0,
+          46.0,
+          4.0,
+          44.0
+        ],
+        "cov_h1": 57.5,
+        "cov_h2": 24.0,
+        "cov_per_window": [
+          68.0,
+          46.94,
+          4.0,
+          44.0
+        ],
+        "update_cost": 742,
+        "cache_writes": 742,
+        "replacement_count": 742,
+        "cache_replacements": 742,
+        "replacement_rate_per_query": 7.42,
+        "replacement_rate_per_window": 185.5,
+        "cache_churn_rate": 0.172558,
+        "cache_churn_rate_pct": 17.256,
+        "maint_retrieval_cost": 54,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 54,
+        "cost": 796,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.002,
+          0.001,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 3.544,
+        "retrieval_latency_per_window": [
+          3.351,
+          3.418,
+          3.575,
+          3.834
+        ],
+        "query_latency_mean_ms": 3.546,
+        "query_latency_per_window": [
+          3.352,
+          3.419,
+          3.576,
+          3.836
+        ],
+        "per_query_latency_mean_ms": 0.1418,
+        "per_query_latency_per_window": [
+          0.1341,
+          0.1368,
+          0.143,
+          0.1534
+        ],
+        "step_latency_mean_ms": 61.777,
+        "step_latency_per_window": [
+          51.326,
+          61.489,
+          79.056,
+          55.235
+        ],
+        "update_latency_mean_ms": 61.777,
+        "update_latency_per_window": [
+          51.326,
+          61.489,
+          79.056,
+          55.235
+        ],
+        "step_overhead_mean": 185.5,
+        "step_overhead_per_window": [
+          200,
+          200,
+          200,
+          142
+        ],
+        "cold_fetches_per_query": 1.19,
+        "support_coverage_rate": 40.5,
+        "arc_item_hit_rate": 40.5,
+        "has_answer_rate": 17.0,
+        "strict_has_answer_rate": 17.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 17,
+        "has_answer_h1": 34.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          32.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 57.0,
+        "support_coverage_h2": 24.0,
+        "support_coverage_per_window": [
+          68.0,
+          46.0,
+          4.0,
+          44.0
+        ],
+        "cold_fetches_h1": 0.86,
+        "cold_fetches_h2": 1.52,
+        "cold_fetches_per_window": [
+          0.64,
+          1.08,
+          1.92,
+          1.12
+        ],
+        "amat": 9.3,
+        "amat_normalized": 9.3,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.83,
+        "l2_accesses_per_query": 0.83,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIPNOdetector": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 15.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          28.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 17.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          30.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 17.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          30.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 17.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          30.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 17.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          30.0
+        ],
+        "update_cost": 71,
+        "cache_writes": 71,
+        "replacement_count": 71,
+        "cache_replacements": 71,
+        "replacement_rate_per_query": 0.71,
+        "replacement_rate_per_window": 17.75,
+        "cache_churn_rate": 0.016512,
+        "cache_churn_rate_pct": 1.651,
+        "maint_retrieval_cost": 632,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 632,
+        "cost": 703,
+        "prepare_latency_mean_ms": 0.003,
+        "prepare_latency_per_window": [
+          0.006,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 5.98,
+        "retrieval_latency_per_window": [
+          6.0,
+          5.986,
+          5.896,
+          6.039
+        ],
+        "query_latency_mean_ms": 5.983,
+        "query_latency_per_window": [
+          6.007,
+          5.988,
+          5.898,
+          6.041
+        ],
+        "per_query_latency_mean_ms": 0.2393,
+        "per_query_latency_per_window": [
+          0.2403,
+          0.2395,
+          0.2359,
+          0.2416
+        ],
+        "step_latency_mean_ms": 70.145,
+        "step_latency_per_window": [
+          54.419,
+          60.902,
+          79.414,
+          85.846
+        ],
+        "update_latency_mean_ms": 70.145,
+        "update_latency_per_window": [
+          54.419,
+          60.902,
+          79.414,
+          85.846
+        ],
+        "step_overhead_mean": 17.75,
+        "step_overhead_per_window": [
+          5,
+          12,
+          25,
+          29
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 50,
+          "under_covered": 25,
+          "write_budget": 50,
+          "reactive_write_budget": 50,
+          "writes": 29,
+          "write_gold": 19,
+          "write_gold_candidates": 34,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 26,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.004651,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.510157,
+            "direct_writes": 5,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.192308,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 26,
+            "control_budget": 26
+          },
+          {
+            "w": 1,
+            "write_budget": 32,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.011163,
+            "replacement_pressure": 0.039062,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.255323,
+            "direct_writes": 12,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.375,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 32,
+            "control_budget": 32
+          },
+          {
+            "w": 2,
+            "write_budget": 50,
+            "writes": 25,
+            "evictions": 25,
+            "churn_rate": 0.023256,
+            "replacement_pressure": 0.07875,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.297232,
+            "direct_writes": 25,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.5,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 50,
+            "control_budget": 50
+          },
+          {
+            "w": 3,
+            "write_budget": 50,
+            "writes": 29,
+            "evictions": 29,
+            "churn_rate": 0.026977,
+            "replacement_pressure": 0.184062,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 0.910383,
+            "direct_writes": 29,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.04,
+            "replacement_load": 0.58,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 50,
+            "control_budget": 50
+          }
+        ],
+        "evictions": 71,
+        "churn_rate_mean": 0.016512,
+        "write_budget_mean": 39.5,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 17,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 13,
+            "semantic_loss": 0.442129,
+            "recency_loss": 0.433247,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 1,
+            "semantic_loss": 0.53352,
+            "recency_loss": 0.52095,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 10,
+            "semantic_loss": 0.066853,
+            "recency_loss": 0.06378,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 1.25,
+        "support_coverage_rate": 37.5,
+        "arc_item_hit_rate": 37.5,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 17.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          30.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.66,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.4
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP": {
+        "recall@1_h1": 34.0,
+        "recall@1_h2": 15.0,
+        "recall@1_per_window": [
+          38.0,
+          30.0,
+          2.0,
+          28.0
+        ],
+        "recall@5_h1": 53.0,
+        "recall@5_h2": 17.0,
+        "recall@5_per_window": [
+          60.0,
+          46.0,
+          4.0,
+          30.0
+        ],
+        "recall@10_h1": 55.0,
+        "recall@10_h2": 17.0,
+        "recall@10_per_window": [
+          64.0,
+          46.0,
+          4.0,
+          30.0
+        ],
+        "recall@20_h1": 58.0,
+        "recall@20_h2": 17.0,
+        "recall@20_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          30.0
+        ],
+        "cov_h1": 58.5,
+        "cov_h2": 17.0,
+        "cov_per_window": [
+          68.0,
+          48.98,
+          4.0,
+          30.0
+        ],
+        "update_cost": 71,
+        "cache_writes": 71,
+        "replacement_count": 71,
+        "cache_replacements": 71,
+        "replacement_rate_per_query": 0.71,
+        "replacement_rate_per_window": 17.75,
+        "cache_churn_rate": 0.016512,
+        "cache_churn_rate_pct": 1.651,
+        "maint_retrieval_cost": 632,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 632,
+        "cost": 703,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.003,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 5.743,
+        "retrieval_latency_per_window": [
+          5.895,
+          5.608,
+          5.749,
+          5.721
+        ],
+        "query_latency_mean_ms": 5.745,
+        "query_latency_per_window": [
+          5.898,
+          5.61,
+          5.75,
+          5.722
+        ],
+        "per_query_latency_mean_ms": 0.2298,
+        "per_query_latency_per_window": [
+          0.2359,
+          0.2244,
+          0.23,
+          0.2289
+        ],
+        "step_latency_mean_ms": 114.398,
+        "step_latency_per_window": [
+          58.829,
+          63.784,
+          245.884,
+          89.097
+        ],
+        "update_latency_mean_ms": 114.398,
+        "update_latency_per_window": [
+          58.829,
+          63.784,
+          245.884,
+          89.097
+        ],
+        "step_overhead_mean": 17.75,
+        "step_overhead_per_window": [
+          5,
+          12,
+          25,
+          29
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 50,
+          "under_covered": 25,
+          "write_budget": 50,
+          "reactive_write_budget": 50,
+          "writes": 29,
+          "write_gold": 19,
+          "write_gold_candidates": 34,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 25,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.42,
+              "reference_support_gap": 0.42,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.5,
+              "resident_obsolescence": 0.42,
+              "expected_miss_reduction": 0.2,
+              "reference_expected_miss_reduction": 0.2
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 50,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.56,
+              "reference_support_gap": 0.49,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.585366,
+              "resident_obsolescence": 0.56,
+              "expected_miss_reduction": 0.48,
+              "reference_expected_miss_reduction": 0.34
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 3.410427,
+              "mean_support_gap": 0.98,
+              "reference_support_gap": 0.56,
+              "bandwidth": 1.38477,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 109.453,
+              "change_evidence": 0.0,
+              "actionability": 0.675676,
+              "resident_obsolescence": 0.98,
+              "expected_miss_reduction": 1.0,
+              "reference_expected_miss_reduction": 0.48
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 3,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 0.599222,
+              "significance": 0.01,
+              "mmd2": 0.028378,
+              "effect_size": 0.168458,
+              "threshold": 3.410427,
+              "mean_support_gap": 0.8,
+              "reference_support_gap": 0.56,
+              "bandwidth": 1.38477,
+              "warmup": false,
+              "reason": "within_support_working_set_control_limit",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 109.453,
+              "change_evidence": 0.0,
+              "actionability": 0.555556,
+              "resident_obsolescence": 0.8,
+              "expected_miss_reduction": 0.6,
+              "reference_expected_miss_reduction": 0.48
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 26,
+            "writes": 5,
+            "evictions": 5,
+            "churn_rate": 0.004651,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.510157,
+            "direct_writes": 5,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.192308,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 26,
+            "control_budget": 26
+          },
+          {
+            "w": 1,
+            "write_budget": 32,
+            "writes": 12,
+            "evictions": 12,
+            "churn_rate": 0.011163,
+            "replacement_pressure": 0.039062,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.255323,
+            "direct_writes": 12,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.375,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 32,
+            "control_budget": 32
+          },
+          {
+            "w": 2,
+            "write_budget": 50,
+            "writes": 25,
+            "evictions": 25,
+            "churn_rate": 0.023256,
+            "replacement_pressure": 0.07875,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 1.297232,
+            "direct_writes": 25,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.0,
+            "replacement_load": 0.5,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 50,
+            "control_budget": 50
+          },
+          {
+            "w": 3,
+            "write_budget": 50,
+            "writes": 29,
+            "evictions": 29,
+            "churn_rate": 0.026977,
+            "replacement_pressure": 0.184062,
+            "replacement_penalty": 0.0,
+            "avg_net_gain": 0.910383,
+            "direct_writes": 29,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.0,
+            "dual_price_after": 0.04,
+            "replacement_load": 0.58,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 50,
+            "control_budget": 50
+          }
+        ],
+        "evictions": 71,
+        "churn_rate_mean": 0.016512,
+        "write_budget_mean": 39.5,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 17,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 13,
+            "semantic_loss": 0.442129,
+            "recency_loss": 0.433247,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 1,
+            "semantic_loss": 0.53352,
+            "recency_loss": 0.52095,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 10,
+            "semantic_loss": 0.066853,
+            "recency_loss": 0.06378,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 1.25,
+        "support_coverage_rate": 37.5,
+        "arc_item_hit_rate": 37.5,
+        "has_answer_rate": 18.0,
+        "strict_has_answer_rate": 18.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 18,
+        "has_answer_h1": 36.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          36.0,
+          36.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 58.0,
+        "support_coverage_h2": 17.0,
+        "support_coverage_per_window": [
+          68.0,
+          48.0,
+          4.0,
+          30.0
+        ],
+        "cold_fetches_h1": 0.84,
+        "cold_fetches_h2": 1.66,
+        "cold_fetches_per_window": [
+          0.64,
+          1.04,
+          1.92,
+          1.4
+        ],
+        "amat": 9.2,
+        "amat_normalized": 9.2,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.82,
+        "l2_accesses_per_query": 0.82,
+        "serve_fetches_per_query": 0.0
+      },
+      "Oracle": {
+        "recall@1_h1": 47.0,
+        "recall@1_h2": 46.0,
+        "recall@1_per_window": [
+          46.0,
+          48.0,
+          48.0,
+          44.0
+        ],
+        "recall@5_h1": 94.0,
+        "recall@5_h2": 92.0,
+        "recall@5_per_window": [
+          92.0,
+          96.0,
+          94.0,
+          90.0
+        ],
+        "recall@10_h1": 96.0,
+        "recall@10_h2": 96.0,
+        "recall@10_per_window": [
+          96.0,
+          96.0,
+          96.0,
+          96.0
+        ],
+        "recall@20_h1": 98.0,
+        "recall@20_h2": 98.0,
+        "recall@20_per_window": [
+          98.0,
+          98.0,
+          96.0,
+          100.0
+        ],
+        "cov_h1": 100.0,
+        "cov_h2": 100.0,
+        "cov_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "update_cost": 2291,
+        "cache_writes": 2291,
+        "replacement_count": 2291,
+        "cache_replacements": 2291,
+        "replacement_rate_per_query": 22.91,
+        "replacement_rate_per_window": 572.75,
+        "cache_churn_rate": 0.532791,
+        "cache_churn_rate_pct": 53.279,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 2291,
+        "prepare_latency_mean_ms": 0.003,
+        "prepare_latency_per_window": [
+          0.006,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 6.081,
+        "retrieval_latency_per_window": [
+          6.049,
+          5.974,
+          6.411,
+          5.892
+        ],
+        "query_latency_mean_ms": 6.084,
+        "query_latency_per_window": [
+          6.055,
+          5.976,
+          6.412,
+          5.894
+        ],
+        "per_query_latency_mean_ms": 0.2434,
+        "per_query_latency_per_window": [
+          0.2422,
+          0.239,
+          0.2565,
+          0.2358
+        ],
+        "step_latency_mean_ms": 0.0,
+        "step_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "update_latency_mean_ms": 0.0,
+        "update_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "cold_fetches_per_query": 0.0,
+        "support_coverage_rate": 100.0,
+        "arc_item_hit_rate": 100.0,
+        "has_answer_rate": 100.0,
+        "strict_has_answer_rate": 100.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 100,
+        "has_answer_h1": 100.0,
+        "has_answer_h2": 100.0,
+        "has_answer_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "support_coverage_h1": 100.0,
+        "support_coverage_h2": 100.0,
+        "support_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "cold_fetches_h1": 0.0,
+        "cold_fetches_h2": 0.0,
+        "cold_fetches_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "amat": 1.0,
+        "amat_normalized": 1.0,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.0,
+        "l2_accesses_per_query": 0.0,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 74.2
+  },
+  "2wiki_comparison": {
+    "dataset": "2wiki_comparison",
+    "config": {
+      "kb_budget": 830,
+      "pool_size": 8304,
+      "kb_pool_ratio": 0.099952,
+      "n_windows": 4,
+      "window_size": 25,
+      "n_queries_available": 1200,
+      "seed": 42,
+      "data_seed": 42,
+      "workload": "factorized_gradual",
+      "initialization": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 100,
+        "unique": 100,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 100,
+        "support_occurrences": 200,
+        "unique_supports": 199,
+        "repeated_support_occurrences": 1,
+        "repeated_support_rate": 0.005,
+        "queries_answerable_from_past": 0,
+        "past_answerable_query_rate": 0.0,
+        "adjacent_window_jaccard_mean": 0.003367,
+        "max_support_frequency": 2
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.258563,
+        "regime_js_divergence": 1.0,
+        "adjacent_centroid_shift_mean": 0.148065,
+        "adjacent_centroid_shift_max": 0.248106
+      },
+      "workload_factors": {
+        "windows": 4,
+        "regimes": 2,
+        "cross_regime_transitions": 1,
+        "cross_regime_evidence_jaccard_mean": 0.0,
+        "drift_magnitude": 1.0,
+        "within_regime_repeated_support_rate": 0.005,
+        "causal_transition_accuracy": 0.0,
+        "recurrent_transition_rate": 0.0,
+        "labeled_visibility_rate": 0.0
+      },
+      "factorized_construction": {
+        "representation": "sparse-evidence-tfidf",
+        "latent_topics": 8,
+        "regimes": 4,
+        "requested_queries": 100,
+        "selected_queries": 100,
+        "warmup_queries": 25,
+        "available_queries": 1200,
+        "eligible_queries": 1200,
+        "exact_query_duplicates": 0,
+        "min_support_frequency": 1,
+        "family_mode": "auto",
+        "support_families": 1198,
+        "regime_counts": {
+          "1": 24,
+          "0": 26,
+          "2": 26,
+          "3": 24
+        }
+      },
+      "warmup_audit": {
+        "requested": 25,
+        "actual": 25,
+        "unique": 25,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "temporal_sampling": null,
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          8.0,
+          6.0
+        ],
+        "recall@5_h1": 19.0,
+        "recall@5_h2": 7.0,
+        "recall@5_per_window": [
+          24.0,
+          14.0,
+          8.0,
+          6.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 7.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 7.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 7.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "update_cost": 75,
+        "cache_writes": 75,
+        "replacement_count": 75,
+        "cache_replacements": 75,
+        "replacement_rate_per_query": 0.75,
+        "replacement_rate_per_window": 18.75,
+        "cache_churn_rate": 0.02259,
+        "cache_churn_rate_pct": 2.259,
+        "maint_retrieval_cost": 84,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 84,
+        "cost": 159,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.002,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 3.087,
+        "retrieval_latency_per_window": [
+          3.728,
+          2.9,
+          2.787,
+          2.931
+        ],
+        "query_latency_mean_ms": 3.088,
+        "query_latency_per_window": [
+          3.729,
+          2.902,
+          2.789,
+          2.933
+        ],
+        "per_query_latency_mean_ms": 0.1235,
+        "per_query_latency_per_window": [
+          0.1492,
+          0.1161,
+          0.1116,
+          0.1173
+        ],
+        "step_latency_mean_ms": 7.99,
+        "step_latency_per_window": [
+          7.593,
+          7.239,
+          8.169,
+          8.959
+        ],
+        "update_latency_mean_ms": 7.99,
+        "update_latency_per_window": [
+          7.593,
+          7.239,
+          8.169,
+          8.959
+        ],
+        "step_overhead_mean": 18.75,
+        "step_overhead_per_window": [
+          16,
+          17,
+          20,
+          22
+        ],
+        "cold_fetches_per_query": 1.73,
+        "support_coverage_rate": 13.5,
+        "arc_item_hit_rate": 13.5,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 7.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.86,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.88
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "FIFO": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 8.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          8.0,
+          8.0
+        ],
+        "recall@5_h1": 19.0,
+        "recall@5_h2": 8.0,
+        "recall@5_per_window": [
+          24.0,
+          14.0,
+          8.0,
+          8.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 8.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 8.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 8.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "update_cost": 74,
+        "cache_writes": 74,
+        "replacement_count": 74,
+        "cache_replacements": 74,
+        "replacement_rate_per_query": 0.74,
+        "replacement_rate_per_window": 18.5,
+        "cache_churn_rate": 0.022289,
+        "cache_churn_rate_pct": 2.229,
+        "maint_retrieval_cost": 83,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 83,
+        "cost": 157,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 2.972,
+        "retrieval_latency_per_window": [
+          3.012,
+          2.959,
+          2.941,
+          2.977
+        ],
+        "query_latency_mean_ms": 2.974,
+        "query_latency_per_window": [
+          3.013,
+          2.961,
+          2.942,
+          2.979
+        ],
+        "per_query_latency_mean_ms": 0.119,
+        "per_query_latency_per_window": [
+          0.1205,
+          0.1184,
+          0.1177,
+          0.1192
+        ],
+        "step_latency_mean_ms": 1.447,
+        "step_latency_per_window": [
+          1.504,
+          1.431,
+          1.386,
+          1.465
+        ],
+        "update_latency_mean_ms": 1.447,
+        "update_latency_per_window": [
+          1.504,
+          1.431,
+          1.386,
+          1.465
+        ],
+        "step_overhead_mean": 18.5,
+        "step_overhead_per_window": [
+          16,
+          17,
+          20,
+          21
+        ],
+        "cold_fetches_per_query": 1.72,
+        "support_coverage_rate": 14.0,
+        "arc_item_hit_rate": 14.0,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 8.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.84,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.84
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "TinyLFU": {
+        "recall@1_h1": 14.0,
+        "recall@1_h2": 6.0,
+        "recall@1_per_window": [
+          18.0,
+          10.0,
+          6.0,
+          6.0
+        ],
+        "recall@5_h1": 18.0,
+        "recall@5_h2": 6.0,
+        "recall@5_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          6.0
+        ],
+        "recall@10_h1": 19.0,
+        "recall@10_h2": 6.0,
+        "recall@10_per_window": [
+          24.0,
+          14.0,
+          6.0,
+          6.0
+        ],
+        "recall@20_h1": 19.0,
+        "recall@20_h2": 6.0,
+        "recall@20_per_window": [
+          24.0,
+          14.0,
+          6.0,
+          6.0
+        ],
+        "cov_h1": 19.0,
+        "cov_h2": 6.0,
+        "cov_per_window": [
+          24.0,
+          14.0,
+          6.0,
+          6.0
+        ],
+        "update_cost": 77,
+        "cache_writes": 77,
+        "replacement_count": 77,
+        "cache_replacements": 77,
+        "replacement_rate_per_query": 0.77,
+        "replacement_rate_per_window": 19.25,
+        "cache_churn_rate": 0.023193,
+        "cache_churn_rate_pct": 2.319,
+        "maint_retrieval_cost": 86,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 86,
+        "cost": 163,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 2.926,
+        "retrieval_latency_per_window": [
+          2.948,
+          2.951,
+          2.912,
+          2.895
+        ],
+        "query_latency_mean_ms": 2.928,
+        "query_latency_per_window": [
+          2.949,
+          2.951,
+          2.913,
+          2.897
+        ],
+        "per_query_latency_mean_ms": 0.1171,
+        "per_query_latency_per_window": [
+          0.118,
+          0.118,
+          0.1165,
+          0.1159
+        ],
+        "step_latency_mean_ms": 8.007,
+        "step_latency_per_window": [
+          7.01,
+          7.555,
+          8.463,
+          9.002
+        ],
+        "update_latency_mean_ms": 8.007,
+        "update_latency_per_window": [
+          7.01,
+          7.555,
+          8.463,
+          9.002
+        ],
+        "step_overhead_mean": 19.25,
+        "step_overhead_per_window": [
+          16,
+          18,
+          21,
+          22
+        ],
+        "cold_fetches_per_query": 1.75,
+        "support_coverage_rate": 12.5,
+        "arc_item_hit_rate": 12.5,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 19.0,
+        "support_coverage_h2": 6.0,
+        "support_coverage_per_window": [
+          24.0,
+          14.0,
+          6.0,
+          6.0
+        ],
+        "cold_fetches_h1": 1.62,
+        "cold_fetches_h2": 1.88,
+        "cold_fetches_per_window": [
+          1.52,
+          1.72,
+          1.88,
+          1.88
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "GPTCacheStyle": {
+        "recall@1_h1": 16.0,
+        "recall@1_h2": 6.0,
+        "recall@1_per_window": [
+          18.0,
+          14.0,
+          8.0,
+          4.0
+        ],
+        "recall@5_h1": 20.0,
+        "recall@5_h2": 6.0,
+        "recall@5_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          4.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 6.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          4.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 6.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          4.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 6.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          4.0
+        ],
+        "update_cost": 271,
+        "cache_writes": 271,
+        "replacement_count": 271,
+        "cache_replacements": 271,
+        "replacement_rate_per_query": 2.71,
+        "replacement_rate_per_window": 67.75,
+        "cache_churn_rate": 0.081627,
+        "cache_churn_rate_pct": 8.163,
+        "maint_retrieval_cost": 320,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 320,
+        "cost": 591,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 2.987,
+        "retrieval_latency_per_window": [
+          2.984,
+          2.978,
+          2.952,
+          3.035
+        ],
+        "query_latency_mean_ms": 2.988,
+        "query_latency_per_window": [
+          2.985,
+          2.979,
+          2.953,
+          3.036
+        ],
+        "per_query_latency_mean_ms": 0.1195,
+        "per_query_latency_per_window": [
+          0.1194,
+          0.1192,
+          0.1181,
+          0.1214
+        ],
+        "step_latency_mean_ms": 5.693,
+        "step_latency_per_window": [
+          5.69,
+          5.799,
+          5.648,
+          5.637
+        ],
+        "update_latency_mean_ms": 5.693,
+        "update_latency_per_window": [
+          5.69,
+          5.799,
+          5.648,
+          5.637
+        ],
+        "step_overhead_mean": 67.75,
+        "step_overhead_per_window": [
+          63,
+          71,
+          71,
+          66
+        ],
+        "cold_fetches_per_query": 1.74,
+        "support_coverage_rate": 13.0,
+        "arc_item_hit_rate": 13.0,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 6.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          4.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.88,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.92
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "Proximity": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          8.0,
+          6.0
+        ],
+        "recall@5_h1": 20.0,
+        "recall@5_h2": 7.0,
+        "recall@5_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 7.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 7.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 7.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "update_cost": 79,
+        "cache_writes": 79,
+        "replacement_count": 79,
+        "cache_replacements": 79,
+        "replacement_rate_per_query": 0.79,
+        "replacement_rate_per_window": 19.75,
+        "cache_churn_rate": 0.023795,
+        "cache_churn_rate_pct": 2.38,
+        "maint_retrieval_cost": 100,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 100,
+        "cost": 179,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.001,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 2.995,
+        "retrieval_latency_per_window": [
+          3.073,
+          2.958,
+          2.948,
+          3.001
+        ],
+        "query_latency_mean_ms": 2.996,
+        "query_latency_per_window": [
+          3.075,
+          2.959,
+          2.949,
+          3.002
+        ],
+        "per_query_latency_mean_ms": 0.1198,
+        "per_query_latency_per_window": [
+          0.123,
+          0.1184,
+          0.118,
+          0.1201
+        ],
+        "step_latency_mean_ms": 1.329,
+        "step_latency_per_window": [
+          1.39,
+          1.242,
+          1.268,
+          1.417
+        ],
+        "update_latency_mean_ms": 1.329,
+        "update_latency_per_window": [
+          1.39,
+          1.242,
+          1.268,
+          1.417
+        ],
+        "step_overhead_mean": 19.75,
+        "step_overhead_per_window": [
+          17,
+          19,
+          20,
+          23
+        ],
+        "cold_fetches_per_query": 1.73,
+        "support_coverage_rate": 13.5,
+        "arc_item_hit_rate": 13.5,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 7.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          6.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.86,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.88
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "AgentRAGCache": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 7.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "recall@5_h1": 18.0,
+        "recall@5_h2": 7.0,
+        "recall@5_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "recall@10_h1": 18.0,
+        "recall@10_h2": 7.0,
+        "recall@10_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "recall@20_h1": 18.0,
+        "recall@20_h2": 7.0,
+        "recall@20_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "cov_h1": 18.0,
+        "cov_h2": 7.0,
+        "cov_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "update_cost": 784,
+        "cache_writes": 784,
+        "replacement_count": 784,
+        "cache_replacements": 784,
+        "replacement_rate_per_query": 7.84,
+        "replacement_rate_per_window": 196.0,
+        "cache_churn_rate": 0.236145,
+        "cache_churn_rate_pct": 23.614,
+        "maint_retrieval_cost": 83,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 83,
+        "cost": 867,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 2.751,
+        "retrieval_latency_per_window": [
+          2.63,
+          2.72,
+          2.794,
+          2.86
+        ],
+        "query_latency_mean_ms": 2.752,
+        "query_latency_per_window": [
+          2.631,
+          2.722,
+          2.796,
+          2.861
+        ],
+        "per_query_latency_mean_ms": 0.1101,
+        "per_query_latency_per_window": [
+          0.1052,
+          0.1089,
+          0.1118,
+          0.1144
+        ],
+        "step_latency_mean_ms": 57.04,
+        "step_latency_per_window": [
+          54.192,
+          58.813,
+          57.788,
+          57.367
+        ],
+        "update_latency_mean_ms": 57.04,
+        "update_latency_per_window": [
+          54.192,
+          58.813,
+          57.788,
+          57.367
+        ],
+        "step_overhead_mean": 196.0,
+        "step_overhead_per_window": [
+          200,
+          200,
+          200,
+          184
+        ],
+        "cold_fetches_per_query": 1.75,
+        "support_coverage_rate": 12.5,
+        "arc_item_hit_rate": 12.5,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 18.0,
+        "support_coverage_h2": 7.0,
+        "support_coverage_per_window": [
+          24.0,
+          12.0,
+          6.0,
+          8.0
+        ],
+        "cold_fetches_h1": 1.64,
+        "cold_fetches_h2": 1.86,
+        "cold_fetches_per_window": [
+          1.52,
+          1.76,
+          1.88,
+          1.84
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIPNOdetector": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 8.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          8.0,
+          8.0
+        ],
+        "recall@5_h1": 19.0,
+        "recall@5_h2": 8.0,
+        "recall@5_per_window": [
+          24.0,
+          14.0,
+          8.0,
+          8.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 8.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 8.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 8.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "update_cost": 87,
+        "cache_writes": 87,
+        "replacement_count": 87,
+        "cache_replacements": 87,
+        "replacement_rate_per_query": 0.87,
+        "replacement_rate_per_window": 21.75,
+        "cache_churn_rate": 0.026205,
+        "cache_churn_rate_pct": 2.62,
+        "maint_retrieval_cost": 768,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 768,
+        "cost": 855,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.005,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 4.826,
+        "retrieval_latency_per_window": [
+          4.812,
+          4.815,
+          4.866,
+          4.81
+        ],
+        "query_latency_mean_ms": 4.828,
+        "query_latency_per_window": [
+          4.817,
+          4.817,
+          4.868,
+          4.812
+        ],
+        "per_query_latency_mean_ms": 0.1931,
+        "per_query_latency_per_window": [
+          0.1927,
+          0.1927,
+          0.1947,
+          0.1925
+        ],
+        "step_latency_mean_ms": 52.508,
+        "step_latency_per_window": [
+          45.514,
+          51.639,
+          53.725,
+          59.155
+        ],
+        "update_latency_mean_ms": 52.508,
+        "update_latency_per_window": [
+          45.514,
+          51.639,
+          53.725,
+          59.155
+        ],
+        "step_overhead_mean": 21.75,
+        "step_overhead_per_window": [
+          16,
+          19,
+          22,
+          30
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 50,
+          "under_covered": 25,
+          "write_budget": 50,
+          "reactive_write_budget": 50,
+          "writes": 30,
+          "write_gold": 25,
+          "write_gold_candidates": 43,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 44,
+            "writes": 16,
+            "evictions": 16,
+            "churn_rate": 0.019277,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.536526,
+            "direct_writes": 16,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.113636,
+            "replacement_load": 0.363636,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 44,
+            "control_budget": 44
+          },
+          {
+            "w": 1,
+            "write_budget": 50,
+            "writes": 19,
+            "evictions": 19,
+            "churn_rate": 0.022892,
+            "replacement_pressure": 0.08,
+            "replacement_penalty": 0.113636,
+            "avg_net_gain": 1.016965,
+            "direct_writes": 19,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.113636,
+            "dual_price_after": 0.028784,
+            "replacement_load": 0.38,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 50,
+            "control_budget": 50
+          },
+          {
+            "w": 2,
+            "write_budget": 48,
+            "writes": 22,
+            "evictions": 22,
+            "churn_rate": 0.026506,
+            "replacement_pressure": 0.161458,
+            "replacement_penalty": 0.028784,
+            "avg_net_gain": 1.203513,
+            "direct_writes": 22,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.028784,
+            "dual_price_after": 0.004727,
+            "replacement_load": 0.458333,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 48,
+            "control_budget": 48
+          },
+          {
+            "w": 3,
+            "write_budget": 50,
+            "writes": 30,
+            "evictions": 30,
+            "churn_rate": 0.036145,
+            "replacement_pressure": 0.22625,
+            "replacement_penalty": 0.004727,
+            "avg_net_gain": 1.101294,
+            "direct_writes": 30,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.004727,
+            "dual_price_after": 0.054727,
+            "replacement_load": 0.6,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 50,
+            "control_budget": 50
+          }
+        ],
+        "evictions": 87,
+        "churn_rate_mean": 0.026205,
+        "write_budget_mean": 48.0,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.514475,
+            "recency_loss": 0.512063,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 5,
+            "semantic_loss": 0.528347,
+            "recency_loss": 0.525935,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.409831,
+            "recency_loss": 0.410585,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 1.72,
+        "support_coverage_rate": 14.0,
+        "arc_item_hit_rate": 14.0,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 8.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.84,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.84
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "DRIP": {
+        "recall@1_h1": 15.0,
+        "recall@1_h2": 8.0,
+        "recall@1_per_window": [
+          18.0,
+          12.0,
+          8.0,
+          8.0
+        ],
+        "recall@5_h1": 19.0,
+        "recall@5_h2": 8.0,
+        "recall@5_per_window": [
+          24.0,
+          14.0,
+          8.0,
+          8.0
+        ],
+        "recall@10_h1": 20.0,
+        "recall@10_h2": 8.0,
+        "recall@10_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "recall@20_h1": 20.0,
+        "recall@20_h2": 8.0,
+        "recall@20_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cov_h1": 20.0,
+        "cov_h2": 8.0,
+        "cov_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "update_cost": 87,
+        "cache_writes": 87,
+        "replacement_count": 87,
+        "cache_replacements": 87,
+        "replacement_rate_per_query": 0.87,
+        "replacement_rate_per_window": 21.75,
+        "cache_churn_rate": 0.026205,
+        "cache_churn_rate_pct": 2.62,
+        "maint_retrieval_cost": 768,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 768,
+        "cost": 855,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.002,
+          0.002,
+          0.002,
+          0.002
+        ],
+        "retrieval_latency_mean_ms": 4.619,
+        "retrieval_latency_per_window": [
+          4.642,
+          4.565,
+          4.671,
+          4.599
+        ],
+        "query_latency_mean_ms": 4.621,
+        "query_latency_per_window": [
+          4.644,
+          4.566,
+          4.673,
+          4.601
+        ],
+        "per_query_latency_mean_ms": 0.1848,
+        "per_query_latency_per_window": [
+          0.1858,
+          0.1826,
+          0.1869,
+          0.184
+        ],
+        "step_latency_mean_ms": 95.878,
+        "step_latency_per_window": [
+          47.494,
+          56.232,
+          214.336,
+          65.45
+        ],
+        "update_latency_mean_ms": 95.878,
+        "update_latency_per_window": [
+          47.494,
+          56.232,
+          214.336,
+          65.45
+        ],
+        "step_overhead_mean": 21.75,
+        "step_overhead_per_window": [
+          16,
+          19,
+          22,
+          30
+        ],
+        "last_admission": {
+          "w": 3,
+          "target_slots": 50,
+          "under_covered": 25,
+          "write_budget": 50,
+          "reactive_write_budget": 50,
+          "writes": 30,
+          "write_gold": 25,
+          "write_gold_candidates": 43,
+          "write_hidden": 0,
+          "hidden_evictions": 0,
+          "drift_severity": 0.0,
+          "prefetch_candidates": 0,
+          "prefetch_confidence": 0.0,
+          "prefetch_writes": 0,
+          "bundle_admissions": 0,
+          "bundle_writes": 0
+        },
+        "drift_log": [
+          {
+            "w": 0,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 25,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.86,
+              "reference_support_gap": 0.86,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.5,
+              "resident_obsolescence": 0.86,
+              "expected_miss_reduction": 0.64,
+              "reference_expected_miss_reduction": 0.64
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 1,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 50,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 0.0,
+              "mean_support_gap": 0.92,
+              "reference_support_gap": 0.89,
+              "bandwidth": 0.0,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 0.0,
+              "change_evidence": 0.0,
+              "actionability": 0.520548,
+              "resident_obsolescence": 0.92,
+              "expected_miss_reduction": 0.76,
+              "reference_expected_miss_reduction": 0.7
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 2,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 1.0,
+              "significance": 0.01,
+              "mmd2": 0.0,
+              "effect_size": 0.0,
+              "threshold": 3.351959,
+              "mean_support_gap": 0.88,
+              "reference_support_gap": 0.88,
+              "bandwidth": 1.364596,
+              "warmup": true,
+              "reason": "warming_support_working_set_reference",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 100.242,
+              "change_evidence": 0.0,
+              "actionability": 0.512821,
+              "resident_obsolescence": 0.88,
+              "expected_miss_reduction": 0.8,
+              "reference_expected_miss_reduction": 0.76
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          },
+          {
+            "w": 3,
+            "severity": 0.0,
+            "drifted": false,
+            "affected_agents": [],
+            "global": {
+              "n_queries": 25,
+              "n_reference": 75,
+              "severity": 0.0,
+              "drifted": false,
+              "p_value": 0.723735,
+              "significance": 0.01,
+              "mmd2": 0.026732,
+              "effect_size": 0.163499,
+              "threshold": 3.351959,
+              "mean_support_gap": 0.92,
+              "reference_support_gap": 0.88,
+              "bandwidth": 1.364596,
+              "warmup": false,
+              "reason": "within_support_working_set_control_limit",
+              "sequential_statistic": 0.0,
+              "target_arl": 100.0,
+              "calibrated_arl": 100.242,
+              "change_evidence": 0.0,
+              "actionability": 0.536585,
+              "resident_obsolescence": 0.92,
+              "expected_miss_reduction": 0.88,
+              "reference_expected_miss_reduction": 0.76
+            },
+            "agent_contributions": {},
+            "controller_severity": 0.0,
+            "controller": "support_selective_serve_half_life",
+            "reference_rebased": false
+          }
+        ],
+        "cost_log": [
+          {
+            "w": 0,
+            "write_budget": 44,
+            "writes": 16,
+            "evictions": 16,
+            "churn_rate": 0.019277,
+            "replacement_pressure": 0.0,
+            "replacement_penalty": 0.25,
+            "avg_net_gain": 0.536526,
+            "direct_writes": 16,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.25,
+            "dual_price_after": 0.113636,
+            "replacement_load": 0.363636,
+            "replacement_target": 0.5,
+            "dual_step_size": 1.0,
+            "execution_budget": 44,
+            "control_budget": 44
+          },
+          {
+            "w": 1,
+            "write_budget": 50,
+            "writes": 19,
+            "evictions": 19,
+            "churn_rate": 0.022892,
+            "replacement_pressure": 0.08,
+            "replacement_penalty": 0.113636,
+            "avg_net_gain": 1.016965,
+            "direct_writes": 19,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.113636,
+            "dual_price_after": 0.028784,
+            "replacement_load": 0.38,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.707107,
+            "execution_budget": 50,
+            "control_budget": 50
+          },
+          {
+            "w": 2,
+            "write_budget": 48,
+            "writes": 22,
+            "evictions": 22,
+            "churn_rate": 0.026506,
+            "replacement_pressure": 0.161458,
+            "replacement_penalty": 0.028784,
+            "avg_net_gain": 1.203513,
+            "direct_writes": 22,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.028784,
+            "dual_price_after": 0.004727,
+            "replacement_load": 0.458333,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.57735,
+            "execution_budget": 48,
+            "control_budget": 48
+          },
+          {
+            "w": 3,
+            "write_budget": 50,
+            "writes": 30,
+            "evictions": 30,
+            "churn_rate": 0.036145,
+            "replacement_pressure": 0.22625,
+            "replacement_penalty": 0.004727,
+            "avg_net_gain": 1.101294,
+            "direct_writes": 30,
+            "bridge_writes": 0,
+            "bundle_admissions": 0,
+            "bundle_rejections": 0,
+            "bundle_writes": 0,
+            "dual_price_before": 0.004727,
+            "dual_price_after": 0.054727,
+            "replacement_load": 0.6,
+            "replacement_target": 0.5,
+            "dual_step_size": 0.5,
+            "execution_budget": 50,
+            "control_budget": 50
+          }
+        ],
+        "evictions": 87,
+        "churn_rate_mean": 0.026205,
+        "write_budget_mean": 48.0,
+        "expert_log": [
+          {
+            "w": 0,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.5,
+            "recency_loss": 0.5,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 1,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.514475,
+            "recency_loss": 0.512063,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 2,
+            "mode": "consensus",
+            "hits": 5,
+            "semantic_loss": 0.528347,
+            "recency_loss": 0.525935,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          },
+          {
+            "w": 3,
+            "mode": "consensus",
+            "hits": 4,
+            "semantic_loss": 0.409831,
+            "recency_loss": 0.410585,
+            "semantic_weight": 0.5,
+            "recency_weight": 0.5,
+            "eta": 0.0,
+            "drift_reset": false,
+            "ghost_events": 0,
+            "ghost_semantic_loss": 0.0,
+            "ghost_recency_loss": 0.0
+          }
+        ],
+        "cold_fetches_per_query": 1.72,
+        "support_coverage_rate": 14.0,
+        "arc_item_hit_rate": 14.0,
+        "has_answer_rate": 1.0,
+        "strict_has_answer_rate": 1.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 1,
+        "has_answer_h1": 2.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          4.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "support_coverage_h1": 20.0,
+        "support_coverage_h2": 8.0,
+        "support_coverage_per_window": [
+          24.0,
+          16.0,
+          8.0,
+          8.0
+        ],
+        "cold_fetches_h1": 1.6,
+        "cold_fetches_h2": 1.84,
+        "cold_fetches_per_window": [
+          1.52,
+          1.68,
+          1.84,
+          1.84
+        ],
+        "amat": 10.9,
+        "amat_normalized": 10.9,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.99,
+        "l2_accesses_per_query": 0.99,
+        "serve_fetches_per_query": 0.0
+      },
+      "Oracle": {
+        "recall@1_h1": 41.0,
+        "recall@1_h2": 50.0,
+        "recall@1_per_window": [
+          44.0,
+          38.0,
+          50.0,
+          50.0
+        ],
+        "recall@5_h1": 84.0,
+        "recall@5_h2": 96.0,
+        "recall@5_per_window": [
+          82.0,
+          86.0,
+          94.0,
+          98.0
+        ],
+        "recall@10_h1": 90.0,
+        "recall@10_h2": 97.0,
+        "recall@10_per_window": [
+          90.0,
+          90.0,
+          96.0,
+          98.0
+        ],
+        "recall@20_h1": 95.0,
+        "recall@20_h2": 99.0,
+        "recall@20_per_window": [
+          94.0,
+          96.0,
+          100.0,
+          98.0
+        ],
+        "cov_h1": 100.0,
+        "cov_h2": 100.0,
+        "cov_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "update_cost": 1982,
+        "cache_writes": 1982,
+        "replacement_count": 1982,
+        "cache_replacements": 1982,
+        "replacement_rate_per_query": 19.82,
+        "replacement_rate_per_window": 495.5,
+        "cache_churn_rate": 0.596988,
+        "cache_churn_rate_pct": 59.699,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 1982,
+        "prepare_latency_mean_ms": 0.002,
+        "prepare_latency_per_window": [
+          0.001,
+          0.002,
+          0.002,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 4.805,
+        "retrieval_latency_per_window": [
+          4.806,
+          4.808,
+          4.799,
+          4.806
+        ],
+        "query_latency_mean_ms": 4.806,
+        "query_latency_per_window": [
+          4.807,
+          4.81,
+          4.801,
+          4.808
+        ],
+        "per_query_latency_mean_ms": 0.1922,
+        "per_query_latency_per_window": [
+          0.1923,
+          0.1924,
+          0.192,
+          0.1923
+        ],
+        "step_latency_mean_ms": 0.0,
+        "step_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "update_latency_mean_ms": 0.0,
+        "update_latency_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "step_overhead_mean": 0.0,
+        "step_overhead_per_window": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "cold_fetches_per_query": 0.0,
+        "support_coverage_rate": 100.0,
+        "arc_item_hit_rate": 100.0,
+        "has_answer_rate": 100.0,
+        "strict_has_answer_rate": 100.0,
+        "has_answer_queries": 100,
+        "has_answer_hits": 100,
+        "has_answer_h1": 100.0,
+        "has_answer_h2": 100.0,
+        "has_answer_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "support_coverage_h1": 100.0,
+        "support_coverage_h2": 100.0,
+        "support_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "cold_fetches_h1": 0.0,
+        "cold_fetches_h2": 0.0,
+        "cold_fetches_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "amat": 1.0,
+        "amat_normalized": 1.0,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.0,
+        "l2_accesses_per_query": 0.0,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 50.1
+  }
+}

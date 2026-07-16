@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / 'motivation_1' / 'data'
+DATA = ROOT.parent / 'experiments' / 'direct' / 'data'
 OUT  = ROOT / 'paper_figs' / 'intro'
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -282,7 +282,7 @@ def fig1():
 
 # ── Fig.2 — Absolute Recall@5 curves on multi-hop datasets ─────────────────
 def fig2():
-    DATA2 = ROOT / 'motivation_2' / 'data'
+    DATA2 = ROOT.parent / 'experiments' / 'hidden' / 'data'
     HOTPOT_FILE = DATA2 / 'results_hotpotqa_comp_full_gradual_q2k_final_clean.json'
     WIKI_FILE   = DATA2 / 'results_2wiki_bc_entity_expand_gradual_q2k_final_clean.json'
     d_hot  = json.load(open(HOTPOT_FILE))['hotpotqa']

@@ -1,0 +1,198 @@
+{
+  "squad": {
+    "dataset": "squad",
+    "config": {
+      "kb_budget": 3,
+      "pool_size": 30,
+      "kb_pool_ratio": 0.1,
+      "n_windows": 2,
+      "window_size": 4,
+      "n_queries_available": 141,
+      "seed": 42,
+      "data_seed": 42,
+      "workload": "factorized_recurring",
+      "initialization": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 8,
+        "unique": 8,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 8,
+        "support_occurrences": 8,
+        "unique_supports": 8,
+        "repeated_support_occurrences": 0,
+        "repeated_support_rate": 0.0,
+        "queries_answerable_from_past": 0,
+        "past_answerable_query_rate": 0.0,
+        "adjacent_window_jaccard_mean": 0.0,
+        "max_support_frequency": 1
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.87299,
+        "cluster_js_divergence": 1.0,
+        "adjacent_centroid_shift_mean": 0.763688,
+        "adjacent_centroid_shift_max": 0.763688
+      },
+      "workload_factors": {
+        "windows": 2,
+        "regimes": 2,
+        "cross_regime_transitions": 1,
+        "cross_regime_evidence_jaccard_mean": 0.0,
+        "drift_magnitude": 1.0,
+        "within_regime_repeated_support_rate": 0.0,
+        "causal_transition_accuracy": 0.0,
+        "recurrent_transition_rate": 0.0,
+        "labeled_visibility_rate": 1.0
+      },
+      "factorized_construction": {
+        "representation": "sparse-evidence-tfidf",
+        "latent_topics": 8,
+        "regimes": 4,
+        "requested_queries": 8,
+        "selected_queries": 8,
+        "warmup_queries": 4,
+        "available_queries": 141,
+        "eligible_queries": 141,
+        "exact_query_duplicates": 0,
+        "min_support_frequency": 1,
+        "family_mode": "auto",
+        "support_families": 30,
+        "regime_counts": {
+          "0": 4,
+          "1": 4
+        }
+      },
+      "warmup_audit": {
+        "requested": 4,
+        "actual": 4,
+        "unique": 4,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "temporal_sampling": null,
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 75.0,
+        "recall@1_h2": 0.0,
+        "recall@1_per_window": [
+          75.0,
+          0.0
+        ],
+        "recall@5_h1": 75.0,
+        "recall@5_h2": 0.0,
+        "recall@5_per_window": [
+          75.0,
+          0.0
+        ],
+        "recall@10_h1": 75.0,
+        "recall@10_h2": 0.0,
+        "recall@10_per_window": [
+          75.0,
+          0.0
+        ],
+        "recall@20_h1": 75.0,
+        "recall@20_h2": 0.0,
+        "recall@20_per_window": [
+          75.0,
+          0.0
+        ],
+        "cov_h1": 75.0,
+        "cov_h2": 0.0,
+        "cov_per_window": [
+          75.0,
+          0.0
+        ],
+        "update_cost": 6,
+        "cache_writes": 6,
+        "replacement_count": 6,
+        "cache_replacements": 6,
+        "replacement_rate_per_query": 0.75,
+        "replacement_rate_per_window": 3.0,
+        "cache_churn_rate": 1.0,
+        "cache_churn_rate_pct": 100.0,
+        "maint_retrieval_cost": 8,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 8,
+        "cost": 14,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 0.131,
+        "retrieval_latency_per_window": [
+          0.148,
+          0.114
+        ],
+        "query_latency_mean_ms": 0.132,
+        "query_latency_per_window": [
+          0.15,
+          0.114
+        ],
+        "per_query_latency_mean_ms": 0.033,
+        "per_query_latency_per_window": [
+          0.0375,
+          0.0285
+        ],
+        "step_latency_mean_ms": 0.139,
+        "step_latency_per_window": [
+          0.177,
+          0.101
+        ],
+        "update_latency_mean_ms": 0.139,
+        "update_latency_per_window": [
+          0.177,
+          0.101
+        ],
+        "step_overhead_mean": 3.0,
+        "step_overhead_per_window": [
+          2,
+          4
+        ],
+        "cold_fetches_per_query": 0.625,
+        "support_coverage_rate": 37.5,
+        "arc_item_hit_rate": 37.5,
+        "has_answer_rate": 37.5,
+        "strict_has_answer_rate": 37.5,
+        "has_answer_queries": 8,
+        "has_answer_hits": 3,
+        "has_answer_h1": 75.0,
+        "has_answer_h2": 0.0,
+        "has_answer_per_window": [
+          75.0,
+          0.0
+        ],
+        "support_coverage_h1": 75.0,
+        "support_coverage_h2": 0.0,
+        "support_coverage_per_window": [
+          75.0,
+          0.0
+        ],
+        "cold_fetches_h1": 0.25,
+        "cold_fetches_h2": 1.0,
+        "cold_fetches_per_window": [
+          0.25,
+          1.0
+        ],
+        "amat": 7.25,
+        "amat_normalized": 7.25,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.625,
+        "l2_accesses_per_query": 0.625,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 7.4
+  }
+}

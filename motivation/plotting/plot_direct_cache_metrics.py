@@ -15,14 +15,16 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "paper_figs" / "intro"
 STREAMINGQA = (
-    ROOT
-    / "motivation_1"
+    ROOT.parent
+    / "experiments"
+    / "direct"
     / "data"
     / "qdirect_streamingqa_temporal_fig1_metrics_100w50_current.json"
 )
 TWIKI = (
-    ROOT
-    / "motivation_2"
+    ROOT.parent
+    / "experiments"
+    / "hidden"
     / "data"
     / "qdirect_2wiki_comparison_100w50_kb6250_dense_current.json"
 )

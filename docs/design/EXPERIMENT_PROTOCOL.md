@@ -1,167 +1,104 @@
-# EXPERIMENT_PROTOCOL
+# Current Stream Construction Protocol
 
-This document records the current experiment policy after implementation
-unification.
+本文件只描述当前可运行的数据流协议。旧的 query-embedding KMeans、head/tail
+混合比例、`--drift sudden/gradual`、手工 bridge-reuse 流和 future-gold 初始化均已
+从 runner 删除。
 
-## Core Implementation Rule
+## 1. 唯一入口
 
-DRIP has one current runnable implementation:
+两个 runner 使用相同协议：
 
 ```text
-algorithms/drip/cache_manager/
+experiments/direct/run.py
+experiments/hidden/run.py
 ```
 
-New runs, paper text, figures, and tables should use the two paper-facing
-visibility variants below: `DRIP-QueryVisible` and `DRIP-QueryHidden`.
+推荐参数是 `--workload auto`：
 
-| Layer | Current location | Notes |
+| 数据类型 | `auto` 选择 | 是否重排 |
 |---|---|---|
-| DRIPCore manager | `algorithms/drip/cache_manager/__init__.py` | Drift control, route, evidence ledger, admission. |
-| Drift detector | `algorithms/drip/detection/multi_agent_drift.py` | Multi-agent query-cache alignment detector; controls update aggressiveness only. |
-| Paper variants | `algorithms/drip/cache_manager/drip.py` | `DRIP-QueryVisible`, `DRIP-QueryHidden`, and `DRIP`. |
-| Query routing | `algorithms/drip/cache_manager/query_router.py` | `QUERY_VISIBLE` / `QUERY_HIDDEN`; qtype is diagnostic by default. |
-| Dense/direct evidence | `algorithms/drip/cache_manager/embedding_index.py` | Direct candidates for query-visible evidence. |
-| Hidden support | `algorithms/drip/cache_manager/support_completion.py` | Evidence-conditioned hidden-support completion and pair lease. |
-| Graph metadata | `algorithms/drip/cache_manager/graph_index.py` | Entity metadata and postings for hidden-support completion. |
-| Detector baselines | `algorithms/drip/detection/baseline_detectors.py` | Optional detector ablations. |
+| 带 `preserve_order` 的真实日志 | `natural_temporal` | 否 |
+| 普通 QA / agent 数据 | `factorized_recurring` | 是，仅离线构造 |
 
-Earlier prototype implementations have been removed from the runnable cache
-registry; `algorithms/drip/cache_manager/` is the only current DRIP code path.
+显式指定与数据协议冲突的 workload 会直接报错，不再静默覆盖。
 
-## Strategy Registry
+## 2. 自然时间流
 
-All runnable cache policies are registered in:
+实现位于 `experiments/common/stream_protocol.py::chronological_sample`。
 
-```text
-algorithms/cache/registry.py
-```
+- `prefix`：使用日志开头的连续事件；
+- `window_span`：在完整时间范围选择连续窗口块，保留窗口内 locality；
+- 前 `warmup_windows * window_size` 条只用于初始缓存；
+- 后续恰好 `n_windows * window_size` 条用于评估；
+- warm-up 与 evaluation 的 exact query 必须无交集。
 
-Current DRIP-related entries:
+StreamingQA 只使用官方 `question_ts` loader。旧的“从问题文本抽年份再分箱”代理
+已经删除。
 
-| Strategy | Meaning |
+## 3. 受控 Evidence Drift
+
+实现位于 `experiments/common/factorized_workload.py`，构造标签不提供给在线策略。
+
+1. 用 gold evidence 文本的 sparse TF-IDF 表示聚类 latent evidence topics；
+2. 将 topics 平衡映射为 working-set regimes；
+3. 从初始 regime 先取互不重复的 warm-up query；
+4. 每个 evaluation query 最多出现一次；
+5. 通过不同 regime 日程独立控制漂移与可预测性。
+
+| workload | 日程含义 |
 |---|---|
-| `DRIP-QueryVisible` | Embedding/direct evidence channel only. |
-| `DRIP-QueryHidden` | Query-visible A plus evidence-conditioned hidden-support completion B and pair lease. |
-| `DRIP` | Main method alias for `DRIP-QueryHidden`. |
+| `factorized_recurring` | regime 周期复现，用于检验可预测转移与 evidence reuse |
+| `factorized_shuffled` | 保持 regime 边际频率，打乱转移顺序 |
+| `factorized_one_shot` | 旧 working set 到新 working set 的一次转移 |
+| `factorized_stationary` | 所有 regime 的稳定混合对照 |
 
-Old graph-walk/entity-rerank/decomposition variants are no longer registry entries.
+证据家族默认规则：单 support 按完整 support；多 support direct query 按共享 anchor。
+复用的是 evidence family，不是重复 query 文本。
 
-Detector ablations should not change the query-visible/query-hidden router.
-They should only change the controller signal `rho_t` and therefore the update
-policy:
+## 4. 初始缓存与容量
 
-```text
-NoDetector / fixed rho=0
-MultiAgentDriftDetector
-DriftLensDetector or ADWIN/MMD ablations
-```
-
-## Main Comparison Set
-
-Use a compact cache-replacement comparison set:
+所有策略共用 `causal_prefix_init_kb`：只根据 warm-up query 的冷库检索结果初始化，
+不读取评估流的 gold support 或未来 `ctx_titles`。
 
 ```text
-Static
-LRU
-TinyLFU
-GPTCacheStyle
-AgentRAGCache
-DRIP-QueryVisible
-DRIP-QueryHidden
-Oracle
+B = round(kb_pool_ratio * |D|)
 ```
 
-Additional paradigm references such as DocArrival, KnowledgeEdit,
-OnDemandFetch, LogDrivenArrival, and MemGPTStyle can remain in appendices or
-diagnostic runs.
+默认 `kb_pool_ratio=0.1`，`--kb-budget` 可覆盖绝对容量。
 
-For paper tables, label `AgentRAGCache` as `ARC`. Keep the runnable strategy
-name as `AgentRAGCache` because that is the registry key. The DRIP family
-should appear only as `DRIP-QueryVisible`, `DRIP-QueryHidden`, or the main
-alias `DRIP`.
+## 5. 必须保存的构造审计
 
-## Benchmark Design
+每个结果 JSON 的 `config` 保存：
 
-The benchmark is two-dimensional. A method only answers the paper question if
-it is evaluated across both axes:
+- `workload` 与 `initialization`；
+- `stream_sampling`：exact-query 重复率；
+- `warmup_audit`：warm-up/evaluation overlap；
+- `support_reuse`：阶段内 evidence reuse；
+- `query_drift`：仅作事后 query-space 诊断；
+- `workload_factors`：跨 regime evidence overlap、漂移幅度与转移可预测性；
+- `factorized_construction` 或 `temporal_sampling`。
 
-| Axis | Levels | Why it matters |
-|---|---|---|
-| Demand dynamics | `static`, `random`, `temporal_drift`, `burst_drift` | Cache management is about a moving hot working set, not one independent QA batch. |
-| Evidence visibility | `single_hop_visible`, `direct_multi_hop_visible`, `bridge_hidden` | Query-visible methods can solve the first two; bridge-hidden evidence needs a content/link signal after observing the first hop. |
+## 6. 示例命令
 
-Suggested dataset mapping:
+受控 direct workload：
 
-| Visibility level | Dataset / filter | Primary purpose |
-|---|---|---|
-| `single_hop_visible` | StreamingQA or single-hop QA stream | Calibration: access history and `DRIP-QueryVisible` should both be competitive. |
-| `direct_multi_hop_visible` | HotpotQA `comparison` | Query embedding can see both target entities; `DRIP-QueryVisible` should help through neighborhood demand. |
-| `bridge_hidden` | 2WikiMultihopQA `bridge_comparison`, `compositional`, `inference` | Query exposes A, but reusable B must be inferred through content/entity links. |
+```bash
+python experiments/direct/run.py \
+  --datasets hotpotqa_comparison \
+  --n-windows 50 --window-size 50 \
+  --workload factorized_recurring \
+  --kb-pool-ratio 0.1 --warmup-windows 3
+```
 
-Workload constructors:
+自然时间 workload：
 
-| Workload | Meaning | Current runner |
-|---|---|---|
-| `cluster_shift` | Existing KMeans head/tail split with sudden/gradual/full-gradual drift. | `--workload cluster_shift --drift sudden` |
-| `random_static` | Same query pool sampled uniformly with replacement/reshuffle; no intended drift. | `--workload random_static` |
-| `temporal_bridge_reuse` | Bridge groups appear in phases: exposure queries reveal a shared support title, later reuse queries test whether the hot tier kept it warm. | `--workload temporal_bridge_reuse` |
-| `burst_bridge_reuse` | Same bridge groups but compressed into bursts to test fast recovery and churn. | `--workload burst_bridge_reuse` |
+```bash
+python experiments/direct/run.py \
+  --datasets streamingqa_official \
+  --n-windows 50 --window-size 500 \
+  --workload natural_temporal \
+  --temporal-sampling window_span \
+  --kb-pool-ratio 0.1 --warmup-windows 3
+```
 
-`temporal_bridge_reuse` is the key prefetch benchmark. One-shot 2Wiki bridge
-diagnoses query-only blindness, but it does not by itself justify prefetch.
-Prefetch only becomes a cache-management win when a hidden evidence document is
-reused by later queries, reducing future cold-tier pressure.
-
-## Core Metrics
-
-Report at minimum:
-
-- `Recall@5 H1/H2`
-- `KB coverage H1/H2`
-- `Update cost`
-- `Maintenance retrieval cost`
-- `Serve retrieval cost` when the policy fetches from the cold pool online
-
-Route-aware / reuse-aware metrics:
-
-- `cold_fetches_per_query`: average number of gold support documents missing
-  from the effective hot tier before serve-time retrieval.
-- `reuse_hit_rate`: among reuse-labeled queries, fraction whose reuse support
-  document is resident before the query is evaluated.
-- `reuse_queries`: number of reuse-labeled queries used for the rate.
-- `first_exposure_cost`: average missing gold documents on exposure queries.
-- `amortized_cold_cost`: average missing gold documents after the first
-  exposure within each reuse group.
-- `bridge_prefetch_precision`: among bridge-channel candidates/writes, fraction
-  that are gold or future-reuse support. Use DRIP `bridge_log` for diagnostics.
-- `bridge_resident_survival`: whether the reuse support remains resident from
-  exposure to later reuse.
-- `wasted_prefetch_rate`: written bridge candidates that are never reused later
-  in the constructed stream.
-- `shift_recovery_lag`: windows after a demand shift until recall or reuse hit
-  rate reaches a configured fraction of its final plateau.
-- `stale_resident_rate`: resident documents tied only to old demand after the
-  shift.
-
-The first implemented pass records `cold_fetches_per_query`,
-`reuse_hit_rate`, `reuse_queries`, `first_exposure_cost`, and
-`amortized_cold_cost` directly in `motivation_2/run.py`. The remaining metrics
-are diagnostic targets for the next GraphIndex iteration.
-
-## Ablation Interpretation
-
-| Comparison | Meaning |
-|---|---|
-| `DRIP-QueryHidden` vs `DRIP-QueryVisible` | Gain from evidence-conditioned hidden-support completion plus pair retention. |
-| `DRIP-QueryHidden` vs `AgentRAGCache` | Whether hidden-support evidence beats query-distribution geometry on hidden-support tasks. |
-| `DRIP-QueryHidden` vs `Oracle` | Remaining headroom from imperfect candidate scoring and admission. |
-
-GraphIndex should be changed only after these metrics expose a concrete
-failure mode. For example:
-
-| Failure observed | Component to inspect |
-|---|---|
-| High bridge candidate volume but low future reuse hit | GraphIndex relation/entity gates and candidate precision. |
-| Good bridge candidates but low writes | Budgeted writer / priority threshold. |
-| Good writes but poor survival until reuse | Eviction priority / serve decay. |
-| Strong recall but high cold cost | Serve-time fallback is masking bad hot-tier residency. |
+容量 sweep 的统一入口是 `motivation/run_cache_ratio_sweep.py`。

@@ -20,15 +20,16 @@
 | **Miss Rate↓ / Hit Rate↑** | `miss_rate = 1 - has_answer_rate`；`hit_rate = has_answer_rate` | 解释 AMAT 的来源 |
 
 
-这份文档是当前主线的唯一实验入口。历史 `motivation_1/`、`motivation_2/`
-命名保留不动，但论文主线按实验问题重新整理：
+这份文档记录早期 CostAwareDRIP 实验。正式实验入口现分为 direct QA、hidden QA
+和真实 agent trace 三类协议：
 
 | 实验 | 问题 | Runner | 主数据 |
 |---|---|---|---|
-| E1 temporal boundary | 真实时间漂移下 LRU/FIFO 是否已经很强？同等质量下谁写得少？ | `motivation_1/run.py` | StreamingQA temporal；TREC-COVID temporal 可选 |
-| E2 direct topic drift | query-visible direct evidence 的 topic drift 下，成本感知 admission 是否更稳？ | `motivation_2/run.py` | 2Wiki comparison；HotpotQA comparison；MuSiQue |
-| E3 cost/churn stress | KB 更紧或 probe/write 更贵时，谁在质量-成本 frontier 上更好？ | `motivation_2/run.py` | E2 同数据，扫 `--kb-budget` |
-| Diagnostic hidden | hidden evidence 边界，不作为主贡献 | `motivation_2/run.py` | bridge / bridge_comparison |
+| E1 temporal boundary | 真实时间漂移下 LRU/FIFO 是否已经很强？同等质量下谁写得少？ | `experiments/direct/run.py` | StreamingQA temporal；TREC-COVID temporal 可选 |
+| E2 direct topic drift | query-visible direct evidence 的 topic drift 下，成本感知 admission 是否更稳？ | `experiments/direct/run.py` | 2Wiki comparison；HotpotQA comparison；MuSiQue direct subset |
+| E3 cost/churn stress | KB 更紧或 probe/write 更贵时，谁在质量-成本 frontier 上更好？ | `experiments/direct/run.py` | E2 同数据，扫 `--kb-budget` |
+| Hidden evidence | query-hidden evidence 下图扩展和证据补全是否有效？ | `experiments/hidden/run.py` | bridge / bridge_comparison QA |
+| Agent access | 真实时序或会话访问中 evidence 是否在请求前驻留？ | `experiments/agent/` | MIND、MT-RAG、Mind2Web |
 
 当前主方法：
 
@@ -71,8 +72,8 @@ L2AccessRate = max(1 - HasAnswerRate, serve_fetches_per_query)
 full index 的策略。参数已经配置在：
 
 ```text
-motivation/motivation_1/config.py
-motivation/motivation_2/config.py
+experiments/direct/config.py
+experiments/hidden/config.py
 algorithms/cache/params.py
 ```
 
@@ -157,7 +158,7 @@ export CAD_PROBE_TOPK=8
 推荐主跑：
 
 ```bash
-$PY motivation/motivation_1/run.py \
+$PY experiments/direct/run.py \
   --datasets streamingqa_temporal \
   --n-windows 100 \
   --window-size 50 \
@@ -170,7 +171,7 @@ $PY motivation/motivation_1/run.py \
 已跑过的一轮结果文件：
 
 ```text
-motivation/motivation_1/data/costaware_streamingqa_temporal_100w50_kb400.json
+experiments/direct/data/costaware_streamingqa_temporal_100w50_kb400.json
 ```
 
 这轮的读法：
@@ -184,7 +185,7 @@ NoChurn 往往质量更高，但写入和 churn 更高，正好证明 churn cont
 ### E1-b TREC-COVID temporal，可选
 
 ```bash
-$PY motivation/motivation_1/run.py \
+$PY experiments/direct/run.py \
   --datasets trec_covid_temporal \
   --n-windows 20 \
   --window-size 5 \
@@ -203,7 +204,7 @@ $PY motivation/motivation_1/run.py \
 这是目前最快、最稳的 direct evidence 检查：
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type comparison \
@@ -222,7 +223,7 @@ $PY motivation/motivation_2/run.py \
 ### E2-b 2Wiki comparison，主跑
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type comparison \
@@ -241,7 +242,7 @@ $PY motivation/motivation_2/run.py \
 ### E2-c HotpotQA comparison，中等规模
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets hotpotqa \
   --expanded \
   --q-type comparison \
@@ -264,7 +265,7 @@ $PY motivation/motivation_2/run.py \
 更接近旧图 `(pool≈87,175, KB=9,600)`，但会很慢：
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets hotpotqa \
   --expanded \
   --q-type comparison \
@@ -285,7 +286,7 @@ $PY motivation/motivation_2/run.py \
 MuSiQue 没有同样干净的 `q-type comparison`，建议当作 direct-ish / robustness：
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets musique \
   --expanded \
   --n-source 1200 \
@@ -330,7 +331,7 @@ CostAwareDRIP 的价值是同等质量下更少写、更少 churn，或者同等
 hidden 不删，但先不要放主线：
 
 ```bash
-$PY motivation/motivation_2/run.py \
+$PY experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type bridge_comparison \
@@ -348,7 +349,7 @@ $PY motivation/motivation_2/run.py \
 
 ## 结果读取
 
-### motivation_1 结果
+### Direct 结果
 
 ```bash
 jq '.streamingqa_temporal.summary | {
@@ -381,10 +382,10 @@ jq '.streamingqa_temporal.summary | {
     evictions:."CostAwareDRIP-NoChurn".evictions,
     internal_churn:."CostAwareDRIP-NoChurn".churn_rate_mean
   }
-}' motivation/motivation_1/data/costaware_streamingqa_temporal_100w50_kb400.json
+}' experiments/direct/data/costaware_streamingqa_temporal_100w50_kb400.json
 ```
 
-### motivation_2 结果
+### Hidden 结果
 
 把文件名换成你实际输出的 JSON：
 
@@ -423,21 +424,22 @@ jq '.["2wikimultihopqa"].summary // .hotpotqa.summary // .musique.summary | {
     internal_churn:."CostAwareDRIP-NoChurn".churn_rate_mean,
     maint:."CostAwareDRIP-NoChurn".maint_retrieval_cost
   }
-}' motivation/motivation_2/data/costaware_2wiki_comp_direct_8w25_kb1250.json
+}' experiments/hidden/data/costaware_2wiki_comp_direct_8w25_kb1250.json
 ```
 
 ## 文件夹读法
 
 ```text
-motivation_1/
-  run.py              E1 temporal runner
+experiments/direct/
+  run.py              temporal 和 direct-topic 统一入口
   loaders_temporal.py StreamingQA / TREC-COVID temporal loader
-  data/               E1 JSON outputs
+  loaders.py          direct QA loaders
+  data/               direct JSON outputs
 
-motivation_2/
-  run.py              E2/E3 direct-topic and hidden-diagnostic runner
+experiments/hidden/
+  run.py              hidden-evidence 和 agent 实验入口
   loaders.py          HotpotQA / 2Wiki / MuSiQue loaders
-  data/               E2/E3 JSON outputs
+  data/               hidden JSON outputs
 
 algorithms/drip/cache_manager/cost_aware.py
   CostAwareDRIP 主方法逻辑

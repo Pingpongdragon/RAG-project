@@ -1,0 +1,198 @@
+{
+  "squad": {
+    "dataset": "squad",
+    "config": {
+      "kb_budget": 50,
+      "pool_size": 500,
+      "kb_pool_ratio": 0.1,
+      "n_windows": 4,
+      "window_size": 50,
+      "n_queries_available": 2303,
+      "seed": 42,
+      "data_seed": 42,
+      "drift": "full_gradual",
+      "init_mode": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 200,
+        "unique": 200,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 200,
+        "support_occurrences": 200,
+        "unique_supports": 168,
+        "repeated_support_occurrences": 32,
+        "repeated_support_rate": 0.16,
+        "queries_answerable_from_past": 32,
+        "past_answerable_query_rate": 0.16,
+        "adjacent_window_jaccard_mean": 0.063822,
+        "max_support_frequency": 3
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.426747,
+        "cluster_js_divergence": 0.878186,
+        "adjacent_centroid_shift_mean": 0.226784,
+        "adjacent_centroid_shift_max": 0.249936
+      },
+      "warmup_audit": {
+        "requested": 50,
+        "actual": 50,
+        "unique": 50,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 8.0,
+        "recall@1_h2": 12.0,
+        "recall@1_per_window": [
+          8.0,
+          8.0,
+          12.0,
+          12.0
+        ],
+        "recall@5_h1": 8.0,
+        "recall@5_h2": 13.0,
+        "recall@5_per_window": [
+          8.0,
+          8.0,
+          14.0,
+          12.0
+        ],
+        "recall@10_h1": 8.0,
+        "recall@10_h2": 13.0,
+        "recall@10_per_window": [
+          8.0,
+          8.0,
+          14.0,
+          12.0
+        ],
+        "recall@20_h1": 8.0,
+        "recall@20_h2": 13.0,
+        "recall@20_per_window": [
+          8.0,
+          8.0,
+          14.0,
+          12.0
+        ],
+        "cov_h1": 8.4,
+        "cov_h2": 12.7,
+        "cov_per_window": [
+          8.51,
+          8.33,
+          14.89,
+          10.42
+        ],
+        "update_cost": 160,
+        "cache_writes": 160,
+        "replacement_count": 160,
+        "cache_replacements": 160,
+        "replacement_rate_per_query": 0.8,
+        "replacement_rate_per_window": 40.0,
+        "cache_churn_rate": 0.8,
+        "cache_churn_rate_pct": 80.0,
+        "maint_retrieval_cost": 183,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 183,
+        "cost": 343,
+        "prepare_latency_mean_ms": 0.001,
+        "prepare_latency_per_window": [
+          0.002,
+          0.001,
+          0.001,
+          0.001
+        ],
+        "retrieval_latency_mean_ms": 1.819,
+        "retrieval_latency_per_window": [
+          1.922,
+          1.791,
+          1.778,
+          1.786
+        ],
+        "query_latency_mean_ms": 1.82,
+        "query_latency_per_window": [
+          1.924,
+          1.791,
+          1.779,
+          1.787
+        ],
+        "per_query_latency_mean_ms": 0.0364,
+        "per_query_latency_per_window": [
+          0.0385,
+          0.0358,
+          0.0356,
+          0.0357
+        ],
+        "step_latency_mean_ms": 1.566,
+        "step_latency_per_window": [
+          1.652,
+          1.548,
+          1.493,
+          1.572
+        ],
+        "update_latency_mean_ms": 1.566,
+        "update_latency_per_window": [
+          1.652,
+          1.548,
+          1.493,
+          1.572
+        ],
+        "step_overhead_mean": 40.0,
+        "step_overhead_per_window": [
+          39,
+          40,
+          39,
+          42
+        ],
+        "cold_fetches_per_query": 0.895,
+        "support_coverage_rate": 10.5,
+        "arc_item_hit_rate": 10.5,
+        "has_answer_rate": 10.5,
+        "strict_has_answer_rate": 10.5,
+        "has_answer_queries": 200,
+        "has_answer_hits": 21,
+        "has_answer_h1": 8.0,
+        "has_answer_h2": 13.0,
+        "has_answer_per_window": [
+          8.0,
+          8.0,
+          14.0,
+          12.0
+        ],
+        "support_coverage_h1": 8.0,
+        "support_coverage_h2": 13.0,
+        "support_coverage_per_window": [
+          8.0,
+          8.0,
+          14.0,
+          12.0
+        ],
+        "cold_fetches_h1": 0.92,
+        "cold_fetches_h2": 0.87,
+        "cold_fetches_per_window": [
+          0.92,
+          0.92,
+          0.86,
+          0.88
+        ],
+        "amat": 9.95,
+        "amat_normalized": 9.95,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 0.895,
+        "l2_accesses_per_query": 0.895,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 12.9
+  }
+}

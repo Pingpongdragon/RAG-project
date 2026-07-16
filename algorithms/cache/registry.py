@@ -12,13 +12,11 @@
 from algorithms.cache.recency.lru import LRU
 from algorithms.cache.recency.fifo import FIFO
 from algorithms.cache.frequency.tinylfu import TinyLFU
+from algorithms.cache.adaptive.arc import ClassicalARC
 from algorithms.cache.semantic.gptcache import GPTCacheStyle
 from algorithms.cache.semantic.proximity import Proximity
 from algorithms.cache.oracle.belady import Oracle
-from algorithms.drip import (
-    DRIP,
-    DRIPNOdetector,
-)
+from algorithms.drip import DRIP
 from algorithms.cache.paradigm_ref.agent_rag_cache import AgentRAGCache
 
 
@@ -33,6 +31,7 @@ STRATEGY_FACTORIES = {
     'LRU':              _f(LRU),
     'FIFO':             _f(FIFO),
     'TinyLFU':          _f(TinyLFU),
+    'ClassicalARC':     _f(ClassicalARC),
 
     # 语义 cache baseline。
     'GPTCacheStyle':    _f(GPTCacheStyle),
@@ -41,11 +40,8 @@ STRATEGY_FACTORIES = {
     # Agent-RAG Cache baseline。
     'AgentRAGCache':    _f(AgentRAGCache),
 
-    # DRIP: 保留两个入口。
-    # DRIP = 以后接 drift detector 的版本；现在 detector 还没调好，先少用。
-    # DRIPNOdetector = 当前重点实验版本，不依赖 detector。
+    # 唯一论文主方法：MEF/HSU + Fixed-Share + primal-dual admission。
     'DRIP':             _f(DRIP),
-    'DRIPNOdetector':   _f(DRIPNOdetector),
 
     # 上界。
     'Oracle':           _f(Oracle),

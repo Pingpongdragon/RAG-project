@@ -1,0 +1,169 @@
+{
+  "hotpotqa": {
+    "dataset": "hotpotqa",
+    "config": {
+      "kb_budget": 30,
+      "pool_size": 300,
+      "kb_pool_ratio": 0.1,
+      "n_windows": 2,
+      "window_size": 4,
+      "n_queries_available": 30,
+      "seed": 42,
+      "data_seed": 42,
+      "workload": "factorized_recurring",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ],
+      "initialization": "causal-prefix",
+      "warmup_windows": 1,
+      "stream_sampling": {
+        "total": 8,
+        "unique": 8,
+        "duplicates": 0,
+        "duplicate_rate": 0.0
+      },
+      "support_reuse": {
+        "queries_with_support": 8,
+        "support_occurrences": 16,
+        "unique_supports": 16,
+        "repeated_support_occurrences": 0,
+        "repeated_support_rate": 0.0,
+        "queries_answerable_from_past": 0,
+        "past_answerable_query_rate": 0.0,
+        "adjacent_window_jaccard_mean": 0.0,
+        "max_support_frequency": 1
+      },
+      "query_drift": {
+        "centroid_cosine_shift": 0.722229,
+        "cluster_js_divergence": 1.0,
+        "adjacent_centroid_shift_mean": 0.416019,
+        "adjacent_centroid_shift_max": 0.416019
+      },
+      "workload_factors": {
+        "windows": 2,
+        "regimes": 2,
+        "cross_regime_transitions": 1,
+        "cross_regime_evidence_jaccard_mean": 0.0,
+        "drift_magnitude": 1.0,
+        "within_regime_repeated_support_rate": 0.0,
+        "causal_transition_accuracy": 0.0,
+        "recurrent_transition_rate": 0.0,
+        "labeled_visibility_rate": 0.0
+      },
+      "factorized_construction": {
+        "representation": "sparse-evidence-tfidf",
+        "latent_topics": 8,
+        "regimes": 4,
+        "requested_queries": 8,
+        "selected_queries": 8,
+        "warmup_queries": 4,
+        "available_queries": 30,
+        "eligible_queries": 30,
+        "exact_query_duplicates": 0,
+        "min_support_frequency": 1,
+        "family_mode": "auto",
+        "support_families": 30,
+        "regime_counts": {
+          "0": 4,
+          "1": 4
+        }
+      },
+      "warmup_audit": {
+        "requested": 4,
+        "actual": 4,
+        "unique": 4,
+        "evaluation_overlap": 0,
+        "overlap_rate": 0.0
+      },
+      "temporal_sampling": null
+    },
+    "summary": {
+      "LRU": {
+        "recall@1_h1": 0.0,
+        "recall@1_h2": 0.0,
+        "recall@1_per_window": [
+          0.0,
+          0.0
+        ],
+        "recall@5_h1": 0.0,
+        "recall@5_h2": 0.0,
+        "recall@5_per_window": [
+          0.0,
+          0.0
+        ],
+        "recall@10_h1": 0.0,
+        "recall@10_h2": 0.0,
+        "recall@10_per_window": [
+          0.0,
+          0.0
+        ],
+        "recall@20_h1": 0.0,
+        "recall@20_h2": 0.0,
+        "recall@20_per_window": [
+          0.0,
+          0.0
+        ],
+        "kb_coverage_h1": 0.0,
+        "kb_coverage_h2": 0.0,
+        "kb_coverage_per_window": [
+          0.0,
+          0.0
+        ],
+        "kb_coverage_cumulative_h1": 0.0,
+        "kb_coverage_cumulative_h2": 25.0,
+        "kb_coverage_cumulative_per_window": [
+          0.0,
+          25.0
+        ],
+        "update_cost": 8,
+        "cache_writes": 8,
+        "replacement_count": 8,
+        "cache_replacements": 8,
+        "replacement_rate_per_query": 1.0,
+        "replacement_rate_per_window": 4.0,
+        "cache_churn_rate": 0.133333,
+        "cache_churn_rate_pct": 13.333,
+        "maint_retrieval_cost": 8,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 8,
+        "cost": 16,
+        "cold_fetches_per_query": 2.0,
+        "support_coverage_rate": 0.0,
+        "arc_item_hit_rate": 0.0,
+        "has_answer_rate": 0.0,
+        "strict_has_answer_rate": 0.0,
+        "has_answer_queries": 8,
+        "has_answer_hits": 0,
+        "hidden_B_hit_rate": 0.0,
+        "hidden_B_queries": 0,
+        "hidden_B_hits": 0,
+        "reuse_hit_rate": 0.0,
+        "reuse_queries": 0,
+        "reuse_hits": 0,
+        "first_exposure_cost": 0.0,
+        "amortized_cold_cost": 0.0,
+        "target_cold_fetches_per_query": 0.0,
+        "target_support_coverage_rate": 0.0,
+        "target_has_answer_rate": 0.0,
+        "target_has_answer_queries": 0,
+        "target_has_answer_hits": 0,
+        "background_cold_fetches_per_query": 2.0,
+        "background_support_coverage_rate": 0.0,
+        "background_has_answer_rate": 0.0,
+        "background_has_answer_queries": 8,
+        "background_has_answer_hits": 0,
+        "amat": 11.0,
+        "amat_normalized": 11.0,
+        "amat_hit_cost": 1.0,
+        "amat_miss_penalty": 10.0,
+        "miss_rate": 1.0,
+        "l2_accesses_per_query": 1.0,
+        "serve_fetches_per_query": 0.0
+      }
+    },
+    "elapsed": 18.1
+  }
+}

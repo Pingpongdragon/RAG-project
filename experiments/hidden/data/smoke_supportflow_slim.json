@@ -1,0 +1,133 @@
+{
+  "hotpotqa": {
+    "dataset": "hotpotqa",
+    "config": {
+      "kb_budget": 300,
+      "pool_size": 33052,
+      "n_windows": 2,
+      "window_size": 5,
+      "n_queries_available": 3500,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "SupportFlow": {
+        "recall@1_h1": 40.0,
+        "recall@1_h2": 0.0,
+        "recall@1_per_window": [
+          40.0,
+          0.0
+        ],
+        "recall@5_h1": 60.0,
+        "recall@5_h2": 0.0,
+        "recall@5_per_window": [
+          60.0,
+          0.0
+        ],
+        "recall@10_h1": 60.0,
+        "recall@10_h2": 0.0,
+        "recall@10_per_window": [
+          60.0,
+          0.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 0.0,
+        "recall@20_per_window": [
+          70.0,
+          0.0
+        ],
+        "kb_coverage_h1": 80.0,
+        "kb_coverage_h2": 0.0,
+        "kb_coverage_per_window": [
+          80.0,
+          0.0
+        ],
+        "kb_coverage_cumulative_h1": 80.0,
+        "kb_coverage_cumulative_h2": 40.0,
+        "kb_coverage_cumulative_per_window": [
+          80.0,
+          40.0
+        ],
+        "update_cost": 0,
+        "maint_retrieval_cost": 72,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 72,
+        "cost": 72,
+        "last_admission": {
+          "w": 1,
+          "target_slots": 10,
+          "under_covered": 5,
+          "write_budget": 10,
+          "writes": 0
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "under_covered": 4,
+            "bridge_updates": 0,
+            "bridge_mass": 0.0,
+            "direct_updates": 23,
+            "direct_mass": 5.0591
+          },
+          {
+            "w": 1,
+            "under_covered": 5,
+            "bridge_updates": 0,
+            "bridge_mass": 0.0,
+            "direct_updates": 40,
+            "direct_mass": 10.0321
+          }
+        ]
+      },
+      "Static": {
+        "recall@1_h1": 40.0,
+        "recall@1_h2": 0.0,
+        "recall@1_per_window": [
+          40.0,
+          0.0
+        ],
+        "recall@5_h1": 60.0,
+        "recall@5_h2": 0.0,
+        "recall@5_per_window": [
+          60.0,
+          0.0
+        ],
+        "recall@10_h1": 60.0,
+        "recall@10_h2": 0.0,
+        "recall@10_per_window": [
+          60.0,
+          0.0
+        ],
+        "recall@20_h1": 70.0,
+        "recall@20_h2": 0.0,
+        "recall@20_per_window": [
+          70.0,
+          0.0
+        ],
+        "kb_coverage_h1": 80.0,
+        "kb_coverage_h2": 0.0,
+        "kb_coverage_per_window": [
+          80.0,
+          0.0
+        ],
+        "kb_coverage_cumulative_h1": 80.0,
+        "kb_coverage_cumulative_h2": 40.0,
+        "kb_coverage_cumulative_per_window": [
+          80.0,
+          40.0
+        ],
+        "update_cost": 0,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 0
+      }
+    },
+    "elapsed": 4.0
+  }
+}

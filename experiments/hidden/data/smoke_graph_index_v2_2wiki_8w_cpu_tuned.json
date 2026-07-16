@@ -1,0 +1,717 @@
+{
+  "2wikimultihopqa": {
+    "dataset": "2wikimultihopqa",
+    "config": {
+      "kb_budget": 700,
+      "pool_size": 4848,
+      "n_windows": 8,
+      "window_size": 20,
+      "n_queries_available": 800,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "DRIP": {
+        "recall@1_h1": 23.4,
+        "recall@1_h2": 3.1,
+        "recall@1_per_window": [
+          22.5,
+          23.75,
+          23.75,
+          23.75,
+          3.75,
+          1.25,
+          3.75,
+          3.75
+        ],
+        "recall@5_h1": 50.0,
+        "recall@5_h2": 4.7,
+        "recall@5_per_window": [
+          47.5,
+          51.25,
+          55.0,
+          46.25,
+          3.75,
+          1.25,
+          10.0,
+          3.75
+        ],
+        "recall@10_h1": 51.9,
+        "recall@10_h2": 5.0,
+        "recall@10_per_window": [
+          47.5,
+          52.5,
+          58.75,
+          48.75,
+          3.75,
+          1.25,
+          10.0,
+          5.0
+        ],
+        "recall@20_h1": 56.2,
+        "recall@20_h2": 5.0,
+        "recall@20_per_window": [
+          51.25,
+          60.0,
+          58.75,
+          55.0,
+          3.75,
+          1.25,
+          10.0,
+          5.0
+        ],
+        "kb_coverage_h1": 95.6,
+        "kb_coverage_h2": 10.6,
+        "kb_coverage_per_window": [
+          92.31,
+          100.0,
+          95.0,
+          95.0,
+          5.06,
+          6.25,
+          16.25,
+          15.0
+        ],
+        "kb_coverage_cumulative_h1": 95.0,
+        "kb_coverage_cumulative_h2": 63.1,
+        "kb_coverage_cumulative_per_window": [
+          92.31,
+          96.2,
+          95.78,
+          95.57,
+          73.86,
+          65.4,
+          59.09,
+          54.17
+        ],
+        "update_cost": 218,
+        "maint_retrieval_cost": 1040,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 1040,
+        "cost": 1258,
+        "last_admission": {
+          "w": 7,
+          "target_slots": 40,
+          "under_covered": 20,
+          "write_budget": 40,
+          "writes": 40
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "under_covered": 13,
+            "bridge_updates": 215,
+            "bridge_mass": 40.0436,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.4626,
+            "bridge_direct_updates": 11,
+            "bridge_direct_mass": 1.2714,
+            "bridge_direct_gold_updates": 4,
+            "bridge_direct_gold_mass": 0.4895,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1105,
+            "graph_after_degree_gate": 949,
+            "graph_after_relation_gate": 660,
+            "graph_after_threshold": 215,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "paramount pictures",
+                118
+              ],
+              [
+                "broadway",
+                110
+              ],
+              [
+                "hollywood",
+                66
+              ],
+              [
+                "paris",
+                32
+              ],
+              [
+                "world war ii",
+                27
+              ]
+            ]
+          },
+          {
+            "w": 1,
+            "under_covered": 13,
+            "bridge_updates": 173,
+            "bridge_mass": 29.209,
+            "bridge_gold_updates": 0,
+            "bridge_gold_mass": 0.0,
+            "bridge_direct_updates": 2,
+            "bridge_direct_mass": 0.2205,
+            "bridge_direct_gold_updates": 0,
+            "bridge_direct_gold_mass": 0.0,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1131,
+            "graph_after_degree_gate": 949,
+            "graph_after_relation_gate": 637,
+            "graph_after_threshold": 173,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "united states",
+                94
+              ],
+              [
+                "columbia pictures",
+                66
+              ],
+              [
+                "london",
+                43
+              ],
+              [
+                "berlin international film festival",
+                41
+              ],
+              [
+                "paris",
+                32
+              ]
+            ]
+          },
+          {
+            "w": 2,
+            "under_covered": 9,
+            "bridge_updates": 133,
+            "bridge_mass": 25.3711,
+            "bridge_gold_updates": 2,
+            "bridge_gold_mass": 1.2,
+            "bridge_direct_updates": 6,
+            "bridge_direct_mass": 0.6802,
+            "bridge_direct_gold_updates": 2,
+            "bridge_direct_gold_mass": 0.2464,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 709,
+            "graph_after_degree_gate": 576,
+            "graph_after_relation_gate": 380,
+            "graph_after_threshold": 133,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "berlin international film festival",
+                41
+              ],
+              [
+                "broadway",
+                37
+              ],
+              [
+                "south korean",
+                32
+              ],
+              [
+                "paris",
+                31
+              ],
+              [
+                "universal pictures",
+                27
+              ]
+            ]
+          },
+          {
+            "w": 3,
+            "under_covered": 15,
+            "bridge_updates": 204,
+            "bridge_mass": 37.7323,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.6,
+            "bridge_direct_updates": 10,
+            "bridge_direct_mass": 1.1595,
+            "bridge_direct_gold_updates": 3,
+            "bridge_direct_gold_mass": 0.3661,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1022,
+            "graph_after_degree_gate": 852,
+            "graph_after_relation_gate": 519,
+            "graph_after_threshold": 204,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "columbia pictures",
+                44
+              ],
+              [
+                "london",
+                43
+              ],
+              [
+                "cannes film festival",
+                38
+              ],
+              [
+                "france",
+                36
+              ],
+              [
+                "south korean",
+                33
+              ]
+            ]
+          },
+          {
+            "w": 4,
+            "under_covered": 20,
+            "bridge_updates": 343,
+            "bridge_mass": 74.1354,
+            "bridge_gold_updates": 33,
+            "bridge_gold_mass": 17.5786,
+            "bridge_direct_updates": 53,
+            "bridge_direct_mass": 6.4934,
+            "bridge_direct_gold_updates": 38,
+            "bridge_direct_gold_mass": 4.7981,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1607,
+            "graph_after_degree_gate": 1361,
+            "graph_after_relation_gate": 967,
+            "graph_after_threshold": 343,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "united states",
+                188
+              ],
+              [
+                "hollywood",
+                62
+              ],
+              [
+                "paramount pictures",
+                53
+              ],
+              [
+                "california",
+                49
+              ],
+              [
+                "polish",
+                42
+              ]
+            ]
+          },
+          {
+            "w": 5,
+            "under_covered": 20,
+            "bridge_updates": 313,
+            "bridge_mass": 79.2343,
+            "bridge_gold_updates": 34,
+            "bridge_gold_mass": 18.4473,
+            "bridge_direct_updates": 53,
+            "bridge_direct_mass": 6.4892,
+            "bridge_direct_gold_updates": 40,
+            "bridge_direct_gold_mass": 5.0376,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1873,
+            "graph_after_degree_gate": 1602,
+            "graph_after_relation_gate": 1219,
+            "graph_after_threshold": 313,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "united states",
+                184
+              ],
+              [
+                "berlin international film festival",
+                115
+              ],
+              [
+                "paramount pictures",
+                106
+              ],
+              [
+                "cannes film festival",
+                73
+              ],
+              [
+                "india",
+                72
+              ]
+            ]
+          },
+          {
+            "w": 6,
+            "under_covered": 20,
+            "bridge_updates": 267,
+            "bridge_mass": 58.4474,
+            "bridge_gold_updates": 23,
+            "bridge_gold_mass": 11.6112,
+            "bridge_direct_updates": 48,
+            "bridge_direct_mass": 5.8304,
+            "bridge_direct_gold_updates": 35,
+            "bridge_direct_gold_mass": 4.3632,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1280,
+            "graph_after_degree_gate": 985,
+            "graph_after_relation_gate": 684,
+            "graph_after_threshold": 267,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "united states",
+                91
+              ],
+              [
+                "india",
+                35
+              ],
+              [
+                "france",
+                33
+              ],
+              [
+                "paris",
+                30
+              ],
+              [
+                "britain",
+                27
+              ]
+            ]
+          },
+          {
+            "w": 7,
+            "under_covered": 20,
+            "bridge_updates": 283,
+            "bridge_mass": 57.3798,
+            "bridge_gold_updates": 26,
+            "bridge_gold_mass": 13.4937,
+            "bridge_direct_updates": 52,
+            "bridge_direct_mass": 6.298,
+            "bridge_direct_gold_updates": 36,
+            "bridge_direct_gold_mass": 4.4613,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1193,
+            "graph_after_degree_gate": 919,
+            "graph_after_relation_gate": 622,
+            "graph_after_threshold": 283,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "india",
+                107
+              ],
+              [
+                "columbia pictures",
+                39
+              ],
+              [
+                "cannes film festival",
+                36
+              ],
+              [
+                "universal pictures",
+                26
+              ],
+              [
+                "west german",
+                25
+              ]
+            ]
+          }
+        ],
+        "route_log": [
+          {
+            "w": 0,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 13,
+            "target_slots": 26
+          },
+          {
+            "w": 1,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 13,
+            "target_slots": 26
+          },
+          {
+            "w": 2,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 9,
+            "target_slots": 18
+          },
+          {
+            "w": 3,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 15,
+            "target_slots": 30
+          },
+          {
+            "w": 4,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          },
+          {
+            "w": 5,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          },
+          {
+            "w": 6,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          },
+          {
+            "w": 7,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          }
+        ]
+      },
+      "Oracle": {
+        "recall@1_h1": 25.0,
+        "recall@1_h2": 25.0,
+        "recall@1_per_window": [
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "recall@5_h1": 53.1,
+        "recall@5_h2": 53.1,
+        "recall@5_per_window": [
+          52.5,
+          51.25,
+          58.75,
+          50.0,
+          53.75,
+          53.75,
+          52.5,
+          52.5
+        ],
+        "recall@10_h1": 54.7,
+        "recall@10_h2": 55.6,
+        "recall@10_per_window": [
+          52.5,
+          51.25,
+          61.25,
+          53.75,
+          57.5,
+          55.0,
+          55.0,
+          55.0
+        ],
+        "recall@20_h1": 58.1,
+        "recall@20_h2": 57.5,
+        "recall@20_per_window": [
+          56.25,
+          56.25,
+          61.25,
+          58.75,
+          58.75,
+          57.5,
+          56.25,
+          57.5
+        ],
+        "kb_coverage_h1": 100.0,
+        "kb_coverage_h2": 100.0,
+        "kb_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "kb_coverage_cumulative_h1": 62.4,
+        "kb_coverage_cumulative_h2": 36.8,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          58.86,
+          49.37,
+          41.46,
+          39.59,
+          36.71,
+          36.91,
+          33.81
+        ],
+        "update_cost": 1601,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 1601
+      },
+      "SemFlow": {
+        "recall@1_h1": 23.4,
+        "recall@1_h2": 1.2,
+        "recall@1_per_window": [
+          22.5,
+          23.75,
+          23.75,
+          23.75,
+          2.5,
+          0.0,
+          0.0,
+          2.5
+        ],
+        "recall@5_h1": 51.2,
+        "recall@5_h2": 2.5,
+        "recall@5_per_window": [
+          47.5,
+          51.25,
+          55.0,
+          51.25,
+          2.5,
+          0.0,
+          3.75,
+          3.75
+        ],
+        "recall@10_h1": 53.4,
+        "recall@10_h2": 2.5,
+        "recall@10_per_window": [
+          47.5,
+          52.5,
+          58.75,
+          55.0,
+          2.5,
+          0.0,
+          3.75,
+          3.75
+        ],
+        "recall@20_h1": 57.5,
+        "recall@20_h2": 2.8,
+        "recall@20_per_window": [
+          51.25,
+          60.0,
+          58.75,
+          60.0,
+          2.5,
+          0.0,
+          3.75,
+          5.0
+        ],
+        "kb_coverage_h1": 96.8,
+        "kb_coverage_h2": 8.1,
+        "kb_coverage_per_window": [
+          92.31,
+          100.0,
+          95.0,
+          100.0,
+          3.8,
+          5.0,
+          11.25,
+          12.5
+        ],
+        "kb_coverage_cumulative_h1": 96.0,
+        "kb_coverage_cumulative_h2": 68.0,
+        "kb_coverage_cumulative_per_window": [
+          92.31,
+          97.47,
+          96.62,
+          97.78,
+          78.93,
+          70.04,
+          63.64,
+          59.29
+        ],
+        "update_cost": 82,
+        "maint_retrieval_cost": 470,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 470,
+        "cost": 552,
+        "last_admission": {
+          "w": 7,
+          "weak_queries": 19,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 19
+        }
+      }
+    },
+    "elapsed": 342.4
+  }
+}

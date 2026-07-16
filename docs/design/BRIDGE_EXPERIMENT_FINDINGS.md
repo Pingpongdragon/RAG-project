@@ -15,7 +15,7 @@
 StreamingQA temporal
 pool=29,819, KB=400
 100 windows x 50 queries
-结果文件: motivation/motivation_1/data/results_streamingqa_temporal_final_clean.json
+结果文件: experiments/direct/data/results_streamingqa_temporal_final_clean.json
 ```
 
 | Strategy | R@5 H1 | R@5 H2 | Writes | MaintR | Cost |
@@ -41,7 +41,7 @@ KB=750, n_source=3000
 20 windows x 25 queries
 retrieval=graph
 结果文件:
-  motivation/motivation_2/data/hidden_2wiki_musique_simplified_sd_20w25_kb750_graphret.json
+  experiments/hidden/data/hidden_2wiki_musique_simplified_sd_20w25_kb750_graphret.json
 ```
 
 2Wiki bridge-comparison:
@@ -74,7 +74,7 @@ n_source=5000, pool=22,984, KB=750
 workload=multi_agent_bridge_reuse
 retrieval=graph
 结果文件:
-motivation/motivation_2/data/full100_2wiki_no_shift_multiagent_kb750_graphret_current.json
+experiments/hidden/data/full100_2wiki_no_shift_multiagent_kb750_graphret_current.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | Support Cov | Has-answer | Hidden-B | Reuse | ColdQ | Writes |
@@ -102,7 +102,7 @@ DRIP 的优势是 retrieval-facing R@5 + 较高 coverage per write, 不是全面
 workload=topic_shift_bridge_reuse
 drift=full_gradual
 结果文件:
-motivation/motivation_2/data/full100_2wiki_topic_shift_bridge_kb750_graphret_routed.json
+experiments/hidden/data/full100_2wiki_topic_shift_bridge_kb750_graphret_routed.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | Support Cov | Has-answer | Hidden-B | Reuse | ColdQ | Writes |
@@ -193,7 +193,7 @@ B 是 query 够不着的第二跳, 与 A 共享稀有实体。
 ## 关键发现 (按因果链)
 
 1. **Benchmark CLI 从不触发 bridge 分支。**
-   `DRIPStrategyAdapter.initialize` (benchmark/adapters.py:89) 从不调用
+   `DRIPStrategyAdapter.initialize` (benchmarks/archive_legacy/adapters.py:89) 从不调用
    `set_pool_entities`, 且喂给 step() 的 query 只有 {"question": text},
    丢掉了 sf_titles/qtype。`step()` 中 `if not has_metadata()` (line 87) 把
    route 强制降级为 SINGLE。=> 现有所有 benchmark 跑法里 bridge 根本没跑过。
@@ -273,7 +273,7 @@ B 是 query 够不着的第二跳, 与 A 共享稀有实体。
 
 # 第三阶段: 真实嵌入 (bge-large) + 真实 2wiki (结论: 方向成立, 增益尚小)
 
-脚本: `motivation/motivation_2/run_ppr_2wiki.py`
+脚本: `experiments/hidden/run_ppr_2wiki.py`
 环境: ljy_rag_ft。数据: 2wiki_expanded, pool=8465, queries=1500。
 嵌入: BAAI/bge-large-en-v1.5 (1024d, 缓存)。实体: spaCy NER (缓存)。
 KB预算=192, 窗口=50, d_cap=30, c=0.5, L=3, R=2, K0=5。
@@ -315,13 +315,13 @@ KB预算=192, 窗口=50, d_cap=30, c=0.5, L=3, R=2, K0=5。
 
 ## 0. 先修一个 PPR 专用脚本的 embedding 对齐 bug
 
-`motivation/motivation_2/run.py` 的标准写法是:
+`experiments/hidden/run.py` 的标准写法是:
 
 ```python
 wqe = np.array([query_embs[q["qidx"]] for q in wq])
 ```
 
-但 `motivation/motivation_2/run_ppr_2wiki.py` 目前在 `run()` 里用了:
+但 `experiments/hidden/run_ppr_2wiki.py` 目前在 `run()` 里用了:
 
 ```python
 qe = query_embs[w0:w0 + WINDOW]
@@ -517,7 +517,7 @@ absolute recall 大幅提升
 
 ```bash
 for d in 10 20 30 50; do
-  /home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run_ppr_2wiki.py \
+  /home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run_ppr_2wiki.py \
     --dataset 2wikimultihopqa \
     --n-source 1500 \
     --d-cap $d \
@@ -568,12 +568,12 @@ DRIP-PPR+bucketed-writer
 
 # 第五阶段: Mo2 全量复跑 + baseline 对比 (结论: PPR 有效, 但还不够)
 
-脚本: `motivation/motivation_2/run.py`
+脚本: `experiments/hidden/run.py`
 策略: `LRU / ARC / DRIP-Dense / DRIP / DRIP_PPR / Oracle`
 数据: `2wikimultihopqa --expanded --q-type bridge_comparison --n-source 1500`
 流: `temporal_bridge_reuse`, 50 windows x 50 queries = 2500 stream queries。
 KB=300, pool=8404。输出:
-`motivation/motivation_2/data/mo2_full_2wiki_bridge_ppr_baselines.json`。
+`experiments/hidden/data/mo2_full_2wiki_bridge_ppr_baselines.json`。
 
 本轮同时做了两个代码修复/接入:
 
@@ -776,8 +776,8 @@ temporal_bridge_reuse, 50x50, KB=300
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_ppr_writer_baselines.json
-motivation/motivation_2/data/mo2_full_2wiki_ppr_writer_variants.json
+experiments/hidden/data/mo2_full_2wiki_ppr_writer_baselines.json
+experiments/hidden/data/mo2_full_2wiki_ppr_writer_variants.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -937,8 +937,8 @@ temporal_bridge_reuse, 50x50, KB=300
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_ppr_drf_final_baselines.json
-motivation/motivation_2/data/mo2_full_2wiki_ppr_drf_variants_v2.json
+experiments/hidden/data/mo2_full_2wiki_ppr_drf_final_baselines.json
+experiments/hidden/data/mo2_full_2wiki_ppr_drf_variants_v2.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -1091,7 +1091,7 @@ drf_weight=0.15, hub_weight=0.05, drf_decay=0.98
 如果 KB 容量已经大于全部 stream support docs, coverage 是否能接近上界?
 ```
 
-因此 `motivation/motivation_2/run.py` 新增两个开关:
+因此 `experiments/hidden/run.py` 新增两个开关:
 
 ```text
 --no-mask-stream-gold   不从初始 KB 移除 stream support docs
@@ -1104,7 +1104,7 @@ drf_weight=0.15, hub_weight=0.05, drf_decay=0.98
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES='' \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa --expanded --q-type bridge_comparison \
   --n-source 1500 --kb-budget 4500 \
   --strategies LRU ARC DRIP-Dense DRIP_PPR_DRF_AGGR Oracle \
@@ -1152,7 +1152,7 @@ ARC 和 DRIP-Dense, 但 writes 更高。
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES='' \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa --expanded --q-type bridge_comparison \
   --n-source 1500 --kb-budget 4500 \
   --strategies LRU ARC DRIP-Dense DRIP_PPR_DRF_AGGR Oracle \
@@ -1249,7 +1249,7 @@ strategies: LRU / ARC / DRIP-Dense / DRIP_PPR_DRF_AGGR / Oracle
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES='' \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa --expanded --q-type bridge_comparison \
   --n-source 1500 --kb-budget 4500 \
   --strategies LRU ARC DRIP-Dense DRIP_PPR_DRF_AGGR Oracle \
@@ -1262,7 +1262,7 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES='' \
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_ppr_drf_kb4500_nomask_graphret.json
+experiments/hidden/data/mo2_full_2wiki_ppr_drf_kb4500_nomask_graphret.json
 ```
 
 ## 结果
@@ -1431,7 +1431,7 @@ retrieval=graph/PPR
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_ppr_drf_ablate_rh_graphret.json
+experiments/hidden/data/mo2_full_2wiki_ppr_drf_ablate_rh_graphret.json
 ```
 
 ## 变体定义
@@ -1686,7 +1686,7 @@ retrieval=graph/PPR
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_bridge_echo_budget045_graphret.json
+experiments/hidden/data/mo2_full_2wiki_bridge_echo_budget045_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -1784,9 +1784,9 @@ strategies=ARC, DRIP-Dense, DRIP_OVERFLOW
 输出:
 
 ```text
-motivation/motivation_2/data/cap_2wiki_kb300_20w25_graphret.json
-motivation/motivation_2/data/cap_2wiki_kb750_20w25_graphret.json
-motivation/motivation_2/data/small_2wiki_overflow_v2_20w25_graphret.json
+experiments/hidden/data/cap_2wiki_kb300_20w25_graphret.json
+experiments/hidden/data/cap_2wiki_kb750_20w25_graphret.json
+experiments/hidden/data/small_2wiki_overflow_v2_20w25_graphret.json
 ```
 
 | KB | Approx MB | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Writes |
@@ -1878,7 +1878,7 @@ KB=750   # 约等于 ARC 3MB 容量
 输出:
 
 ```text
-motivation/motivation_2/data/mo2_full_2wiki_decomp_heur_kb750_temporal_graphret.json
+experiments/hidden/data/mo2_full_2wiki_decomp_heur_kb750_temporal_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2034,7 +2034,7 @@ bridge_comparison:
 结果:
 
 ```text
-motivation/motivation_2/data/small_2wiki_routerhybrid_kb750_temporal_20w25_graphret.json
+experiments/hidden/data/small_2wiki_routerhybrid_kb750_temporal_20w25_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | Reuse | Writes |
@@ -2068,7 +2068,7 @@ bridge_comparison:
 结果:
 
 ```text
-motivation/motivation_2/data/small_2wiki_routerhybrid_v2_kb750_temporal_20w25_graphret.json
+experiments/hidden/data/small_2wiki_routerhybrid_v2_kb750_temporal_20w25_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | Reuse | Writes |
@@ -2234,10 +2234,10 @@ top 80 hidden groups
 代码:
 
 ```text
-motivation/motivation_2/utils.py
+experiments/hidden/utils.py
   _build_resident_anchor_bridge_stream
 
-motivation/motivation_2/run.py
+experiments/hidden/run.py
   _init_anchored_bridge_kb
 ```
 
@@ -2256,7 +2256,7 @@ resident_anchor_bridge_reuse
 输出:
 
 ```text
-motivation/motivation_2/data/small_2wiki_resident_anchor_kb750_20w25_graphret_v4.json
+experiments/hidden/data/small_2wiki_resident_anchor_kb750_20w25_graphret_v4.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2288,8 +2288,8 @@ resident_anchor_bridge_reuse (top80 hidden groups, 8 reuse/group)
 输出:
 
 ```text
-motivation/motivation_2/data/full_2wiki_resident_anchor_top80_titlecap_kb750_50w50_graphret.json
-motivation/motivation_2/data/full_2wiki_resident_anchor_top80_decomp_kb750_50w50_graphret.json
+experiments/hidden/data/full_2wiki_resident_anchor_top80_titlecap_kb750_50w50_graphret.json
+experiments/hidden/data/full_2wiki_resident_anchor_top80_decomp_kb750_50w50_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2423,7 +2423,7 @@ full 50x50 时虽然 hidden groups 多, 但 reuse target 与写入信号不稳�
 新 workload:
 
 ```text
-motivation/motivation_2/utils.py
+experiments/hidden/utils.py
   _build_multi_agent_bridge_stream
 ```
 
@@ -2466,7 +2466,7 @@ multi_agent_bridge_reuse
 输出:
 
 ```text
-motivation/motivation_2/data/small_2wiki_multiagent_esc_text_rel_kb750_20w25_graphret.json
+experiments/hidden/data/small_2wiki_multiagent_esc_text_rel_kb750_20w25_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2510,7 +2510,7 @@ multi_agent_bridge_reuse
 输出:
 
 ```text
-motivation/motivation_2/data/full_2wiki_multiagent_esc_text_rel_kb750_50w50_graphret.json
+experiments/hidden/data/full_2wiki_multiagent_esc_text_rel_kb750_50w50_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2624,7 +2624,7 @@ KB=750, graph retrieval
 默认稳健版输出:
 
 ```text
-motivation/motivation_2/data/small_2wiki_multiagent_esc_text_diag_confirm_v3_kb750_20w25_graphret.json
+experiments/hidden/data/small_2wiki_multiagent_esc_text_diag_confirm_v3_kb750_20w25_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2667,7 +2667,7 @@ soft bridge victim fallback = True
 输出:
 
 ```text
-motivation/motivation_2/data/small_2wiki_multiagent_esc_text_rankadmit_softvictim_kb750_20w25_graphret.json
+experiments/hidden/data/small_2wiki_multiagent_esc_text_rankadmit_softvictim_kb750_20w25_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2707,7 +2707,7 @@ KB=750, graph retrieval
 输出:
 
 ```text
-motivation/motivation_2/data/full_2wiki_multiagent_esc_text_diag_confirm_v2_kb750_50w50_graphret.json
+experiments/hidden/data/full_2wiki_multiagent_esc_text_diag_confirm_v2_kb750_50w50_graphret.json
 ```
 
 | Strategy | R@5 H2 | KB Cov H2 | ColdQ | Reuse | Writes |
@@ -2844,7 +2844,7 @@ resident; resident 以后是否能被 top-5 retriever 取出, 是下一层问题
 2Wiki bridge_comparison, n_source=3000
 multi_agent_bridge_reuse, 20 windows x 25 queries
 KB=750, graph retrieval
-output = motivation/motivation_2/data/small_2wiki_multiagent_hasanswer_20w25_graphret.json
+output = experiments/hidden/data/small_2wiki_multiagent_hasanswer_20w25_graphret.json
 ```
 
 | Strategy | Has-answer | Support Cov | Hidden-B Hit | Reuse | ColdQ | Writes |
@@ -2979,7 +2979,7 @@ registry key:
 设置同 12.3, 输出:
 
 ```text
-motivation/motivation_2/data/small_2wiki_multiagent_pairlease_20w25_graphret.json
+experiments/hidden/data/small_2wiki_multiagent_pairlease_20w25_graphret.json
 ```
 
 | Strategy | Has-answer | Support Cov | Hidden-B | Reuse | R@5 H2 | KB Cov H2 | Writes |
@@ -3068,13 +3068,13 @@ strategies=ARC / DRIP-Dense / DRIP-ESC / DRIP-ESC-Lease / Oracle
 
 ```text
 2Wiki:
-motivation/motivation_2/data/small_2wiki_multiagent_pairlease_20w25_graphret.json
+experiments/hidden/data/small_2wiki_multiagent_pairlease_20w25_graphret.json
 
 Hotpot:
-motivation/motivation_2/data/multids_hotpot_musique_pairlease_20w25_graphret.json
+experiments/hidden/data/multids_hotpot_musique_pairlease_20w25_graphret.json
 
 MuSiQue corrected:
-motivation/motivation_2/data/musique_pairlease_diagfix_20w25_graphret.json
+experiments/hidden/data/musique_pairlease_diagfix_20w25_graphret.json
 ```
 
 | Dataset | Strategy | Has-answer | Support Cov | Hidden-B | Reuse | R@5 H2 | KB Cov H2 | Writes |
@@ -3208,7 +3208,7 @@ Support-set lease:
   没写 route_hint=bridge。
 
 修复:
-  motivation/motivation_2/utils.py
+  experiments/hidden/utils.py
     _query_copy(... support_title=...) -> out.setdefault("route_hint", "bridge")
 ```
 
@@ -3236,7 +3236,7 @@ Support-set lease:
   还是 background direct query 被牺牲。
 
 修复:
-  motivation/motivation_2/run.py 新增:
+  experiments/hidden/run.py 新增:
     target_has_answer_rate
     target_support_coverage_rate
     target_cold_fetches_per_query
@@ -3293,10 +3293,10 @@ DRIP-ESC-Lease
 algorithms/drip/cache_manager/local_ppr.py
 algorithms/drip/tests/test_bridge_ppr.py
 algorithms/drip/tests/test_bridge_ppr_real.py
-motivation/motivation_2/run_ppr_2wiki.py
+experiments/hidden/run_ppr_2wiki.py
 ```
 
-同时清理 `motivation/motivation_2/config.py` 和 `run.py` 里的旧展示名:
+同时清理 `experiments/hidden/config.py` 和 `run.py` 里的旧展示名:
 
 ```text
 DRIP_PPR_*
@@ -3305,7 +3305,7 @@ DRIP_DECOMP
 DRIP_OVERFLOW / PAIR / CHAIN / RSD
 ```
 
-保留的 `motivation/motivation_2/graph_retrieval.py` 是 retrieval backend,
+保留的 `experiments/hidden/graph_retrieval.py` 是 retrieval backend,
 不属于 DRIP cache policy 的主公式。
 
 ## 14.2 Writer 修正: direct-first, bridge-leftover
@@ -3341,7 +3341,7 @@ bridge admit from leftover:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --datasets 2wikimultihopqa \
   --expanded \
   --q-type bridge_comparison \
@@ -3421,7 +3421,7 @@ StreamingQA temporal
 pool=29,819, KB=400
 100 windows x 50 queries
 结果文件:
-motivation/motivation_1/data/results_streamingqa_temporal_final_clean.json
+experiments/direct/data/results_streamingqa_temporal_final_clean.json
 ```
 
 结果:
@@ -3489,10 +3489,10 @@ strategies=ARC / DRIP-Dense / DRIP-ESC / DRIP
 
 ```text
 2Wiki:
-motivation/motivation_2/data/cleanup_2wiki_esc_pair_directfloor_20w25_graphret.json
+experiments/hidden/data/cleanup_2wiki_esc_pair_directfloor_20w25_graphret.json
 
 Hotpot + MuSiQue:
-motivation/motivation_2/data/cleanup_hotpot_musique_esc_pair_directfloor_20w25_graphret.json
+experiments/hidden/data/cleanup_hotpot_musique_esc_pair_directfloor_20w25_graphret.json
 ```
 
 ### 2Wiki bridge-comparison
@@ -3635,7 +3635,7 @@ Our run:   support_coverage_rate + strict has_answer_rate
 
 ## 16.1 代码接入
 
-`motivation/motivation_1/run.py` 已加入:
+`experiments/direct/run.py` 已加入:
 
 ```text
 has_answer_rate
@@ -3666,7 +3666,7 @@ motivation/paper_figs/intro/direct_query_visible_cache_metrics.md
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_1/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/direct/run.py \
   --datasets streamingqa_temporal \
   --drift temporal \
   --n-windows 100 \
@@ -3679,7 +3679,7 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
 输出:
 
 ```text
-motivation/motivation_1/data/qdirect_streamingqa_temporal_fig1_metrics_100w50_current.json
+experiments/direct/data/qdirect_streamingqa_temporal_fig1_metrics_100w50_current.json
 ```
 
 | Strategy | Has-answer | SupportCov | ColdQ | R@5 H2 | KB Cov H2 | Writes |
@@ -3722,7 +3722,7 @@ DRIP universally dominates all cache baselines on single-hop shift.
 已有完整结果:
 
 ```text
-motivation/motivation_2/data/qdirect_2wiki_comparison_100w50_kb6250_dense_current.json
+experiments/hidden/data/qdirect_2wiki_comparison_100w50_kb6250_dense_current.json
 ```
 
 | Strategy | Has-answer | SupportCov | ColdQ | R@5 H2 | KB Cov H2 | Writes |
@@ -3772,7 +3772,7 @@ answer can be served from the persistent hot cache without full-index access
 已修正:
 
 ```text
-motivation/motivation_1/run.py
+experiments/direct/run.py
 ```
 
 现在 residency metrics 使用 persistent `s.kb`, retrieval `R@K` 仍可使用
@@ -3815,14 +3815,14 @@ motivation/paper_figs/intro/direct_arcstyle_cache_ablation.md
 
 ```text
 StreamingQA:
-motivation/motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb200_current.json
-motivation/motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb400_current.json
-motivation/motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb800_current.json
+experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb200_current.json
+experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb400_current.json
+experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb800_current.json
 
 2Wiki:
-motivation/motivation_2/data/qdirect_2wiki_comparison_arcstyle_100w50_kb1250_dense_current.json
-motivation/motivation_2/data/qdirect_2wiki_comparison_arcstyle_100w50_kb2500_dense_current.json
-motivation/motivation_2/data/qdirect_2wiki_comparison_allbaselines_100w50_kb6250_dense_current.json
+experiments/hidden/data/qdirect_2wiki_comparison_arcstyle_100w50_kb1250_dense_current.json
+experiments/hidden/data/qdirect_2wiki_comparison_arcstyle_100w50_kb2500_dense_current.json
+experiments/hidden/data/qdirect_2wiki_comparison_allbaselines_100w50_kb6250_dense_current.json
 ```
 
 ## 17.3 主容量结果

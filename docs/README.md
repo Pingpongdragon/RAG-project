@@ -27,19 +27,22 @@
 
 ## 代码与实验的文档（在各自目录）
 
-- **算法实现** → [algorithms/README.md](../algorithms/README.md)：DRIP 核心 + baseline（comrag/erase/base）
-- **实验驱动** → [benchmark/](../benchmark/)：DRIP vs baseline 对比框架
-- **motivation 实验台** → [motivation/docs/README.md](../motivation/docs/README.md)：三级 audit 的叙事/实验/验证
+- **算法实现** → [algorithms/README.md](../algorithms/README.md)：DRIP 核心与 cache baselines
+- **主实验驱动** → [direct](../experiments/direct/)、[hidden](../experiments/hidden/) 与 [agent](../experiments/agent/)
+- **专项审计** → [benchmarks/](../benchmarks/)：协议、trace 与预取审计脚本
+- **Motivation 材料** → [motivation/](../motivation/)：问题必要性、引言图与历史分析
 
 ## 全项目结构速览
 
 ```
 RAG-project/
 ├── docs/             # 本目录：算法设计 + 文献（全项目级文档）
-├── algorithms/       # 核心算法 DRIP + baseline(comrag/erase/base)
-├── benchmark/        # 唯一实验驱动（DRIP vs baseline），legacy_benchmarks/ 存旧数据
-├── motivation/       # 论文 motivation 实验台（三级 audit, Fig 0/1/2）
-├── core/             # 底层公共库（retriever/generator/evaluator…）
+├── algorithms/       # 核心算法 DRIP + cache baselines
+├── experiments/      # 正式 direct / hidden / agent 实验及 common 协议
+├── benchmarks/       # 与主协议分离的专项机制审计脚本
+│   └── archive_legacy/ # 旧实验框架与历史结果，不属于当前论文主链
+├── motivation/       # 漂移/缓存必要性、引言图与历史材料
+├── core/             # RAG runtime（retriever/generator/evaluator…）
 ├── config/ models/   # 配置与模型缓存
 ├── datasets/         # 数据集
 ├── third_party/      # HippoRAG/LightRAG/RECIPE（参考实现，不 import）

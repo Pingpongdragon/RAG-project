@@ -1,4 +1,5 @@
-"""Shared base classes for window-level cache policies (verbatim from motivation_2)."""
+"""窗口级缓存策略共用的基础接口。"""
+import zlib
 import numpy as np
 from algorithms.cache.params import PARAMS as _P
 import logging
@@ -30,6 +31,25 @@ class BaseStrategy:
     def set_kb(self, ids):
         self.kb = set(ids)
 
+    def _observed_access_position(self, query):
+        """返回请求发生后可观察的精确 access key；普通 QA 返回 ``None``。
+
+        ``access_title`` 不是离线 gold hint，而是 item-access workload 中本次实际
+        请求的对象。策略只能在服务当前请求之后使用它更新下一窗口缓存。
+        """
+
+        if not isinstance(query, dict):
+            return None
+        title = query.get("access_title")
+        if title is None:
+            return None
+        position = self.title_to_idx.get(title)
+        return None if position is None else int(position)
+
+    def _observed_access_positions(self, window_queries):
+        positions = [self._observed_access_position(q) for q in window_queries]
+        return positions if positions and all(p is not None for p in positions) else None
+
     def prepare_window(self, window_queries, window_query_embs, window_idx):
         pass
 
@@ -49,7 +69,8 @@ class _ArrivalCacheBase(BaseStrategy):
     """
     def __init__(self, name, doc_pool, doc_embs, title_to_idx):
         super().__init__(name, doc_pool, doc_embs, title_to_idx)
-        self.rng = np.random.default_rng(_P.SEED + 200 + hash(name) % 1000)
+        stable_name_hash = zlib.crc32(name.encode("utf-8")) % 1000
+        self.rng = np.random.default_rng(_P.SEED + 200 + stable_name_hash)
         self.all_ids = [d['doc_id'] for d in doc_pool]
 
     # subclass hooks
@@ -130,8 +151,11 @@ class _ArrivalCacheBase(BaseStrategy):
         )
 
         n = 0
+        window_cap = min(
+            int(_P.WRITE_CAP), int(_P.DOC_ADD_CAP), len(evict_order)
+        )
         for score, ni in cand_scored:
-            if n >= min(_P.DOC_ADD_CAP, len(evict_order)):
+            if n >= window_cap:
                 break
             ep = evict_order[n]
             old = self.p2d[ep]
@@ -141,5 +165,3 @@ class _ArrivalCacheBase(BaseStrategy):
             self._on_query_hit(ni, window_idx)
             n += 1
         self.update_cost += n
-
-

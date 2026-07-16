@@ -1,57 +1,69 @@
-# Motivation — Cost-Aware RAG Hot-Tier Adaptation under Evidence Drift
+# Motivation 材料
 
-> 当前 CostAwareDRIP 主线实验、推荐命令、结果读取方式统一看
-> [COSTAWARE_RUNBOOK.md](COSTAWARE_RUNBOOK.md)。历史 `motivation_1/2`
-> 目录名保留，但论文主线按 E1/E2/E3 组织。
+当前论文首先定义两个研究场景前提：
 
-本目录是论文 Introduction / Motivation 部分的全部材料：LaTeX 源文、三级 system audit 的
-实验代码与数据、绘图脚本、叙事文档，以及最终算法设计。
+1. **活跃请求的 domain mixture 会随时间变化**；
+2. **每个活跃 domain 内存在大量可复用的相同或相关证据请求**。
 
-## 一句话主线
+第一个前提导致历史 resident set 在换域后变旧，第二个前提保证
+cache 本身有价值。二者交集定义为 `cacheable domain-mixture drift`。
+此后才使用完整的方法必要性证据链：
 
-> 在多用户/agent 共享 RAG 部署里，L2 全量语料可以近似 append-only，但 L1 hot-tier
-> 缓存受容量、写入、换出和延迟成本约束。本文用分层实验说明：真实 temporal drift
-> 下 recency 是强边界，controlled direct-evidence topic drift 下需要主动写入新证据，
-> 而真正的主问题是 **cost-aware admission**：什么时候值得把 L2 检索到的新 evidence
-> 写进 L1，并避免 cache churn。
-> 当前可审阅方案见 [docs/design/COST_AWARE_DRIP_EXPERIMENT_PLAN.md](../docs/design/COST_AWARE_DRIP_EXPERIMENT_PLAN.md)。
+1. RAGCache/AgentRAGCache 证明固定领域局部性下 cache 有价值；
+2. 同一 SQuAD 源池在 domain schedule 改变后出现 residency mismatch；
+3. DRIP 在同容量下联合报告 hit、writes 和 cold reads，验证是否恢复。
 
-## 分层实验逻辑
+正式实验代码已经迁移到：
 
-| 层级 | 论文图 | 现象 | 目录 | 结论 |
-|---|---|---|---|---|
-| **L1** 宏观需求漂移 | Fig 0 | WildChat / Google Trends topic 重排 | [motivation_0/](motivation_0/) | 漂移是 first-class 普遍现象 |
-| **S1** 真实 temporal visible drift | Fig 1 | StreamingQA 14 年 era 流 | [motivation_1/](motivation_1/) | LRU/FIFO 很强；这是 visible temporal 的边界，不是 hidden evidence 问题 |
-| **S2** controlled direct-evidence topic drift | Fig 2 | 2Wiki/Hotpot/MuSiQue topic shift | [motivation_2/](motivation_2/) | 新 topic evidence 需要主动 admission；比较质量-成本 tradeoff |
-| **S3** cost/churn stress | Fig 3 / appendix | KB budget sweep + write budget/churn | [motivation_1/](motivation_1/), [motivation_2/](motivation_2/) | 主张不是“写得更多”，而是同等质量下写得更少/更稳 |
-| **Diagnostic** hidden evidence | appendix | 2Wiki `Q→A→B` / bridge workloads | [motivation_2/](motivation_2/) | 只作为 direct-evidence policy 的边界；不作为主贡献 |
-
-## 顶层文件 / 目录
-
-| 项 | 角色 |
+| 场景 | 目录 |
 |---|---|
-| `motivation.tex` | 论文 Intro/Motivation 源文（图叙事注释见文件头部） |
-| `references.bib` | 参考文献（缺失 cite key 见 [docs/narrative/NEXT_STEPS_AUDIT_TODO.md](docs/narrative/NEXT_STEPS_AUDIT_TODO.md) §3） |
-| `motivation_0/` | **Fig 0** — query demand drift（WildChat / Trends） |
-| `motivation_1/` | **Fig 1** — StreamingQA real temporal visible drift + recency boundary |
-| `motivation_2/` | **Fig 2/3** — controlled direct-evidence topic drift + cost/churn stress |
-| `plotting/` | 论文图绘制：`plot_motivation_v2.py`（fig1/fig2）、benchmark 脚本 |
-| `paper_figs/intro/` | 论文最终引用的 `fig0/1/2_*.pdf`（tex `\includegraphics` 指向这里） |
-| `baselines_src/` | 第三方 baseline 源码参考（GPTCache / MemGPT），只读 |
-| `docs/` | 全部文档（叙事 / 实验 / 设计 / 文献 / 复现）→ 见 [docs/README.md](docs/README.md) |
-| `archive/` | 历史备份、日志、过时文档、旧快照 → 见 [archive/README.md](archive/README.md) |
+| Direct evidence、受控 evidence-domain shift | [`experiments/direct/`](../experiments/direct/) |
+| Hidden evidence、多跳边界 | [`experiments/hidden/`](../experiments/hidden/) |
+| 真实 agent/session/access trace | [`experiments/agent/`](../experiments/agent/) |
 
-## 文档导航（docs/）
+本目录保留的内容：
 
-- **叙事 & 评审** [docs/narrative/](docs/narrative/) — 故事线、评审意见、会议记录、待办
-- **实验总结** [docs/experiments/](docs/experiments/) — 各图结果、数据集诊断、评审回应
-- **算法设计** [docs/design/](docs/design/) — **[COST_AWARE_DRIP_EXPERIMENT_PLAN.md](../docs/design/COST_AWARE_DRIP_EXPERIMENT_PLAN.md)**（当前主线）+ 历史 DRIP 设计文档
-- **文献背景** [docs/literature/](docs/literature/) — query shift 文献、agent memory 笔记
-- **复现验证** [docs/verification/](docs/verification/) — StreamingQA 复现指南
+| 目录 | 内容 |
+|---|---|
+| `motivation_0/` | WildChat、Google Trends 等宏观需求漂移证据 |
+| `plotting/` | 引言图和历史结果绘图脚本 |
+| `paper_figs/` | 论文引用的 motivation 图片 |
+| `docs/` | 历史分析、叙事和验证记录 |
+| `archive/` | 不再属于当前主线的旧快照 |
 
-## 约定
+因此，`motivation/` 不再包含 cache policy、正式 runner 或主实验结果入口。
 
-- 当前主实验算法名为 `CostAwareDRIP`，消融为 `CostAwareDRIP-NoDrift` / `CostAwareDRIP-NoChurn`。
-- `DRIP-QueryHidden` / ESC / pair lease 保留为 hidden-evidence diagnostic，不再承担主论文贡献。
-- 实验数据（`motivation_*/data/*.json`）与 embedding 缓存（`motivation_*/cache/`）一律保留，不删。
-- 细粒度机制设计只写在 `docs/design/`，不进 README / tex 主线。
+## 论文中的两张 motivation 图
+
+1. `fig1_domain_mixture_drift` 保留原 WildChat + Google Trends 图，说明真实聚合
+   请求中 domain mixture 会变化。它支持“这是现实运行条件”，不支持
+   “所有部署都必然漂移”。
+2. `fig2_cacheable_domain_drift` 联合展示域内证据复用和 shift-induced
+   residency mismatch。MIND 使用更严格的跨用户同新闻复用率，SQuAD/WoW
+   使用受控域内 evidence reuse。MT-RAG 仅作低复用负对照，不进入动机主图。
+
+论证不要求自然时间戳：单 agent 任务切换和多 agent 活跃比例变化都可
+形成有因果顺序的 domain mixture。但 SQuAD/WoW/FEVER 始终标为 controlled，
+只有 MIND 标为 natural chronological trace。
+
+正式输出为：
+
+```text
+motivation_0/figures/user_query_topic_drift.{pdf,png}
+paper_figs/intro/fig2_cacheable_domain_drift.{pdf,png}
+```
+
+图二配套数值审计为：
+
+```text
+docs/verification/FIG2_CACHEABLE_DOMAIN_DRIFT.md
+```
+
+重画并导出两张图：
+
+```bash
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python \
+  motivation/motivation_0/plot_mo0_drift.py
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python \
+  motivation/plotting/plot_intro_domain_adapt.py
+```

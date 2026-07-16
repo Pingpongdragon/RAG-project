@@ -1,0 +1,505 @@
+{
+  "2wikimultihopqa": {
+    "dataset": "2wikimultihopqa",
+    "config": {
+      "kb_budget": 300,
+      "pool_size": 2604,
+      "n_windows": 4,
+      "window_size": 10,
+      "n_queries_available": 400,
+      "drift": "sudden",
+      "workload": "temporal_bridge_reuse",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "ARC": {
+        "recall@1_h1": 0.0,
+        "recall@1_h2": 6.2,
+        "recall@1_per_window": [
+          0.0,
+          0.0,
+          5.0,
+          7.5
+        ],
+        "recall@5_h1": 1.2,
+        "recall@5_h2": 10.0,
+        "recall@5_per_window": [
+          0.0,
+          2.5,
+          5.0,
+          15.0
+        ],
+        "recall@10_h1": 2.5,
+        "recall@10_h2": 11.2,
+        "recall@10_per_window": [
+          2.5,
+          2.5,
+          7.5,
+          15.0
+        ],
+        "recall@20_h1": 3.8,
+        "recall@20_h2": 11.2,
+        "recall@20_per_window": [
+          2.5,
+          5.0,
+          7.5,
+          15.0
+        ],
+        "kb_coverage_h1": 17.5,
+        "kb_coverage_h2": 22.4,
+        "kb_coverage_per_window": [
+          20.0,
+          15.0,
+          23.68,
+          21.05
+        ],
+        "kb_coverage_cumulative_h1": 31.9,
+        "kb_coverage_cumulative_h2": 54.0,
+        "kb_coverage_cumulative_per_window": [
+          20.0,
+          43.75,
+          53.64,
+          54.41
+        ],
+        "update_cost": 238,
+        "maint_retrieval_cost": 37,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 37,
+        "cost": 275,
+        "cold_fetches_per_query": 3.15,
+        "reuse_hit_rate": 45.0,
+        "reuse_queries": 20,
+        "reuse_hits": 9,
+        "first_exposure_cost": 3.3,
+        "amortized_cold_cost": 3.0
+      },
+      "SemFlow": {
+        "recall@1_h1": 0.0,
+        "recall@1_h2": 3.8,
+        "recall@1_per_window": [
+          0.0,
+          0.0,
+          0.0,
+          7.5
+        ],
+        "recall@5_h1": 0.0,
+        "recall@5_h2": 5.0,
+        "recall@5_per_window": [
+          0.0,
+          0.0,
+          2.5,
+          7.5
+        ],
+        "recall@10_h1": 1.2,
+        "recall@10_h2": 8.8,
+        "recall@10_per_window": [
+          2.5,
+          0.0,
+          5.0,
+          12.5
+        ],
+        "recall@20_h1": 1.2,
+        "recall@20_h2": 10.0,
+        "recall@20_per_window": [
+          2.5,
+          0.0,
+          7.5,
+          12.5
+        ],
+        "kb_coverage_h1": 23.8,
+        "kb_coverage_h2": 30.3,
+        "kb_coverage_per_window": [
+          20.0,
+          27.5,
+          28.95,
+          31.58
+        ],
+        "kb_coverage_cumulative_h1": 27.5,
+        "kb_coverage_cumulative_h2": 41.9,
+        "kb_coverage_cumulative_per_window": [
+          20.0,
+          35.0,
+          41.82,
+          41.91
+        ],
+        "update_cost": 38,
+        "maint_retrieval_cost": 190,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 190,
+        "cost": 228,
+        "last_admission": {
+          "w": 3,
+          "weak_queries": 8,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 8
+        },
+        "cold_fetches_per_query": 2.875,
+        "reuse_hit_rate": 65.0,
+        "reuse_queries": 20,
+        "reuse_hits": 13,
+        "first_exposure_cost": 3.05,
+        "amortized_cold_cost": 2.7
+      },
+      "DRIP": {
+        "recall@1_h1": 0.0,
+        "recall@1_h2": 3.8,
+        "recall@1_per_window": [
+          0.0,
+          0.0,
+          2.5,
+          5.0
+        ],
+        "recall@5_h1": 0.0,
+        "recall@5_h2": 5.0,
+        "recall@5_per_window": [
+          0.0,
+          0.0,
+          5.0,
+          5.0
+        ],
+        "recall@10_h1": 1.2,
+        "recall@10_h2": 8.8,
+        "recall@10_per_window": [
+          2.5,
+          0.0,
+          7.5,
+          10.0
+        ],
+        "recall@20_h1": 1.2,
+        "recall@20_h2": 10.0,
+        "recall@20_per_window": [
+          2.5,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "kb_coverage_h1": 23.8,
+        "kb_coverage_h2": 31.6,
+        "kb_coverage_per_window": [
+          20.0,
+          27.5,
+          34.21,
+          28.95
+        ],
+        "kb_coverage_cumulative_h1": 21.9,
+        "kb_coverage_cumulative_h2": 30.8,
+        "kb_coverage_cumulative_per_window": [
+          20.0,
+          23.75,
+          30.0,
+          31.62
+        ],
+        "update_cost": 52,
+        "maint_retrieval_cost": 320,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 320,
+        "cost": 372,
+        "last_admission": {
+          "w": 3,
+          "target_slots": 20,
+          "under_covered": 10,
+          "write_budget": 20,
+          "writes": 20
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "under_covered": 10,
+            "bridge_updates": 114,
+            "bridge_mass": 28.5345,
+            "bridge_gold_updates": 9,
+            "bridge_gold_mass": 4.7193,
+            "bridge_direct_updates": 22,
+            "bridge_direct_mass": 2.7305,
+            "bridge_direct_gold_updates": 18,
+            "bridge_direct_gold_mass": 2.2523,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 506,
+            "graph_after_degree_gate": 366,
+            "graph_after_relation_gate": 243,
+            "graph_after_threshold": 114,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "columbia pictures",
+                32
+              ],
+              [
+                "paramount pictures",
+                29
+              ],
+              [
+                "telugu",
+                14
+              ],
+              [
+                "american western",
+                14
+              ],
+              [
+                "west german",
+                13
+              ]
+            ]
+          },
+          {
+            "w": 1,
+            "under_covered": 10,
+            "bridge_updates": 131,
+            "bridge_mass": 24.4171,
+            "bridge_gold_updates": 6,
+            "bridge_gold_mass": 3.4621,
+            "bridge_direct_updates": 23,
+            "bridge_direct_mass": 2.7907,
+            "bridge_direct_gold_updates": 21,
+            "bridge_direct_gold_mass": 2.5723,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 602,
+            "graph_after_degree_gate": 433,
+            "graph_after_relation_gate": 312,
+            "graph_after_threshold": 131,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "paramount pictures",
+                58
+              ],
+              [
+                "united states",
+                43
+              ],
+              [
+                "cannes film festival",
+                20
+              ],
+              [
+                "broadway",
+                19
+              ],
+              [
+                "paris",
+                17
+              ]
+            ]
+          },
+          {
+            "w": 2,
+            "under_covered": 10,
+            "bridge_updates": 157,
+            "bridge_mass": 31.3055,
+            "bridge_gold_updates": 5,
+            "bridge_gold_mass": 1.9052,
+            "bridge_direct_updates": 23,
+            "bridge_direct_mass": 2.8352,
+            "bridge_direct_gold_updates": 19,
+            "bridge_direct_gold_mass": 2.3863,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 728,
+            "graph_after_degree_gate": 588,
+            "graph_after_relation_gate": 422,
+            "graph_after_threshold": 157,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "paramount pictures",
+                114
+              ],
+              [
+                "united states",
+                44
+              ],
+              [
+                "broadway",
+                38
+              ],
+              [
+                "cannes film festival",
+                21
+              ],
+              [
+                "columbia pictures",
+                15
+              ]
+            ]
+          },
+          {
+            "w": 3,
+            "under_covered": 10,
+            "bridge_updates": 131,
+            "bridge_mass": 23.3596,
+            "bridge_gold_updates": 9,
+            "bridge_gold_mass": 4.2155,
+            "bridge_direct_updates": 25,
+            "bridge_direct_mass": 3.0194,
+            "bridge_direct_gold_updates": 19,
+            "bridge_direct_gold_mass": 2.3475,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 514,
+            "graph_after_degree_gate": 343,
+            "graph_after_relation_gate": 201,
+            "graph_after_threshold": 131,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "american western",
+                25
+              ],
+              [
+                "paramount pictures",
+                23
+              ],
+              [
+                "new york",
+                18
+              ],
+              [
+                "telugu",
+                14
+              ],
+              [
+                "columbia pictures",
+                12
+              ]
+            ]
+          }
+        ],
+        "route_log": [
+          {
+            "w": 0,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 10
+            },
+            "route_labeled": 10,
+            "route_match": 10,
+            "under_covered": 10,
+            "target_slots": 20
+          },
+          {
+            "w": 1,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 10
+            },
+            "route_labeled": 10,
+            "route_match": 10,
+            "under_covered": 10,
+            "target_slots": 20
+          },
+          {
+            "w": 2,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 10
+            },
+            "route_labeled": 10,
+            "route_match": 10,
+            "under_covered": 10,
+            "target_slots": 20
+          },
+          {
+            "w": 3,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 10
+            },
+            "route_labeled": 10,
+            "route_match": 10,
+            "under_covered": 10,
+            "target_slots": 20
+          }
+        ],
+        "cold_fetches_per_query": 2.85,
+        "reuse_hit_rate": 65.0,
+        "reuse_queries": 20,
+        "reuse_hits": 13,
+        "first_exposure_cost": 3.05,
+        "amortized_cold_cost": 2.65
+      },
+      "Oracle": {
+        "recall@1_h1": 25.0,
+        "recall@1_h2": 25.0,
+        "recall@1_per_window": [
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "recall@5_h1": 52.5,
+        "recall@5_h2": 52.5,
+        "recall@5_per_window": [
+          50.0,
+          55.0,
+          52.5,
+          52.5
+        ],
+        "recall@10_h1": 52.5,
+        "recall@10_h2": 55.0,
+        "recall@10_per_window": [
+          50.0,
+          55.0,
+          52.5,
+          57.5
+        ],
+        "recall@20_h1": 53.8,
+        "recall@20_h2": 57.5,
+        "recall@20_per_window": [
+          52.5,
+          55.0,
+          55.0,
+          60.0
+        ],
+        "kb_coverage_h1": 100.0,
+        "kb_coverage_h2": 100.0,
+        "kb_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "kb_coverage_cumulative_h1": 78.8,
+        "kb_coverage_cumulative_h2": 41.2,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          57.5,
+          46.36,
+          36.03
+        ],
+        "update_cost": 383,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 383,
+        "cold_fetches_per_query": 0.0,
+        "reuse_hit_rate": 100.0,
+        "reuse_queries": 20,
+        "reuse_hits": 20,
+        "first_exposure_cost": 0.0,
+        "amortized_cold_cost": 0.0
+      }
+    },
+    "elapsed": 197.8
+  }
+}

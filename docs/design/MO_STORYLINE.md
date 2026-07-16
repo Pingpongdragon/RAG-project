@@ -20,7 +20,7 @@ Run:
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --expanded \
   --q-type bridge_comparison \
   --n-source 2000 \
@@ -33,7 +33,7 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 
 Result file:
 
-`motivation/motivation_2/data/mo_story_2wiki_bridge_8w25_n2000_drip_ablation.json`
+`experiments/hidden/data/mo_story_2wiki_bridge_8w25_n2000_drip_ablation.json`
 
 Setting: `2Wiki bridge_comparison`, pool `10809`, KB `850`, stream `8x25`, sudden drift.
 

@@ -1,0 +1,425 @@
+{
+  "2wikimultihopqa": {
+    "dataset": "2wikimultihopqa",
+    "config": {
+      "kb_budget": 350,
+      "pool_size": 2604,
+      "n_windows": 4,
+      "window_size": 20,
+      "n_queries_available": 400,
+      "drift": "sudden",
+      "k_list": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "summary": {
+      "DRIP": {
+        "recall@1_h1": 22.5,
+        "recall@1_h2": 1.2,
+        "recall@1_per_window": [
+          22.5,
+          22.5,
+          1.25,
+          1.25
+        ],
+        "recall@5_h1": 50.6,
+        "recall@5_h2": 1.9,
+        "recall@5_per_window": [
+          52.5,
+          48.75,
+          1.25,
+          2.5
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 1.9,
+        "recall@10_per_window": [
+          55.0,
+          53.75,
+          1.25,
+          2.5
+        ],
+        "recall@20_h1": 56.2,
+        "recall@20_h2": 1.9,
+        "recall@20_per_window": [
+          56.25,
+          56.25,
+          1.25,
+          2.5
+        ],
+        "kb_coverage_h1": 95.0,
+        "kb_coverage_h2": 6.2,
+        "kb_coverage_per_window": [
+          95.0,
+          94.94,
+          5.0,
+          7.5
+        ],
+        "kb_coverage_cumulative_h1": 95.0,
+        "kb_coverage_cumulative_h2": 59.9,
+        "kb_coverage_cumulative_per_window": [
+          95.0,
+          94.97,
+          65.13,
+          54.72
+        ],
+        "update_cost": 83,
+        "maint_retrieval_cost": 496,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 496,
+        "cost": 579,
+        "last_admission": {
+          "w": 3,
+          "target_slots": 40,
+          "under_covered": 20,
+          "write_budget": 40,
+          "writes": 40
+        },
+        "bridge_log": [
+          {
+            "w": 0,
+            "under_covered": 10,
+            "bridge_updates": 98,
+            "bridge_mass": 15.3288,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.3324,
+            "bridge_direct_updates": 3,
+            "bridge_direct_mass": 0.3726,
+            "bridge_direct_gold_updates": 1,
+            "bridge_direct_gold_mass": 0.122,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 544,
+            "graph_after_degree_gate": 384,
+            "graph_after_relation_gate": 223,
+            "graph_after_threshold": 98,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "hollywood",
+                34
+              ],
+              [
+                "hong kong",
+                28
+              ],
+              [
+                "germany",
+                19
+              ],
+              [
+                "france",
+                16
+              ],
+              [
+                "love",
+                15
+              ]
+            ]
+          },
+          {
+            "w": 1,
+            "under_covered": 12,
+            "bridge_updates": 155,
+            "bridge_mass": 23.4342,
+            "bridge_gold_updates": 1,
+            "bridge_gold_mass": 0.6,
+            "bridge_direct_updates": 6,
+            "bridge_direct_mass": 0.6818,
+            "bridge_direct_gold_updates": 2,
+            "bridge_direct_gold_mass": 0.2585,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 568,
+            "graph_after_degree_gate": 390,
+            "graph_after_relation_gate": 188,
+            "graph_after_threshold": 155,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "india",
+                22
+              ],
+              [
+                "austrian",
+                15
+              ],
+              [
+                "paris",
+                14
+              ],
+              [
+                "american western",
+                12
+              ],
+              [
+                "berlin",
+                11
+              ]
+            ]
+          },
+          {
+            "w": 2,
+            "under_covered": 20,
+            "bridge_updates": 289,
+            "bridge_mass": 63.2844,
+            "bridge_gold_updates": 33,
+            "bridge_gold_mass": 17.8937,
+            "bridge_direct_updates": 55,
+            "bridge_direct_mass": 6.6453,
+            "bridge_direct_gold_updates": 40,
+            "bridge_direct_gold_mass": 4.9424,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1091,
+            "graph_after_degree_gate": 834,
+            "graph_after_relation_gate": 568,
+            "graph_after_threshold": 289,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "berlin international film festival",
+                85
+              ],
+              [
+                "united states",
+                41
+              ],
+              [
+                "hollywood",
+                33
+              ],
+              [
+                "paramount pictures",
+                28
+              ],
+              [
+                "danish",
+                22
+              ]
+            ]
+          },
+          {
+            "w": 3,
+            "under_covered": 20,
+            "bridge_updates": 275,
+            "bridge_mass": 61.6009,
+            "bridge_gold_updates": 33,
+            "bridge_gold_mass": 17.0493,
+            "bridge_direct_updates": 55,
+            "bridge_direct_mass": 6.6769,
+            "bridge_direct_gold_updates": 39,
+            "bridge_direct_gold_mass": 4.9124,
+            "direct_updates": 0,
+            "direct_mass": 0.0,
+            "direct_gold_updates": 0,
+            "direct_gold_mass": 0.0,
+            "graph_raw_paths": 1226,
+            "graph_after_degree_gate": 996,
+            "graph_after_relation_gate": 703,
+            "graph_after_threshold": 275,
+            "graph_no_path": 0,
+            "graph_top_entities": [
+              [
+                "berlin international film festival",
+                85
+              ],
+              [
+                "paramount pictures",
+                84
+              ],
+              [
+                "cannes film festival",
+                48
+              ],
+              [
+                "united states",
+                43
+              ],
+              [
+                "india",
+                42
+              ]
+            ]
+          }
+        ],
+        "route_log": [
+          {
+            "w": 0,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 10,
+            "target_slots": 20
+          },
+          {
+            "w": 1,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 12,
+            "target_slots": 24
+          },
+          {
+            "w": 2,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          },
+          {
+            "w": 3,
+            "routes": {
+              "SINGLE": 0,
+              "MULTI_DIRECT": 0,
+              "BRIDGE": 20
+            },
+            "route_labeled": 20,
+            "route_match": 20,
+            "under_covered": 20,
+            "target_slots": 40
+          }
+        ]
+      },
+      "Oracle": {
+        "recall@1_h1": 25.0,
+        "recall@1_h2": 25.0,
+        "recall@1_per_window": [
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "recall@5_h1": 51.9,
+        "recall@5_h2": 54.4,
+        "recall@5_per_window": [
+          53.75,
+          50.0,
+          53.75,
+          55.0
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 56.2,
+        "recall@10_per_window": [
+          57.5,
+          51.25,
+          57.5,
+          55.0
+        ],
+        "recall@20_h1": 56.9,
+        "recall@20_h2": 57.5,
+        "recall@20_per_window": [
+          57.5,
+          56.25,
+          58.75,
+          56.25
+        ],
+        "kb_coverage_h1": 100.0,
+        "kb_coverage_h2": 100.0,
+        "kb_coverage_per_window": [
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "kb_coverage_cumulative_h1": 79.9,
+        "kb_coverage_cumulative_h2": 43.2,
+        "kb_coverage_cumulative_per_window": [
+          100.0,
+          59.75,
+          48.32,
+          38.05
+        ],
+        "update_cost": 607,
+        "maint_retrieval_cost": 0,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 0,
+        "cost": 607
+      },
+      "SemFlow": {
+        "recall@1_h1": 22.5,
+        "recall@1_h2": 0.6,
+        "recall@1_per_window": [
+          22.5,
+          22.5,
+          0.0,
+          1.25
+        ],
+        "recall@5_h1": 50.6,
+        "recall@5_h2": 1.2,
+        "recall@5_per_window": [
+          52.5,
+          48.75,
+          0.0,
+          2.5
+        ],
+        "recall@10_h1": 54.4,
+        "recall@10_h2": 1.2,
+        "recall@10_per_window": [
+          55.0,
+          53.75,
+          0.0,
+          2.5
+        ],
+        "recall@20_h1": 56.2,
+        "recall@20_h2": 1.2,
+        "recall@20_per_window": [
+          56.25,
+          56.25,
+          0.0,
+          2.5
+        ],
+        "kb_coverage_h1": 95.0,
+        "kb_coverage_h2": 5.6,
+        "kb_coverage_per_window": [
+          95.0,
+          94.94,
+          3.75,
+          7.5
+        ],
+        "kb_coverage_cumulative_h1": 95.0,
+        "kb_coverage_cumulative_h2": 59.4,
+        "kb_coverage_cumulative_per_window": [
+          95.0,
+          94.97,
+          64.71,
+          54.09
+        ],
+        "update_cost": 41,
+        "maint_retrieval_cost": 220,
+        "serve_retrieval_cost": 0,
+        "retrieval_cost": 220,
+        "cost": 261,
+        "last_admission": {
+          "w": 3,
+          "weak_queries": 19,
+          "write_budget": null,
+          "write_price": 0.0,
+          "writes": 19
+        }
+      }
+    },
+    "elapsed": 15.8
+  }
+}

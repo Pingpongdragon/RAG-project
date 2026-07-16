@@ -1,0 +1,169 @@
+{
+  "dataset": "MultiDoc2Dial",
+  "cache_objects": {
+    "document": "doc_id",
+    "evidence_span": "doc_id::id_sp"
+  },
+  "causal_boundary": "agent-turn references are post-service evidence feedback; they cannot route the same request",
+  "splits": {
+    "train": {
+      "file": "datasets/multidoc2dial/multidoc2dial/multidoc2dial_dial_train.json",
+      "ordering": "released JSON serialization; not a natural timestamp",
+      "dialogues": 3474,
+      "agent_turns_with_evidence": 24603,
+      "document_occurrences": 24603,
+      "unique_documents": 415,
+      "document_repeat_occurrence_rate_pct": 98.313,
+      "document_top_10pct_mass_pct": 16.726,
+      "span_occurrences": 39304,
+      "unique_spans": 12220,
+      "span_repeat_occurrence_rate_pct": 68.909,
+      "documents_reused_across_dialogues": 412,
+      "multi_document_dialogue_rate_pct": 79.85,
+      "within_dialogue_document_switch_rate_pct": 21.08,
+      "agent_turn_prior_document_reuse_rate_pct": 72.398,
+      "serialization_adjacent_window_doc_jaccard_pct": 17.261,
+      "window_size": 100,
+      "per_domain": {
+        "dmv": {
+          "document_occurrences": 6975,
+          "unique_documents": 127,
+          "document_repeat_occurrence_rate_pct": 98.179,
+          "span_occurrences": 11759,
+          "unique_spans": 4027,
+          "span_repeat_occurrence_rate_pct": 65.754
+        },
+        "ssa": {
+          "document_occurrences": 5751,
+          "unique_documents": 93,
+          "document_repeat_occurrence_rate_pct": 98.383,
+          "span_occurrences": 9432,
+          "unique_spans": 2784,
+          "span_repeat_occurrence_rate_pct": 70.483
+        },
+        "studentaid": {
+          "document_occurrences": 4718,
+          "unique_documents": 77,
+          "document_repeat_occurrence_rate_pct": 98.368,
+          "span_occurrences": 6526,
+          "unique_spans": 2139,
+          "span_repeat_occurrence_rate_pct": 67.223
+        },
+        "va": {
+          "document_occurrences": 7159,
+          "unique_documents": 118,
+          "document_repeat_occurrence_rate_pct": 98.352,
+          "span_occurrences": 11587,
+          "unique_spans": 3270,
+          "span_repeat_occurrence_rate_pct": 71.779
+        }
+      }
+    },
+    "validation": {
+      "file": "datasets/multidoc2dial/multidoc2dial/multidoc2dial_dial_validation.json",
+      "ordering": "released JSON serialization; not a natural timestamp",
+      "dialogues": 661,
+      "agent_turns_with_evidence": 4699,
+      "document_occurrences": 4699,
+      "unique_documents": 273,
+      "document_repeat_occurrence_rate_pct": 94.19,
+      "document_top_10pct_mass_pct": 41.136,
+      "span_occurrences": 7461,
+      "unique_spans": 3497,
+      "span_repeat_occurrence_rate_pct": 53.13,
+      "documents_reused_across_dialogues": 207,
+      "multi_document_dialogue_rate_pct": 83.207,
+      "within_dialogue_document_switch_rate_pct": 22.511,
+      "agent_turn_prior_document_reuse_rate_pct": 71.377,
+      "serialization_adjacent_window_doc_jaccard_pct": 17.679,
+      "window_size": 100,
+      "per_domain": {
+        "dmv": {
+          "document_occurrences": 1218,
+          "unique_documents": 51,
+          "document_repeat_occurrence_rate_pct": 95.813,
+          "span_occurrences": 2141,
+          "unique_spans": 914,
+          "span_repeat_occurrence_rate_pct": 57.31
+        },
+        "ssa": {
+          "document_occurrences": 1236,
+          "unique_documents": 77,
+          "document_repeat_occurrence_rate_pct": 93.77,
+          "span_occurrences": 1997,
+          "unique_spans": 1008,
+          "span_repeat_occurrence_rate_pct": 49.524
+        },
+        "studentaid": {
+          "document_occurrences": 920,
+          "unique_documents": 50,
+          "document_repeat_occurrence_rate_pct": 94.565,
+          "span_occurrences": 1244,
+          "unique_spans": 620,
+          "span_repeat_occurrence_rate_pct": 50.161
+        },
+        "va": {
+          "document_occurrences": 1325,
+          "unique_documents": 95,
+          "document_repeat_occurrence_rate_pct": 92.83,
+          "span_occurrences": 2079,
+          "unique_spans": 955,
+          "span_repeat_occurrence_rate_pct": 54.064
+        }
+      }
+    },
+    "test": {
+      "file": "datasets/multidoc2dial/multidoc2dial/multidoc2dial_dial_test.json",
+      "ordering": "released JSON serialization; not a natural timestamp",
+      "dialogues": 661,
+      "agent_turns_with_evidence": 4567,
+      "document_occurrences": 4567,
+      "unique_documents": 273,
+      "document_repeat_occurrence_rate_pct": 94.022,
+      "document_top_10pct_mass_pct": 39.61,
+      "span_occurrences": 7093,
+      "unique_spans": 3539,
+      "span_repeat_occurrence_rate_pct": 50.106,
+      "documents_reused_across_dialogues": 224,
+      "multi_document_dialogue_rate_pct": 79.123,
+      "within_dialogue_document_switch_rate_pct": 18.868,
+      "agent_turn_prior_document_reuse_rate_pct": 72.52,
+      "serialization_adjacent_window_doc_jaccard_pct": 16.309,
+      "window_size": 100,
+      "per_domain": {
+        "dmv": {
+          "document_occurrences": 1139,
+          "unique_documents": 51,
+          "document_repeat_occurrence_rate_pct": 95.522,
+          "span_occurrences": 1948,
+          "unique_spans": 949,
+          "span_repeat_occurrence_rate_pct": 51.283
+        },
+        "ssa": {
+          "document_occurrences": 1226,
+          "unique_documents": 77,
+          "document_repeat_occurrence_rate_pct": 93.719,
+          "span_occurrences": 1926,
+          "unique_spans": 956,
+          "span_repeat_occurrence_rate_pct": 50.363
+        },
+        "studentaid": {
+          "document_occurrences": 890,
+          "unique_documents": 50,
+          "document_repeat_occurrence_rate_pct": 94.382,
+          "span_occurrences": 1178,
+          "unique_spans": 557,
+          "span_repeat_occurrence_rate_pct": 52.716
+        },
+        "va": {
+          "document_occurrences": 1312,
+          "unique_documents": 95,
+          "document_repeat_occurrence_rate_pct": 92.759,
+          "span_occurrences": 2041,
+          "unique_spans": 1077,
+          "span_repeat_occurrence_rate_pct": 47.232
+        }
+      }
+    }
+  }
+}

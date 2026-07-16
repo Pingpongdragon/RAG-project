@@ -17,14 +17,14 @@ OUT_DIR = ROOT / "paper_figs" / "intro"
 
 DATASETS = {
     "StreamingQA": {
-        200: ROOT / "motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb200_current.json",
-        400: ROOT / "motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb400_current.json",
-        800: ROOT / "motivation_1/data/qdirect_streamingqa_arcstyle_100w50_kb800_current.json",
+        200: ROOT.parent / "experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb200_current.json",
+        400: ROOT.parent / "experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb400_current.json",
+        800: ROOT.parent / "experiments/direct/data/qdirect_streamingqa_arcstyle_100w50_kb800_current.json",
     },
     "2Wiki": {
-        1250: ROOT / "motivation_2/data/qdirect_2wiki_comparison_arcstyle_100w50_kb1250_dense_current.json",
-        2500: ROOT / "motivation_2/data/qdirect_2wiki_comparison_arcstyle_100w50_kb2500_dense_current.json",
-        6250: ROOT / "motivation_2/data/qdirect_2wiki_comparison_allbaselines_100w50_kb6250_dense_current.json",
+        1250: ROOT.parent / "experiments/hidden/data/qdirect_2wiki_comparison_arcstyle_100w50_kb1250_dense_current.json",
+        2500: ROOT.parent / "experiments/hidden/data/qdirect_2wiki_comparison_arcstyle_100w50_kb2500_dense_current.json",
+        6250: ROOT.parent / "experiments/hidden/data/qdirect_2wiki_comparison_allbaselines_100w50_kb6250_dense_current.json",
     },
 }
 

@@ -14,7 +14,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA2 = ROOT / "motivation_2" / "data"
+DATA2 = ROOT.parent / "experiments" / "hidden" / "data"
 OUT = ROOT / "paper_figs" / "intro"
 OUT.mkdir(parents=True, exist_ok=True)
 

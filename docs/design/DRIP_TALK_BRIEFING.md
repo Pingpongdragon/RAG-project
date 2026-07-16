@@ -515,9 +515,9 @@ Detector 现在的功能是完整的：
 
 | 场景 | 结果文件 | 用途 |
 |---|---|---|
-| StreamingQA temporal, DRIP final | [motivation/motivation_1/data/results_streamingqa_temporal_drip_final.json](../../motivation/motivation_1/data/results_streamingqa_temporal_drip_final.json) | 展示 DRIP/DRIP-Dense 在真实时间漂移上的恢复能力 |
-| StreamingQA temporal, ARC/FIFO/LRU | [motivation/motivation_1/data/results_streamingqa_temporal_100w_arc_fifo_lru.json](../../motivation/motivation_1/data/results_streamingqa_temporal_100w_arc_fifo_lru.json) | 解释 ARC 在 temporal 场景为什么失效 |
-| 2Wiki bridge-comparison | [motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip.json](../../motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip.json) | 展示 DRIP-Dense/DRIP-ESC/DRIP/ARC 在多跳 bridge 上的差异 |
+| StreamingQA temporal, DRIP final | [experiments/direct/data/results_streamingqa_temporal_drip_final.json](../../experiments/direct/data/results_streamingqa_temporal_drip_final.json) | 展示 DRIP/DRIP-Dense 在真实时间漂移上的恢复能力 |
+| StreamingQA temporal, ARC/FIFO/LRU | [experiments/direct/data/results_streamingqa_temporal_100w_arc_fifo_lru.json](../../experiments/direct/data/results_streamingqa_temporal_100w_arc_fifo_lru.json) | 解释 ARC 在 temporal 场景为什么失效 |
+| 2Wiki bridge-comparison | [experiments/hidden/data/results_50w_2wiki_bridge_dual_drip.json](../../experiments/hidden/data/results_50w_2wiki_bridge_dual_drip.json) | 展示 DRIP-Dense/DRIP-ESC/DRIP/ARC 在多跳 bridge 上的差异 |
 
 已经生成了一张明天可以直接讲的 summary figure：
 
@@ -556,7 +556,7 @@ Writes      为达到该质量付出的更新成本
 实验命令一：自动 KB budget，实际 `KB=4700`。
 
 ```bash
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --n-windows 50 --window-size 25 \
   --expanded --datasets 2wikimultihopqa \
   --q-type bridge_comparison --n-source 2000 --n-stream-queries 1250 \
@@ -565,7 +565,7 @@ Writes      为达到该质量付出的更新成本
   --output results_50w_2wiki_bridge_dual_drip.json
 ```
 
-结果文件：[motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip.json](../../motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip.json)
+结果文件：[experiments/hidden/data/results_50w_2wiki_bridge_dual_drip.json](../../experiments/hidden/data/results_50w_2wiki_bridge_dual_drip.json)
 
 | Method | R@5 H1 | R@5 H2 | KB Cov H2 | Writes |
 |---|---:|---:|---:|---:|
@@ -585,7 +585,7 @@ Writes      为达到该质量付出的更新成本
 实验命令二：固定小 KB，`KB=1050`。
 
 ```bash
-/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python motivation/motivation_2/run.py \
+/home/jyliu/miniconda3/envs/ljy_rag_ft/bin/python experiments/hidden/run.py \
   --n-windows 50 --window-size 25 \
   --expanded --datasets 2wikimultihopqa \
   --q-type bridge_comparison --n-source 2000 --n-stream-queries 1250 \
@@ -595,7 +595,7 @@ Writes      为达到该质量付出的更新成本
   --output results_50w_2wiki_bridge_dual_drip_kb1050.json
 ```
 
-结果文件：[motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip_kb1050.json](../../motivation/motivation_2/data/results_50w_2wiki_bridge_dual_drip_kb1050.json)
+结果文件：[experiments/hidden/data/results_50w_2wiki_bridge_dual_drip_kb1050.json](../../experiments/hidden/data/results_50w_2wiki_bridge_dual_drip_kb1050.json)
 
 | Method | R@5 H1 | R@5 H2 | KB Cov H2 | Writes |
 |---|---:|---:|---:|---:|

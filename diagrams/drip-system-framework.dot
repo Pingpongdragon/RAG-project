@@ -1,0 +1,127 @@
+digraph DRIP {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    pad=0.28,
+    nodesep=0.38,
+    ranksep=0.72,
+    splines=spline,
+    fontname="DejaVu Sans",
+    fontsize=18,
+    label="DRIP: Drift-Aware Evidence Cache Management",
+    labelloc=t,
+    labeljust=c
+  ];
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="DejaVu Sans",
+    fontsize=11,
+    color="#4A5568",
+    penwidth=1.4,
+    margin="0.14,0.10"
+  ];
+  edge [
+    fontname="DejaVu Sans",
+    fontsize=9,
+    color="#64748B",
+    fontcolor="#475569",
+    penwidth=1.25,
+    arrowsize=0.75
+  ];
+
+  Q [label="Query Window\nQ_t", fillcolor="#FFFFFF", color="#334155", penwidth=1.8];
+  K [label="Hot Cache\nK_t", shape=cylinder, fillcolor="#E8F0FE", color="#315A9A", penwidth=1.8];
+  C [label="Cold Corpus\nD", shape=cylinder, fillcolor="#E8F0FE", color="#315A9A", penwidth=1.8];
+
+  subgraph cluster_observation {
+    label="1. Online Observation";
+    color="#93C5A5";
+    fillcolor="#F2FAF4";
+    style="rounded,filled";
+    penwidth=1.2;
+    fontname="DejaVu Sans";
+    fontsize=12;
+
+    SR [label="Serving Retrieval\nand Cache Coverage", fillcolor="#E8F5E9", color="#3C7A57"];
+    UE [label="Under-covered\nQueries U_t", fillcolor="#E8F5E9", color="#3C7A57"];
+    SL [label="Serve Ledger\nS_t(d)", fillcolor="#E8F5E9", color="#3C7A57"];
+  }
+
+  subgraph cluster_detector {
+    label="2. Support-Weighted Drift Detection";
+    color="#E5B75A";
+    fillcolor="#FFFAEB";
+    style="rounded,filled";
+    penwidth=1.2;
+    fontname="DejaVu Sans";
+    fontsize=12;
+
+    REF [label="Frozen Warmup\nReference", fillcolor="#FFF4D6", color="#B7791F"];
+    GAP [label="Support Gap\nu_t(q)", fillcolor="#FFF4D6", color="#B7791F"];
+    MMD [label="Support-Weighted MMD\nRBF Kernel", fillcolor="#FFF4D6", color="#B7791F"];
+    TEST [label="Permutation Test\np_t <= alpha?", shape=diamond, fillcolor="#FFF4D6", color="#B7791F"];
+    CTRL [label="Drift Alarm\nrho_t in {0,1}", fillcolor="#FFE9B0", color="#A16207", penwidth=1.8];
+  }
+
+  subgraph cluster_evidence {
+    label="3. Evidence Acquisition";
+    color="#B99ADE";
+    fillcolor="#FAF5FF";
+    style="rounded,filled";
+    penwidth=1.2;
+    fontname="DejaVu Sans";
+    fontsize=12;
+
+    ROUTE [label="Evidence\nVisibility", shape=diamond, fillcolor="#F3E8FF", color="#7A4EAB"];
+    DIRECT [label="Direct Dense\nEvidence", fillcolor="#F3E8FF", color="#7A4EAB"];
+    HIDDEN [label="Hidden Graph\nCompletion", fillcolor="#F3E8FF", color="#7A4EAB", style="rounded,dashed,filled"];
+    DL [label="Demand Ledger\nD_t(d)", fillcolor="#EAD8FF", color="#6B3FA0", penwidth=1.8];
+  }
+
+  subgraph cluster_admission {
+    label="4. Replacement-Aware Admission";
+    color="#DF8C86";
+    fillcolor="#FFF5F4";
+    style="rounded,filled";
+    penwidth=1.2;
+    fontname="DejaVu Sans";
+    fontsize=12;
+
+    REP [label="Replacement Pressure\nC_t", fillcolor="#FCE8E6", color="#B44B43"];
+    GAIN [label="Net Gain\nDelta_t(c,v)", fillcolor="#FCE8E6", color="#B44B43"];
+    UPDATE [label="Admit Candidate\nEvict Weakest Victim", fillcolor="#F8D4D1", color="#A33D36", penwidth=1.8];
+  }
+
+  KN [label="Updated Hot Cache\nK_(t+1)", shape=cylinder, fillcolor="#D9E8FF", color="#315A9A", penwidth=2.0];
+
+  Q -> SR;
+  K -> SR;
+  SR -> SL [label="resident hits"];
+  SR -> UE [label="support failure"];
+
+  Q -> GAP;
+  K -> GAP;
+  REF -> GAP;
+  GAP -> MMD;
+  MMD -> TEST;
+  TEST -> CTRL [label="reject H0"];
+
+  UE -> ROUTE;
+  ROUTE -> DIRECT [label="visible"];
+  ROUTE -> HIDDEN [label="hidden", style=dashed];
+  C -> DIRECT;
+  C -> HIDDEN [style=dashed];
+  DIRECT -> DL;
+  HIDDEN -> DL [style=dashed];
+
+  SL -> GAIN;
+  DL -> GAIN;
+  CTRL -> GAIN [label="relax margin", color="#B7791F"];
+  REP -> GAIN;
+  GAIN -> UPDATE [label="Delta_t > 0"];
+  K -> UPDATE;
+  UPDATE -> KN;
+  UPDATE -> REP [label="replacement EMA", constraint=false];
+  KN -> K [label="next window", style=dashed, constraint=false];
+}

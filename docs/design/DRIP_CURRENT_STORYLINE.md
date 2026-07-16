@@ -277,7 +277,7 @@ competition between tail direct evidence and hidden bridge evidence.
 File:
 
 ```text
-motivation/motivation_1/data/results_streamingqa_temporal_final_clean.json
+experiments/direct/data/results_streamingqa_temporal_final_clean.json
 ```
 
 Setting:
@@ -309,7 +309,7 @@ When evidence is query-visible, recency/access-history baselines are strong.
 File:
 
 ```text
-motivation/motivation_2/data/full100_2wiki_no_shift_multiagent_kb750_graphret_current.json
+experiments/hidden/data/full100_2wiki_no_shift_multiagent_kb750_graphret_current.json
 ```
 
 Setting:
@@ -348,7 +348,7 @@ query-visible ablation.
 File:
 
 ```text
-motivation/motivation_2/data/full100_2wiki_topic_shift_bridge_kb750_graphret_routed.json
+experiments/hidden/data/full100_2wiki_topic_shift_bridge_kb750_graphret_routed.json
 ```
 
 Setting:

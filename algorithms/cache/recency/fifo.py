@@ -37,11 +37,20 @@ class FIFO(BaseStrategy):
 
     def set_kb(self, ids):
         super().set_kb(ids)
-        self.insert_order = list(ids)
+        # The initial batch has no real arrival order; use a seeded permutation
+        # instead of loader/pool order.
+        stable_ids = sorted(self.kb, key=self.d2p.__getitem__)
+        rng = np.random.default_rng(_P.SEED + 702)
+        self.insert_order = [
+            stable_ids[int(i)] for i in rng.permutation(len(stable_ids))
+        ]
 
     def step(self, window_queries, window_query_embs, window_idx):
         if not self.kb:
             return
+        accesses = self._observed_access_positions(window_queries)
+        if accesses is not None:
+            return self._step_observed_accesses(accesses)
         kb_list = sorted(self.kb)
         kb_idx = np.array([self.d2p[d] for d in kb_list])
         kb_emb = self.doc_embs[kb_idx]
@@ -63,6 +72,8 @@ class FIFO(BaseStrategy):
             cand_did = self.p2d[top1]
             if cand_did in self.kb:
                 continue
+            if n >= int(_P.WRITE_CAP):
+                continue
             # admit, then evict oldest if over budget
             self.kb.add(cand_did)
             self.insert_order.append(cand_did)
@@ -71,4 +82,23 @@ class FIFO(BaseStrategy):
                 old = self.insert_order.pop(0)
                 if old in self.kb:        # skip stale queue entries
                     self.kb.discard(old)
+        self.update_cost += n
+
+    def _step_observed_accesses(self, accesses):
+        capacity = len(self.kb)
+        n = 0
+        for pool_idx in accesses:
+            candidate = self.p2d[int(pool_idx)]
+            if candidate in self.kb:
+                continue
+            self.maint_retrieval_cost += 1
+            if n >= int(_P.WRITE_CAP):
+                continue
+            self.kb.add(candidate)
+            self.insert_order.append(candidate)
+            n += 1
+            while len(self.kb) > capacity and self.insert_order:
+                oldest = self.insert_order.pop(0)
+                if oldest in self.kb:
+                    self.kb.discard(oldest)
         self.update_cost += n
