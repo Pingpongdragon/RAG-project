@@ -30,6 +30,8 @@ from algorithms.cache.params import PARAMS
 from algorithms.cache.paradigm_ref.agent_rag_cache import AgentRAGCache
 from algorithms.cache.recency.fifo import FIFO
 from algorithms.cache.recency.lru import LRU
+from algorithms.cache.semantic.gptcache import GPTCacheStyle
+from algorithms.cache.semantic.proximity import Proximity
 from algorithms.drip import DRIP, DRIPConfig
 from benchmarks.audit_semantic_pages import (
     PROTOCOLS,
@@ -49,7 +51,10 @@ POLICIES = {
     "FIFO": FIFO,
     "TinyLFU": TinyLFU,
     "AgentRAGCache": AgentRAGCache,
+    "Proximity": Proximity,
+    "GPTCacheStyle": GPTCacheStyle,
     "DRIP-Reactive": DRIP,
+    "DRIP-Feedback": DRIP,
     "DRIP-QueryOnly": DRIP,
     "DRIP-DomainAdapt": DRIP,
     "DRIP-TopicDynamics": DRIP,
@@ -162,7 +167,7 @@ def run(args):
             )
             policy_configs[name] = asdict(config)
         elif name in {
-            "DRIP-QueryOnly", "DRIP-DomainAdapt"
+            "DRIP-QueryOnly", "DRIP-DomainAdapt", "DRIP-Feedback"
         }:
             config = DRIPConfig.domain_adapt(
                 candidate_budget=int(args.candidate_budget),
@@ -181,6 +186,11 @@ def run(args):
                 initial_dual_price=float(args.initial_dual_price),
                 demand_decay=float(args.demand_decay),
                 serve_decay=float(args.serve_decay),
+                downstream_feedback_mass=(
+                    float(args.feedback_mass)
+                    if name == "DRIP-Feedback" else 0.0
+                ),
+                downstream_feedback_topk=1,
             )
             policy = cls(
                 name,
@@ -323,7 +333,26 @@ def run(args):
             record["per_window_strict_hit_rate"].append(
                 round(strict_hits / max(1, len(window)), 6)
             )
-            policy.step(feedback, routed_query_embeddings, window_index)
+            step_feedback = feedback
+            if name == "DRIP-Feedback":
+                # Gold support IDs are revealed only after this window's
+                # residency metrics have been frozen.  This is the controlled
+                # trace analogue of a post-generation citation/attribution
+                # signal, not a pre-service oracle.
+                step_feedback = [
+                    {
+                        **event,
+                        "downstream_feedback": [{
+                            "title": event["access_title"],
+                            "utility": 1.0,
+                            "source": "post-service-gold-support",
+                        }],
+                    }
+                    for event in feedback
+                ]
+            policy.step(
+                step_feedback, routed_query_embeddings, window_index
+            )
 
     summary = {}
     for name, policy in policies.items():
@@ -404,6 +433,8 @@ def run(args):
             summary[name]["topic_log"] = list(policy.topic_log)
         if hasattr(policy, "domain_log"):
             summary[name]["domain_log"] = list(policy.domain_log)
+        if hasattr(policy, "downstream_log"):
+            summary[name]["downstream_log"] = list(policy.downstream_log)
 
     return {
         "dataset": args.dataset,
@@ -413,6 +444,10 @@ def run(args):
             "workload": str(dataset.protocol.workload),
             "online_constructor_labels_exposed": False,
             "post_service_gold_evidence_feedback": True,
+            "downstream_feedback": (
+                "DRIP-Feedback receives unit utility on the same post-service "
+                "gold access keys available to all policies"
+            ),
             "causal_current_query_routing": True,
             "routing_input": (
                 "original query embeddings before scoring; repeated only to "
@@ -481,6 +516,7 @@ def main():
     parser.add_argument("--decay", type=float, default=0.5)
     parser.add_argument("--demand-decay", type=float, default=0.92)
     parser.add_argument("--serve-decay", type=float, default=0.75)
+    parser.add_argument("--feedback-mass", type=float, default=1.0)
     parser.add_argument("--forecast-mass", type=float, default=20.0)
     parser.add_argument(
         "--min-forecast-confidence", type=float, default=0.5
